@@ -2,11 +2,22 @@
 
 This repository contains Python code used in the preprint:
 
-**"Fractal Entropic Geometrodynamics: Emergent Gravity and Standard Model Synthesis from Causal Set Information Geometry"**  
-by Juan Pablo Silva Alvarado (metric engineer)
+**"Fractal Entropic Geometrodynamics: Emergent Gravity and Standard Model Synthesis from Causal Set Information Geometry"** by Juan Pablo Silva Alvarado (metric engineer)
 
 DOI (Zenodo): [https://doi.org/10.5281/zenodo.18526209]  
 arXiv: [none – not endorsed yet]
+
+## Pedagogic Material: Modulo Synthesis
+
+In addition to the exploratory code, this repository hosts the **"Modulo Synthesis"** pedagogic project—a comprehensive attempt to teach discrete physics from first principles, where matter emerges as a topological defect in the Causal Set.
+
+Located in the `pedagogic_booklets/` directory:
+
+- **Volume I: The Geometry of Spacetime** Establishes the foundations, deriving General Relativity from the thermodynamics of causal horizons and proving Chentsov's theorem for the uniqueness of the statistical metric.
+
+- **Volume II: The Geometry of Matter** A speculative synthesis proposing geometric origins for the Standard Model generations (via Kuratowski's theorem), gauge groups ($S_3 \to SU(3)$), and constants like $\alpha$ and $\theta_C$.
+
+- **Emma's Thought Experiments** A companion booklet of intuitive scenarios (e.g., "The Quantum Ghost", "The Tilted Loaf") designed to make these advanced discrete concepts accessible to a general audience.
 
 ## What this code does
 

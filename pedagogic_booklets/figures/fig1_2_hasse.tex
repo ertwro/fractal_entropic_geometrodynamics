@@ -1,0 +1,87 @@
+\documentclass[tikz,border=2mm]{standalone}
+\definecolor{structure}{HTML}{1A535C}
+\definecolor{main}{HTML}{C6892A}
+\begin{document}
+\begin{tikzpicture}[
+    scale=5,
+    event/.style={circle, fill=structure, inner sep=1.5pt},
+    link/.style={draw=gray!50, thin}
+]
+\node[event] (0) at (0.004, 0.189) {};
+\node[event] (1) at (0.172, 0.225) {};
+\node[event] (2) at (0.153, 0.313) {};
+\node[event] (3) at (0.177, 0.379) {};
+\node[event] (4) at (-0.392, 0.452) {};
+\node[event] (5) at (-0.185, 0.496) {};
+\node[event] (6) at (-0.052, 0.498) {};
+\node[event] (7) at (0.061, 0.517) {};
+\node[event] (8) at (-0.614, 0.664) {};
+\node[event] (9) at (0.287, 0.724) {};
+\node[event] (10) at (-0.659, 0.750) {};
+\node[event] (11) at (0.369, 0.810) {};
+\node[event] (12) at (-0.803, 0.816) {};
+\node[event] (13) at (0.174, 0.931) {};
+\node[event] (14) at (-0.805, 0.979) {};
+\node[event] (15) at (-0.271, 1.001) {};
+\node[event] (16) at (-0.105, 1.195) {};
+\node[event] (17) at (-0.621, 1.294) {};
+\node[event] (18) at (-0.060, 1.413) {};
+\node[event] (19) at (-0.284, 1.439) {};
+\node[event] (20) at (-0.211, 1.448) {};
+\node[event] (21) at (-0.244, 1.451) {};
+\node[event] (22) at (-0.108, 1.504) {};
+\node[event] (23) at (0.437, 1.509) {};
+\node[event] (24) at (-0.077, 1.537) {};
+\draw[link] (0) -- (3);
+\draw[link] (0) -- (5);
+\draw[link] (0) -- (6);
+\draw[link] (1) -- (2);
+\draw[link] (1) -- (6);
+\draw[link] (2) -- (3);
+\draw[link] (3) -- (7);
+\draw[link] (3) -- (9);
+\draw[link] (4) -- (10);
+\draw[link] (4) -- (15);
+\draw[link] (4) -- (23);
+\draw[link] (5) -- (17);
+\draw[link] (5) -- (13);
+\draw[link] (5) -- (15);
+\draw[link] (6) -- (17);
+\draw[link] (6) -- (13);
+\draw[link] (6) -- (15);
+\draw[link] (7) -- (17);
+\draw[link] (7) -- (13);
+\draw[link] (7) -- (15);
+\draw[link] (8) -- (16);
+\draw[link] (8) -- (10);
+\draw[link] (9) -- (11);
+\draw[link] (9) -- (13);
+\draw[link] (9) -- (16);
+\draw[link] (10) -- (14);
+\draw[link] (10) -- (18);
+\draw[link] (10) -- (19);
+\draw[link] (10) -- (20);
+\draw[link] (10) -- (21);
+\draw[link] (11) -- (18);
+\draw[link] (11) -- (20);
+\draw[link] (11) -- (21);
+\draw[link] (11) -- (23);
+\draw[link] (12) -- (14);
+\draw[link] (12) -- (19);
+\draw[link] (12) -- (20);
+\draw[link] (12) -- (21);
+\draw[link] (13) -- (18);
+\draw[link] (13) -- (19);
+\draw[link] (13) -- (20);
+\draw[link] (13) -- (21);
+\draw[link] (13) -- (23);
+\draw[link] (14) -- (17);
+\draw[link] (15) -- (16);
+\draw[link] (16) -- (18);
+\draw[link] (16) -- (19);
+\draw[link] (16) -- (20);
+\draw[link] (16) -- (21);
+\draw[link] (18) -- (22);
+\draw[link] (22) -- (24);
+\end{tikzpicture}
+\end{document}
