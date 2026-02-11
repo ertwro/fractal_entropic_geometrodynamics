@@ -3,9 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/downloads/)
 [![Numba](https://img.shields.io/badge/numba-accelerated-green)](https://numba.pydata.org/)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18613501.svg)](https://doi.org/10.5281/zenodo.18613501)
 
-**Version:** 1.0.1  
 **Date:** February 11, 2026  
 **Author:** Juan Pablo Silva Alvarado (@ertwro)  
 **Theory:** Modulo Synthesis / Fractal Entropic Geometrodynamics
@@ -18,26 +16,21 @@ The proton is modeled as a **topological Skyrmion** (B=1 knot), while the electr
 
 **Key Result**: The observed ratio 1836.15 lies within the natural geometric band, confirming the topological origin of fermion mass hierarchy.
 
-![Mass Ratio Optimization Plot](calculations/figures/mass_ratio_optimization_plot.png)
+![Mass Ratio Optimization Plot](mass_ratio_optimization_plot.png)
 
 _Figure 1: Geometric mass ratio vs Skyrmion core size (λ_decay). The stable dip at λ ≈ 0.31–0.32 aligns with the dimensional transition. The physical value 1836 is crossed multiple times in the natural parameter space._
 
-## Pedagogic Material: Modulo Synthesis
+## Theoretical Foundation
 
-In addition to the research code, this repository hosts the **"Modulo Synthesis"** pedagogic project—a comprehensive attempt to teach discrete physics from first principles.
+- **Causal Set Theory**: Spacetime is discrete and Lorentz-invariant via Poisson sprinkling.
+- **Modulo Synthesis**: Particles are excitations of SU(2) frame fields on this discrete geometry.
+  - **Baryons**: Topological solitons (Skyrmions, B=1) — protected by winding.
+  - **Leptons**: Non-topological ripples (B=0) — minimal quantum excitations.
+- **Mass Ratio**: Energy cost of topology vs minimal ripple, with vacuum subtraction.
 
-Located in the `pedagogic_booklets/` directory:
+See `walkthrough.md` for the full discovery story and `mass_ratio_summary.md` for technical details.
 
-- **Volume I: The Geometry of Spacetime**  
-  Establishes the foundations, deriving General Relativity from the thermodynamics of causal horizons and proving Chentsov's theorem for the uniqueness of the statistical metric.
-
-- **Volume II: The Geometry of Matter** (Updated)  
-  A speculative synthesis proposing geometric origins for the Standard Model generations (via Kuratowski's theorem), gauge groups ($S_3 \to SU(3)$), and constants like $\alpha$ and $\theta_C$.
-
-- **Emma's Thought Experiments**  
-  A companion booklet of intuitive scenarios (e.g., "The Quantum Ghost", "The Tilted Loaf") designed to make these advanced discrete concepts accessible to a general audience.
-
-## Key Results (from `calculations/`)
+## Key Results
 
 Fine-tuning scan at physical vacuum scale (fluct ≈ 0.0174):
 
@@ -56,9 +49,7 @@ Fine-tuning scan at physical vacuum scale (fluct ≈ 0.0174):
 - **Stability dip**: Minimum variance at λ ≈ 0.32 — geometric preference.
 - **Target 1836**: Crossed naturally on rising/falling edges.
 
-See `calculations/walkthrough.md` for the full discovery story and `calculations/mass_ratio_summary.md` for technical details.
-
-## Installation & Usage
+## Installation & Dependencies
 
 ```bash
 git clone https://github.com/ertwro/modulo-synthesis-mass-ratio.git
@@ -66,21 +57,55 @@ cd modulo-synthesis-mass-ratio
 python -m venv venv
 source venv/bin/activate
 pip install numpy scipy numba matplotlib tqdm
-
-# Run the mass ratio scan
-cd calculations
-python skyrmion_ratio_scan_v03.py
 ```
+
+Required:
+
+- Python 3.12+
+- Numba (JIT acceleration)
+- SciPy, NumPy, Matplotlib, tqdm
+
+## Usage
+
+```bash
+# Full scan (default)
+python skyrmion_ratio_scan_v03.py
+
+# Targeted high-precision run
+python skyrmion_ratio_scan_v03.py -n 100000 --lambda-single 0.31 --fluct 0.0174 --runs 10
+
+# Fine-tune around transition
+python skyrmion_ratio_scan_v03.py -n 50000 --lambda-single 0.32 --fluct 0.016 --runs 5
+```
+
+Output includes:
+
+- Console table
+- PDF/PNG plot
+- Saved experiment logs
 
 ## Files
 
-- `calculations/skyrmion_ratio_scan_v03.py`: Production simulation script
-- `calculations/walkthrough.md`: Full discovery narrative
-- `calculations/mass_ratio_summary.md`: Technical report
-- `pedagogic_booklets/`: PDF booklets (Vol I, Vol II, Emma's Experiments)
+- `skyrmion_ratio_scan_v03.py`: Production simulation script
+- `walkthrough.md`: Full discovery narrative
+- `mass_ratio_summary.md`: Technical report
+- `mass_ratio_optimization_plot.png`: Key visualization
+- `experiment_results_*/`: Logged runs
 
 ## License
 
 MIT License — feel free to use, modify, and build upon this work.
 
+## Next Steps & Open Questions
+
+- High-N (10⁶) confirmation of the stability dip
+- Derivation of fine-structure constant from simplex overlaps
+- Extension to full Standard Model spectrum
+
 **The proton is heavy because it is a knot. The electron is light because it is a ripple. Their ratio is geometry.**
+
+— Juan Pablo Silva Alvarado, February 2026
+
+---
+
+_For questions or collaboration: @ertwro on X_
