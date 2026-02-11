@@ -10,6 +10,8 @@
 **Author:** Juan Pablo Silva Alvarado (@ertwro)  
 **Theory:** Modulo Synthesis / Fractal Entropic Geometrodynamics
 
+Paper: [[https://doi.org/10.5281/zenodo.18613501]]
+
 ## Overview
 
 This repository demonstrates a **geometric derivation** of the proton/electron mass ratio (~1836) from pure causal set theory and SU(2) topology — no free parameters, no fine-tuning beyond the natural vacuum scale.
