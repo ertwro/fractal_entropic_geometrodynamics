@@ -10,7 +10,10 @@
 **Author:** Juan Pablo Silva Alvarado (@ertwro)  
 **Theory:** Modulo Synthesis / Fractal Entropic Geometrodynamics
 
-Paper: [[https://doi.org/10.5281/zenodo.18613501]]
+Paper:
+zenodo: [https://doi.org/10.5281/zenodo.18613501]
+Arxiv: Not endorsed
+
 
 ## Overview
 
