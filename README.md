@@ -86,3 +86,6 @@ python skyrmion_ratio_scan_v03.py
 - `calculations/walkthrough.md`: Full discovery narrative
 - `calculations/mass_ratio_summary.md`: Technical report
 - `pedagogic_booklets/`: PDF booklets (Vol I, Vol II, Emma's Experiments)
+
+License
+This project is dual-licensed under the MIT License (Software) and CC BY-NC-ND 4.0 (Theory). See the LICENSE file for the full legal text.
