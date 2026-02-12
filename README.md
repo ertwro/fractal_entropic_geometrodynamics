@@ -11,8 +11,11 @@
 **Theory:** Modulo Synthesis / Fractal Entropic Geometrodynamics
 
 Paper:
-zenodo: [https://doi.org/10.5281/zenodo.18613501]
+zenodo: https://doi.org/10.5281/zenodo.18613501
+
 Arxiv: Not endorsed
+
+repo's DOI: https://doi.org/10.5281/zenodo.18614014
 
 
 ## Overview
@@ -83,9 +86,3 @@ python skyrmion_ratio_scan_v03.py
 - `calculations/walkthrough.md`: Full discovery narrative
 - `calculations/mass_ratio_summary.md`: Technical report
 - `pedagogic_booklets/`: PDF booklets (Vol I, Vol II, Emma's Experiments)
-
-## License
-
-MIT License — feel free to use, modify, and build upon this work.
-
-**The proton is heavy because it is a knot. The electron is light because it is a ripple. Their ratio is geometry.**
