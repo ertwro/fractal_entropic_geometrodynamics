@@ -1,0 +1,18 @@
+[package]
+name = "causal_set_sim"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+nalgebra = "0.33"
+sprs = "0.11"
+rand = "0.8"
+rayon = "1.10"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+
+[profile.release.build-override]
+opt-level = 3
