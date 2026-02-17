@@ -1,0 +1,3373 @@
+% ═══════════════════════════════════════════════════════════════════════════════
+%   MODULO SYNTHESIS — El Cálculo de Kuratowski
+%   Single-column textbook format · pdfLaTeX
+% ═══════════════════════════════════════════════════════════════════════════════
+\documentclass[11pt, a4paper, openany]{book}
+
+% ─── Geometry ─────────────────────────────────────────────────────────────────
+\usepackage[
+  top=2.5cm, bottom=2.5cm,
+  left=3cm, right=3cm,
+  headheight=14pt
+]{geometry}
+
+% ─── Fonts ────────────────────────────────────────────────────────────────────
+\usepackage{fontspec}
+\defaultfontfeatures{Ligatures=TeX}
+
+% ─── Language ────────────────────────────────────────────────────────────────
+\usepackage{polyglossia}
+\setmainlanguage{spanish}
+
+% ─── Colors ───────────────────────────────────────────────────────────────────
+\usepackage{xcolor}
+\definecolor{structure}{HTML}{1A535C}   % Deep Teal
+\definecolor{main}{HTML}{C6892A}        % Golden Ochre
+\definecolor{second}{HTML}{2E4057}      % Slate Blue
+\definecolor{third}{HTML}{8B2635}       % Burgundy
+\definecolor{fourth}{HTML}{3A7D44}      % Forest Green
+\definecolor{mainlight}{HTML}{FDF6E3}   % Solarized Base3
+\definecolor{secondlight}{HTML}{EDF2F4}
+\definecolor{thirdlight}{HTML}{F9EBEC}
+\definecolor{fourthlight}{HTML}{EBF5EC}
+
+% ─── Packages ─────────────────────────────────────────────────────────────────
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{graphicx,booktabs,enumitem,microtype,float}
+\usepackage{fancyhdr,titlesec,titletoc}
+\usepackage[numbers,sort&compress]{natbib}
+\bibliographystyle{unsrtnat}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable,theorems}
+\usepackage{etoolbox}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=structure, citecolor=second, urlcolor=second,
+  bookmarksnumbered=true, pdfstartview=FitH
+}
+
+% ─── Macros ───────────────────────────────────────────────────────────────────
+\newcommand{\lP}{\ell_{\mathrm{P}}}
+\newcommand{\dS}{d_{\mathrm{S}}}
+\newcommand{\MPl}{M_{\mathrm{Pl}}}
+\newcommand{\stoneref}[1]{%
+  \smallskip\noindent
+  {\small\color{structure!70}\textit{$\blacktriangleright$ Lectura
+  l\'ogica (Ap\'endice~\ref{app:stone-duality}):} #1}%
+  \smallskip}
+\renewcommand{\chaptername}{Modulo}
+
+% ─── Chapter/Section Styling ─────────────────────────────────────────────────
+\titleformat{\chapter}[display]
+  {\normalfont\Large\bfseries\color{structure}}
+  {\small\color{structure!60}\MakeUppercase{\chaptertitlename}\ \thechapter}
+  {4pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{-20pt}{20pt}
+
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{structure}}{\thesection}{0.6em}{}
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{structure!80!black}}{\thesubsection}{0.5em}{}
+\titlespacing*{\subsection}{0pt}{8pt}{4pt}
+
+% ─── Headers ──────────────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE,RO]{\small\thepage}
+\fancyhead[LO]{\small\nouppercase{\rightmark}}
+\fancyhead[RE]{\small\nouppercase{\leftmark}}
+\renewcommand{\headrulewidth}{0.3pt}
+
+% ─── Theorem Environments ─────────────────────────────────────────────────────
+\newcounter{thm}[chapter]
+\renewcommand{\thethm}{\thechapter.\arabic{thm}}
+
+% Definition Box
+\newtcolorbox[use counter=thm]{definition}[1][]{%
+  enhanced,breakable,
+  colback=mainlight,colframe=main,
+  colbacktitle=main,coltitle=white,
+  fonttitle=\small\bfseries,
+  title={Definici\'on~\thethm\ifx&#1&\else: #1\fi},
+  arc=1.5pt,boxrule=0.6pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt,
+  before skip=10pt,after skip=10pt
+}
+
+% Theorem Box
+\newtcolorbox[use counter=thm]{theorem}[1][]{%
+  enhanced,breakable,
+  colback=secondlight,colframe=second,
+  colbacktitle=second,coltitle=white,
+  fonttitle=\small\bfseries,
+  title={Teorema~\thethm\ifx&#1&\else: #1\fi},
+  arc=1.5pt,boxrule=0.6pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt,
+  before skip=10pt,after skip=10pt
+}
+
+% Axiom Box
+\newtcolorbox[use counter=thm]{axiom}[1][]{%
+  enhanced,breakable,
+  colback=thirdlight,colframe=third,
+  colbacktitle=third,coltitle=white,
+  fonttitle=\small\bfseries,
+  title={Axioma~\thethm\ifx&#1&\else: #1\fi},
+  arc=1.5pt,boxrule=0.6pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt,
+  before skip=10pt,after skip=10pt
+}
+
+% Result Box
+\newtcolorbox{result}[1][]{%
+  enhanced,breakable,
+  colback=fourthlight,colframe=fourth,
+  fontupper=\itshape,
+  arc=1.5pt,boxrule=0.6pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt,
+  before skip=10pt,after skip=10pt,
+  title={Resultado Clave},
+  coltitle=fourth!50!black, fonttitle=\small\bfseries,
+  attach boxed title to top left={yshift=-2mm,xshift=2mm},
+  boxed title style={colback=fourthlight,frame hidden},
+  #1
+}
+
+% Introduction/Overview Box
+\newenvironment{introduction}[1][Sinopsis del M\'odulo]{%
+  \begin{tcolorbox}[
+    enhanced,colback=structure!5,colframe=structure,
+    colbacktitle=structure,coltitle=white,
+    fonttitle=\small\bfseries,title={#1},
+    arc=2pt,boxrule=0.7pt,
+    left=8pt,right=8pt,top=6pt,bottom=6pt,
+    before skip=12pt,after skip=12pt
+  ]\itshape\begin{itemize}[leftmargin=*,itemsep=2pt,parsep=0pt]
+}{%
+  \end{itemize}\end{tcolorbox}
+}
+
+% Proof environment
+\renewenvironment{proof}[1][Demostraci\'on]{%
+  \par\noindent\textit{#1.}\quad
+}{\hfill$\square$\par\medskip}
+
+\setlist{nosep,leftmargin=*}
+\setlist[itemize,1]{label={\color{structure}\textbullet}}
+\setlist[enumerate,1]{label={\color{structure}\arabic*.}}
+
+% ─── Title Page Macro ────────────────────────────────────────────────────────
+\makeatletter
+\newcommand{\subtitle}[1]{\gdef\@subtitle{#1}}
+\newcommand{\extrainfo}[1]{\gdef\@extrainfo{#1}}
+\gdef\@subtitle{}\gdef\@extrainfo{}
+\renewcommand{\maketitle}{%
+  \begin{titlepage}\centering
+    \vspace*{4cm}
+    {\Huge\bfseries\color{structure}\@title\par}\vspace{0.6cm}
+    \ifx\@subtitle\empty\else{\Large\color{gray!80}\@subtitle\par}\fi
+    \vspace{2cm}
+    {\color{main}\rule{0.6\textwidth}{2pt}\par}\vspace{2cm}
+    {\LARGE\@author\par}\vspace{1cm}
+    {\large\@date\par}\vfill
+    \ifx\@extrainfo\empty\else
+      \begin{minipage}{0.8\textwidth}\centering\itshape\color{gray!60}\@extrainfo\end{minipage}\vspace{3cm}
+    \fi
+  \end{titlepage}
+}
+\makeatother
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\title{Modulo Synthesis}
+\subtitle{El C\'alculo de Kuratowski}
+\author{Juan Pablo Silva Alvarado}
+\date{\today}
+\extrainfo{``El c\'alculo continuo es la pintura; el C\'alculo de Kuratowski es el lienzo.''}
+
+\begin{document}
+\maketitle
+\frontmatter
+\tableofcontents
+\mainmatter
+
+% ███████████████████████████████████████████████████████████████████████████████
+%   PROLOGUE
+% ███████████████████████████████████████████████████████████████████████████████
+
+\chapter*{Pr\'ologo: La Anatom\'ia del Continuo}
+\addcontentsline{toc}{chapter}{Pr\'ologo: La Anatom\'ia del Continuo}
+\markboth{Pr\'ologo}{Pr\'ologo}
+
+Durante m\'as de tres siglos, la f\'isica ha hablado el idioma de lo
+infinitamente suave. Desde que Newton y Leibniz concibieron la derivada~\cite{newton1687},
+y Riemann generaliz\'o la geometr\'ia de las superficies
+curvas~\cite{riemann1854}, nuestra comprensi\'on del universo se ha
+cimentado sobre una suposici\'on maravillosamente \'util: la
+divisibilidad infinita. En este paradigma, el
+espacio es un lienzo continuo, el tiempo fluye sin interrupciones, y el
+c\'alculo opera sobre un l\'imite diferencial ($dx \to 0$) que se
+desvanece suavemente en el abismo de lo infinitamente peque\~no.
+
+Esta presunci\'on nos permiti\'o modelar el cosmos. Nos dio las
+herramientas para imaginar esferas conc\'entricas de perspectiva que se
+extienden hacia el infinito, anidando nuevos universos y
+permiti\'endonos concebir la majestuosidad de un espacio que se curva, se
+contrae y rebota sobre s\'i mismo. La geometr\'ia de Riemann y el
+c\'alculo diferencial no son un error; son, por el contrario, la
+aproximaci\'on estad\'istica m\'as exitosa en la historia del
+pensamiento humano~\cite{penrose2003}.
+
+Sin embargo, cuando la gravedad de Riemann intenta hablar con la
+mec\'anica cu\'antica, la ilusi\'on de la suavidad se
+fractura~\cite{dewitt1967,goroff1986}. Los infinitos que antes eran una
+herramienta matem\'atica se convierten en singularidades
+patol\'ogicas~\cite{hawking1970,penrose1965}. El continuo se rompe.
+
+\bigskip
+
+\textit{Modulo Synthesis: El C\'alculo de Kuratowski} no es un intento de
+destruir el c\'alculo cl\'asico, sino de revelar la maquinaria que opera
+debajo de \'el. Su prop\'osito es demostrar que las matem\'aticas
+continuas que hemos amado y utilizado durante siglos son el l\'imite
+macrosc\'opico de una realidad fundamentalmente discreta, finita y
+estructurada como un Grafo Ac\'iclico Dirigido
+(DAG)~\cite{bombelli1987,finkelstein1969,thooft1979}.
+
+En este libro, no abandonaremos los s\'imbolos que definen a la
+f\'isica te\'orica. En cambio, les devolveremos su rigor ontol\'ogico
+redefiniendo su significado a la escala de Planck:
+
+\begin{itemize}
+  \item \textbf{El Diferencial ($dx$):} Ya no representa un l\'imite
+    geom\'etrico que tiende a cero, sino la unidad fundamental
+    indivisible del cambio. Un diferencial es un v\'inculo causal
+    primario (un salto topol\'ogico de cobertura, denotado como
+    $\prec^{\!*}$). Es el ``p\'ixel'' del espaciotiempo causal.
+
+  \item \textbf{La Integral ($\int$):} Integrar sobre un volumen ya no
+    es sumar \'areas infinitesimales bajo una curva continua. En el
+    C\'alculo de Kuratowski, la integral es una operaci\'on de conteo
+    estricto. Es la cardinalidad de los eventos contenidos dentro de un
+    intervalo causal (el Diamante de Alexandrov).
+
+  \item \textbf{La M\'etrica ($g_{\mu\nu}$):} La m\'etrica que dicta
+    c\'omo se curvan las distancias en la Relatividad General se revela
+    como una propiedad emergente. Su valor local est\'a dictado
+    directamente por la densidad de los Prismas Causales ($K_{2,N}$).
+    Donde hay materia (nudos topol\'ogicos), el n\'umero de caminos se
+    multiplica, la informaci\'on se retrasa, y el observador
+    macrosc\'opico percibe esto como una curvatura del continuo y la
+    presencia de masa inercial.
+\end{itemize}
+
+\bigskip
+
+La geometr\'ia de Kuratowski nos ense\~na que el espacio no es el
+contenedor de la realidad, sino la red misma de sus relaciones l\'ogicas.
+Este volumen es el manual de traducci\'on. Es el puente anal\'itico que
+nos permite partir de un solo bit de informaci\'on causal discreta y,
+paso a paso, recuperar las infinitas esferas de perspectiva de Riemann.
+
+\begin{center}
+\itshape
+El c\'alculo continuo es la pintura; el C\'alculo de Kuratowski es el
+lienzo. Veamos de qu\'e est\'a hecho.
+\end{center}
+
+\stoneref{Las traducciones f\'isica$\,\leftrightarrow\,$l\'ogica
+que se insin\'uan a lo largo de este volumen no son analog\'ias
+pedag\'ogicas: son \textbf{isomorfismos categ\'oricos} garantizados
+por la Dualidad de Stone~\cite{stone1936}. El
+Ap\'endice~\ref{app:stone-duality} lo demuestra formalmente.}
+
+\bigskip
+\begin{center}
+\rule{0.4\textwidth}{0.5pt}
+\end{center}
+
+% ███████████████████████████████████████████████████████████████████████████████
+%   PART I : LOS ELEMENTOS DEL CÁLCULO DISCRETO
+% ███████████████████████████████████████████████████████████████████████████████
+\part{Los Elementos del C\'alculo Discreto}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\chapter{El Diferencial Discreto: Los Elementos Base}
+% ═══════════════════════════════════════════════════════════════════════════════
+% CORRESPONDENCIA CENTRAL:
+%   Continuo: dx → 0  (límite infinitesimal)
+%   Discreto: ≺*      (vínculo de cobertura indivisible)
+
+\begin{introduction}
+  \item El evento causal como \'atomo indivisible de espaciotiempo.
+  \item El v\'inculo de cobertura $\prec^{\!*}$ como diferencial discreto.
+  \item Longitud y tiempo propio como conteo de v\'inculos.
+  \item El l\'imite de Planck como axioma topol\'ogico, no como constante
+        arbitraria.
+\end{introduction}
+
+El \'exito irrazonable del c\'alculo continuo en la f\'isica cl\'asica
+se basa en una ilusi\'on fundamental: la creencia de que el
+espaciotiempo es un sustrato infinitamente divisible. En la geometr\'ia
+de Riemann, un evento es un punto adimensional definido por coordenadas
+reales $(x^\mu)$, y el cambio se mide a trav\'es de un diferencial
+$dx^\mu$ en el l\'imite donde $dx \to 0$.
+
+Sin embargo, la mec\'anica cu\'antica y la topolog\'ia subyacente del
+universo nos proh\'iben alcanzar ese cero absoluto. En este cap\'itulo
+establecemos el primer pilar del C\'alculo de Kuratowski: la
+redefinici\'on estricta de los elementos
+base~\cite{bombelli1987,sorkin2003,surya2019}.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{El Evento como Nodo L\'ogico}
+
+En nuestra formulaci\'on, abandonamos la noci\'on de un ``espacio
+contenedor''~\cite{malament1977,hawking1976,kronheimer1967}. El
+universo no es un escenario donde ocurren las cosas; es la red de las
+cosas que ocurren.
+
+\begin{definition}[El Evento Fundamental]
+\label{def:event}
+Un \textbf{punto} en el C\'alculo de Kuratowski no posee coordenadas
+aprior\'isticas. Se define como un nodo~$u$ perteneciente a un
+Grafo Ac\'iclico Dirigido (DAG) causalmente
+ordenado~\cite{bombelli1987,myrheim1978}
+$\mathcal{C} = (V, \prec)$, donde:
+\begin{enumerate}
+  \item $V$ es un conjunto finito (o localmente finito) de
+        \textbf{eventos}.
+  \item $\prec$ es un orden parcial estricto: irreflexivo, transitivo y,
+        por la aciclicidad del grafo, asim\'etrico.
+  \item Para cualesquiera $u, v \in V$, el intervalo
+        $\{w \in V : u \prec w \prec v\}$ es finito
+        (\textbf{finitud local}).
+\end{enumerate}
+El ``volumen'' de un evento no es cero sino la unidad fundamental de
+informaci\'on de Planck~($\lP^4$).
+\end{definition}
+
+\noindent
+Esta definici\'on tiene una consecuencia inmediata: las singularidades
+de la Relatividad General~\cite{penrose1965,hawking1973}---centros de
+agujeros negros, el instante $t = 0$ del Big Bang---dejan de existir
+como objetos matem\'aticos v\'alidos, porque la densidad de informaci\'on est\'a topol\'ogicamente
+acotada por la cardinalidad de~$V$. No se puede ``comprimir infinitos
+eventos en volumen cero'' cuando cada evento ocupa, por axioma, un
+volumen irreducible~$\lP^4$.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{El L\'imite del Diferencial: $dx \to \prec^{\!*}$}
+
+Si el espacio no es liso, la operaci\'on fundamental del c\'alculo
+diferencial---la derivada---requiere una nueva base ontol\'ogica. ?`Qu\'e
+significa ``moverse una distancia infinitamente peque\~na'' si el espacio
+est\'a pixelado?
+
+\begin{definition}[El Diferencial Discreto (V\'inculo de Cobertura)]
+\label{def:covering}
+El an\'alogo exacto del diferencial de arco~$ds$ (o el intervalo
+temporal~$dt$) es el \textbf{v\'inculo de cobertura causal}
+$\prec^{\!*}$. Un evento~$u$ \textbf{cubre} a un evento~$v$
+($u \prec^{\!*} v$) si y solo si:
+\[
+  u \prec v
+  \quad\text{y}\quad
+  \nexists\; w \in V \;\text{tal que}\; u \prec w \prec v.
+\]
+La relaci\'on de cobertura es el salto causal m\'inimo: el paso
+m\'as peque\~no posible en el universo. No existe ``medio v\'inculo''.
+\end{definition}
+
+\stoneref{El v\'inculo de cobertura $\prec^{\!*}$ \emph{es} la
+implicaci\'on at\'omica en el \'algebra de Heyting dual
+(Teorema~\ref{thm:stone-kuratowski}, punto~1). El diferencial
+discreto es una unidad indivisible de \emph{razonamiento}: un paso
+inferencial que no admite descomposici\'on.}
+
+\noindent
+El diagrama de Hasse del conjunto
+causal~\cite{davey2002}---la reducci\'on transitiva del DAG---retiene
+\'unicamente los v\'inculos de cobertura~$\prec^{\!*}$, descartando
+las aristas redundantes de largo alcance. Es la representaci\'on can\'onica del espaciotiempo
+discreto: todo lo que la red sabe est\'a codificado en sus v\'inculos
+de cobertura.
+
+Por lo tanto, la notaci\'on cl\'asica del l\'imite diferencial:
+\begin{equation}
+  \lim_{\Delta x \to 0} \frac{\Delta y}{\Delta x}
+  \label{eq:classical-limit}
+\end{equation}
+carece de sentido f\'isico real. En el C\'alculo de Kuratowski, la
+derivada no es el c\'alculo de una tangente imaginaria, sino la
+medici\'on discreta de c\'omo fluye la informaci\'on a trav\'es de un
+\'unico salto topol\'ogico~$\prec^{\!*}$. El ``cero'' del c\'alculo
+tradicional es, en realidad, el ``uno'' de la topolog\'ia causal:
+\begin{equation}
+  dx \;\longrightarrow\; \prec^{\!*}
+  \qquad\text{(un v\'inculo de cobertura, indivisible).}
+  \label{eq:dx-to-link}
+\end{equation}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{La Longitud y el Tiempo Propio}
+
+En la Relatividad de Einstein, el tiempo propio $\tau$ experimentado
+por un observador a lo largo de una l\'inea de mundo se calcula
+integrando el diferencial de arco continuo~$ds$. En nuestra
+topolog\'ia, la longitud de una curva se reduce a un problema de
+conteo estricto.
+
+\begin{definition}[Cadena Causal]
+\label{def:chain}
+Una \textbf{cadena causal} es una secuencia totalmente ordenada de
+eventos conectados por v\'inculos de cobertura:
+\[
+  \gamma \;=\; (e_0 \prec^{\!*} e_1 \prec^{\!*} \cdots \prec^{\!*} e_n),
+  \qquad e_i \in V,\quad 0 \le i \le n.
+\]
+La \textbf{longitud} de la cadena es el n\'umero de v\'inculos (no de
+nodos): $|\gamma| = n$. Denotamos por $\Gamma(A,B)$ el conjunto de
+todas las cadenas causales entre dos eventos $A, B \in V$ con
+$A \prec B$.
+\end{definition}
+
+\begin{definition}[Tiempo Propio Discreto]
+\label{def:proper-time}
+Sea $\gamma \in \Gamma(A,B)$ una cadena causal. El \textbf{tiempo
+propio discreto} a lo largo de~$\gamma$ es:
+\begin{equation}
+  \tau(\gamma) \;=\; |\gamma|
+  \;=\; \bigl|\{(e_i, e_{i+1}) : 0 \le i < n\}\bigr|
+  \;=\; n.
+  \label{eq:proper-time}
+\end{equation}
+Cada v\'inculo de cobertura contribuye exactamente \textbf{una
+unidad} de duraci\'on causal. No existe fracci\'on de v\'inculo.
+\end{definition}
+
+\stoneref{$\tau(\gamma) = |\gamma|$ es la \emph{profundidad de
+demostraci\'on}: el n\'umero de pasos inferenciales at\'omicos en la
+cadena de razonamiento $\gamma$. El tiempo es la longitud de una
+prueba~\cite{prawitz1965}.}
+
+\noindent
+La correspondencia con el continuo es directa:
+\[
+  \tau_{\text{continuo}}
+  \;=\; \int_\gamma ds
+  \quad\longrightarrow\quad
+  \tau_{\text{discreto}}
+  \;=\; \sum_{i=0}^{n-1} 1
+  \;=\; n.
+\]
+La legitimidad f\'isica de esta identificaci\'on descansa sobre un
+resultado cl\'asico de la teor\'ia de conjuntos causales:
+
+\begin{theorem}[Myrheim--Meyer~\cite{myrheim1978,meyer1988,brightwell1991}]
+\label{thm:myrheim-meyer}
+Sea $\mathcal{C} = (V, \prec)$ un conjunto causal obtenido por
+\emph{sprinkling} de Poisson con densidad~$\rho$ en un espaciotiempo
+$d$-dimensional. Para dos eventos $A \prec B$, sea
+$\ell(A,B) = \max_{\gamma \in \Gamma(A,B)} |\gamma|$ la longitud de la
+cadena m\'axima. Entonces, en el l\'imite de alta densidad:
+\begin{equation}
+  \frac{\ell(A,B)}{\rho^{1/d}}
+  \;\xrightarrow{\;\rho \to \infty\;}
+  \; m_d \;\tau(A,B),
+  \label{eq:myrheim-meyer}
+\end{equation}
+donde $\tau(A,B)$ es el tiempo propio geod\'esico del continuo y
+$m_d$ es una constante que depende solo de la dimensi\'on~$d$.
+\end{theorem}
+
+\noindent
+El Teorema~\ref{thm:myrheim-meyer} establece que el conteo de
+v\'inculos de cobertura a lo largo de la cadena m\'as larga converge
+al tiempo propio riemanniano. La cadena m\'axima es la geod\'esica
+(v\'ease el Cap\'itulo~4).
+
+\medskip
+Esta identificaci\'on desmitifica la relatividad del tiempo. El tiempo
+se dilata para un objeto masivo no porque ``viaje por un espacio
+curvo'', sino porque su informaci\'on est\'a atrapada procesando las
+bifurcaciones internas de los Prismas Causales~($K_{2,N}$), obligando
+a su cadena a consumir v\'inculos de cobertura en estructura local
+antes de avanzar hacia el futuro global. La masa no frena al
+tiempo; lo \emph{ocupa}.
+
+\begin{theorem}[Dilataci\'on Temporal como Retraso Topol\'ogico]
+\label{thm:time-dilation}
+Sean $A \prec B$ dos eventos del conjunto causal y sean
+$\gamma_{\text{vac}}$ y $\gamma_{\text{mat}}$ dos cadenas m\'aximas
+entre~$A$ y~$B$ que atraviesan, respectivamente, una regi\'on de
+vac\'io y una regi\'on con densidad de Prismas Causales
+$\nu_{\text{mat}} > 0$. Si la presencia de Prismas genera
+$\Delta N > 0$ v\'inculos internos adicionales por unidad de
+profundidad causal que no contribuyen al avance global, entonces:
+\begin{equation}
+  |\gamma_{\text{mat}}^{\text{global}}|
+  \;<\;
+  |\gamma_{\text{vac}}^{\text{global}}|,
+  \label{eq:time-dilation}
+\end{equation}
+donde $|\gamma^{\text{global}}|$ denota el n\'umero de v\'inculos de
+cobertura que avanzan hacia el futuro causal com\'un de~$A$ y~$B$
+(excluyendo los v\'inculos consumidos en rutas internas de los Prismas).
+\end{theorem}
+
+\begin{proof}
+El n\'umero total de v\'inculos disponibles para un observador
+entre~$A$ y~$B$ est\'a acotado por la longitud de la cadena
+m\'axima $\ell(A,B)$, que depende solo de la geometr\'ia global
+(Teorema~\ref{thm:myrheim-meyer}). En la regi\'on de vac\'io, todos
+los v\'inculos avanzan causalmente:
+$|\gamma_{\text{vac}}^{\text{global}}| = |\gamma_{\text{vac}}|$.
+En la regi\'on con materia, cada Prisma $K_{2,N_j}$ desv\'ia al
+caminante por $N_j$ v\'inculos intermedios que conectan los polos del
+Prisma sin avanzar en el orden causal global. As\'i:
+\[
+  |\gamma_{\text{mat}}^{\text{global}}|
+  \;=\; |\gamma_{\text{mat}}|
+  \;-\; \sum_j N_j.
+\]
+Puesto que $\sum_j N_j > 0$, se obtiene
+la desigualdad~\eqref{eq:time-dilation}.
+\end{proof}
+
+\stoneref{Derivaci\'on independiente v\'ia teor\'ia de la
+prueba~\cite{prawitz1965}: las demostraciones que utilizan lemas
+(introducci\'on de corte) son m\'as largas que las demostraciones
+directas. Los Prismas son lemas; la dilataci\'on temporal es el costo
+de la indirecci\'on inferencial.}
+
+% ─────────────────────────────────────────────────────────────────────────────
+% TODO — §1.3: El Límite de Planck como Axioma Topológico
+% En el continuo, ℓ_P es una constante dimensional derivada de ℏ, G, c
+% \cite{planck1899,garay1995}.
+% Aquí invertimos la lógica: la discretitud es el axioma primario, y ℓ_P
+% es la consecuencia dimensional de la densidad fundamental ρ del sprinkling.
+% Relación: ρ = 1/ℓ_P⁴.
+% Esto elimina la jerarquía de escalas como input y la convierte en output.
+% (Cubierto parcialmente por §1.4 y Axioma~\ref{ax:planck-density}.)
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Los Par\'ametros de la Existencia}
+
+A diferencia de la f\'isica cl\'asica, donde las constantes fundamentales
+se obtienen mediante observaci\'on experimental, el C\'alculo de
+Kuratowski postula que los valores que gobiernan la estructura del
+espaciotiempo son \textbf{constantes topol\'ogicas} derivadas de la
+teor\'ia de grafos. No hay par\'ametros libres que ajustar; cada valor
+se sigue de una restricci\'on combinatoria sobre el DAG causal.
+
+\begin{axiom}[L\'imite de Valencia $\mathcal{V}_{\max}$]
+\label{ax:valence-limit}
+Todo evento $u \in V$ del conjunto causal satisface una cota superior
+sobre su grado total en el diagrama de Hasse:
+\begin{equation}
+  \deg(u) \;=\; d^+(u) + d^-(u) \;\leq\; \mathcal{V}_{\max}.
+  \label{eq:valence-limit}
+\end{equation}
+\end{axiom}
+
+\noindent
+El l\'imite de valencia define la \textbf{saturaci\'on del flujo
+causal}: el n\'umero m\'aximo de v\'inculos de cobertura que pueden
+confluir en un evento. Este par\'ametro es el responsable de que la
+dimensi\'on espectral se estabilice en un valor finito ($\dS \to 4$)
+en vez de divergir. Si la valencia fuera ilimitada, la probabilidad
+de retorno $P(t)$ no decaer\'ia como ley de potencias y la
+dimensi\'on espectral no estar\'ia bien definida. El valor
+$\mathcal{V}_{\max} = 15$ emerge de la condici\'on de que el
+\emph{sprinkling} de Poisson en un diamante causal de 4 dimensiones
+produce, en media, $\langle\deg\rangle \approx 2d = 8$ v\'inculos de
+cobertura por evento, con una cola poissoniana~\cite{kingman1993} que se trunca
+naturalmente a $\sim 2\langle\deg\rangle$.
+
+\begin{axiom}[Umbral de Kuratowski $K_{\text{threat}}$]
+\label{ax:kuratowski-threshold}
+Un nodo~$w$ constituye una \textbf{amenaza topol\'ogica} para un
+Prisma Causal $\mathcal{P}(u, v, W)$ si est\'a conectado
+simult\'aneamente a ambos polos y a al menos $K_{\text{threat}}$
+intermedios:
+\begin{equation}
+  w \in V \setminus (W \cup \{u,v\})
+  \quad\text{con}\quad
+  |\{u, v\} \cap N(w)| = 2
+  \;\;\text{y}\;\;
+  |W \cap N(w)| \;\geq\; K_{\text{threat}},
+  \label{eq:kuratowski-threshold}
+\end{equation}
+donde $N(w)$ denota los vecinos de~$w$ en el diagrama de Hasse. Cuando
+esta condici\'on se cumple, el nodo~$w$ es absorbido por contracci\'on
+de v\'ertice en el polo m\'as cercano, preservando la planaridad del
+grafo.
+\end{axiom}
+
+\noindent
+El valor $K_{\text{threat}} = 2$ se deriva directamente del
+\textbf{Teorema de Kuratowski}~\cite{kuratowski1930,diestel2017}: un
+grafo es planar si y solo si no contiene un menor de $K_5$ ni de
+$K_{3,3}$. Un nodo conectado a los 2
+polos y a 2 intermedios de un Prisma $K_{2,N}$ forma un subgrafo con
+$2 + 2 + 1 = 5$ v\'ertices mutuamente alcanzables---una
+configuraci\'on que amenaza con producir un menor de~$K_5$. La
+absorci\'on es el mecanismo m\'inimo que neutraliza esta amenaza. Es el
+an\'alogo discreto del \textbf{confinamiento de color}: la topolog\'ia
+proh\'ibe que un nodo externo ``rompa'' la estructura bipartita del
+Prisma, del mismo modo que la QCD proh\'ibe aislar un quark.
+
+\begin{axiom}[Profundidad de Hasse $d_{\max}$]
+\label{ax:hasse-depth}
+La b\'usqueda de Prismas Causales y amenazas topol\'ogicas opera dentro
+de un horizonte local de profundidad~$d_{\max}$ en el diagrama de
+Hasse:
+\begin{equation}
+  d_{\max} \;=\; 4.
+  \label{eq:hasse-depth}
+\end{equation}
+Todo v\'inculo a distancia de Hasse $> d_{\max}$ de un evento dado
+queda fuera de su cono de influencia inmediata y se trata como ruido
+de fondo.
+\end{axiom}
+
+\noindent
+La profundidad $d_{\max} = 4$ no es arbitraria: un Prisma
+$\mathcal{P}(u,v,W)$ tiene di\'ametro de Hasse exactamente~2
+($u \prec^{\!*} w \prec^{\!*} v$ para cualquier $w \in W$), y la
+detecci\'on de amenazas~$K_5$ requiere explorar un salto adicional en
+cada direcci\'on. As\'i, $d_{\max} = 2 + 2 = 4$ es la profundidad
+m\'inima y suficiente para detectar toda la f\'isica local. Este valor
+establece la \textbf{localidad fundamental} del C\'alculo de
+Kuratowski: la f\'isica es local no por postulado, sino porque la
+topolog\'ia del DAG solo requiere informaci\'on a 4 saltos de
+profundidad.
+
+\begin{result}[title={Constantes Topol\'ogicas, no Experimentales}]
+\phantomsection\label{res:topological-constants}
+Los tres par\'ametros $(\mathcal{V}_{\max},\; K_{\text{threat}},\;
+d_{\max}) = (15,\; 2,\; 4)$ no son valores libres ajustados a datos:
+son consecuencias de la estructura combinatoria del DAG causal
+(estad\'istica de Poisson, planaridad de Kuratowski, y di\'ametro del
+Prisma). Cualquier universo discreto, causal y planar que obedezca los
+axiomas del C\'alculo de Kuratowski producir\'a necesariamente estos
+mismos valores.
+\end{result}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\chapter{La Integral Topol\'ogica: Acumulaci\'on y Volumen}
+% ═══════════════════════════════════════════════════════════════════════════════
+% CORRESPONDENCIA CENTRAL:
+%   Continuo: ∫ d⁴x √(-g)  (integral de volumen sobre la variedad)
+%   Discreto: |V ∩ ◇(A,B)|  (cardinalidad de eventos en un diamante)
+
+\begin{introduction}
+  \item El Diamante de Alexandrov como dominio natural de integraci\'on.
+  \item La integral de volumen como cardinalidad:
+        $\int d^4x\,\sqrt{-g} \;\to\; N\,\lP^4$.
+  \item El ruido poissoniano de la integral y la Constante Cosmol\'ogica.
+  \item Invarianza de Lorentz emergente del conteo discreto.
+\end{introduction}
+
+Si el diferencial de Kuratowski ($dx \to \prec^{\!*}$) nos dicta c\'omo
+dar un paso indivisible en el espaciotiempo discreto, la operaci\'on
+integral nos dicta c\'omo medir su inmensidad. En el c\'alculo
+tradicional, la integral es el \'area bajo una curva suave o el volumen
+de una variedad continua. En nuestra topolog\'ia fundamental, la
+integraci\'on abandona la geometr\'ia continua y regresa a su forma
+aritm\'etica m\'as pura: el conteo estricto.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{El Diamante de Alexandrov y la Integral de Volumen}
+
+Para integrar sobre una regi\'on del espaciotiempo, primero debemos
+delimitarla utilizando \'unicamente relaciones causales, sin recurrir
+a cintas m\'etricas externas.
+
+\begin{definition}[Diamante de Alexandrov~\cite{alexandrov1967,kronheimer1967}]
+\label{def:alexandrov}
+Sean $A, B \in V$ dos eventos con $A \prec B$. El \textbf{Diamante de
+Alexandrov} (o \textbf{intervalo causal}) es el conjunto de todos los
+eventos causalmente intermedios:
+\begin{equation}
+  \Diamond(A,B) \;=\; \bigl\{\, e \in V : A \prec e \prec B \,\bigr\}.
+  \label{eq:alexandrov}
+\end{equation}
+Por la finitud local del conjunto causal
+(Definici\'on~\ref{def:event}), $\Diamond(A,B)$ es siempre un conjunto
+finito. Su cardinalidad $|\Diamond(A,B)|$ est\'a bien definida.
+\end{definition}
+
+\noindent
+El Diamante de Alexandrov es el dominio de integraci\'on can\'onico
+del C\'alculo de Kuratowski. Toda regi\'on del espaciotiempo
+delimitable por relaciones causales puede descomponerse en uni\'on de
+diamantes. En la Relatividad General, el volumen espaciotemporal de
+esta regi\'on se calcula mediante la integral:
+\begin{equation}
+  V_{\text{continuo}} \;=\;
+  \int_{\Diamond} \sqrt{-g}\; d^4x.
+  \label{eq:volume-continuum}
+\end{equation}
+En el C\'alculo de Kuratowski, esta integral se reemplaza por un
+conteo:
+
+\begin{definition}[Integral Topol\'ogica de Volumen]
+\label{def:topological-integral}
+Sea $\mathcal{C} = (V, \prec)$ un conjunto causal con densidad
+fundamental de \emph{sprinkling}
+$\rho = \lP^{-4}$ (un evento por volumen de Planck). La
+\textbf{integral topol\'ogica de volumen} sobre un
+Diamante de Alexandrov es:
+\begin{equation}
+  \boxed{\;
+  \int_{\Diamond} \sqrt{-g}\; d^4x
+  \quad\longrightarrow\quad
+  \frac{|\Diamond(A,B)|}{\rho}
+  \;=\; N\,\lP^4,
+  \;}
+  \label{eq:volume-discrete}
+\end{equation}
+donde $N = |\Diamond(A,B)|$ es el n\'umero de eventos encerrados en
+el intervalo causal. La flecha denota convergencia estad\'istica en
+el l\'imite $N \gg 1$ (v\'ease el Teorema~\ref{thm:volume-convergence}).
+\end{definition}
+
+\stoneref{$|\Diamond(A,B)|$ es el n\'umero de teoremas en la clausura
+deductiva~\cite{tarski1930} entre las proposiciones $\varphi_A$
+y~$\varphi_B$. Integrar sobre un volumen es contar los teoremas de
+una teor\'ia.}
+
+\noindent
+Esta equivalencia es profunda: el volumen no es una propiedad
+m\'etrica del espacio, sino una propiedad de \emph{conteo} de la
+red de informaci\'on. Integrar es contar.
+
+\begin{theorem}[Convergencia Volumen--Cardinalidad~\cite{myrheim1978,bombelli1987}]
+\label{thm:volume-convergence}
+Sea $\mathcal{C}$ un conjunto causal obtenido por \emph{sprinkling}
+de Poisson con densidad~$\rho$ en un espaciotiempo globalmente
+hiperb\'olico de dimensi\'on~$d$. Para cualesquiera $A \prec B$, la
+variable aleatoria $N = |\Diamond(A,B)|$ satisface:
+\begin{enumerate}
+  \item \textbf{Valor esperado:}
+    $\;\mathbb{E}[N] = \rho\,\mathrm{Vol}\bigl(\Diamond(A,B)\bigr).$
+  \item \textbf{Fluctuaci\'on poissoniana:}
+    $\;\mathrm{Var}[N] = \mathbb{E}[N],$
+    de modo que $\sigma_N = \sqrt{N}$.
+  \item \textbf{Convergencia relativa:}
+    $\;\displaystyle\frac{\sigma_N}{\mathbb{E}[N]}
+    = \frac{1}{\sqrt{N}}
+    \;\xrightarrow{\;N \to \infty\;}\; 0.$
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+Por construcci\'on, el \emph{sprinkling} de Poisson asigna a cada
+regi\'on $R$ del espaciotiempo un n\'umero de eventos distribuido como
+$\mathrm{Poisson}(\rho\,\mathrm{Vol}(R))$. El Diamante de Alexandrov
+es una regi\'on medible del espaciotiempo, por lo que
+$N \sim \mathrm{Poisson}(\rho\,\mathrm{Vol}(\Diamond))$.
+Los puntos~(1) y~(2) son propiedades inmediatas de la distribuci\'on
+de Poisson ($\mathrm{Var} = \mu$). El punto~(3) se sigue de la Ley
+de los Grandes N\'umeros: para $N \gg 1$, la fracci\'on
+$N/\mathbb{E}[N] \to 1$ casi seguramente, y el error relativo
+$1/\sqrt{N}$ se desvanece.
+\end{proof}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{El Ruido de la Integral y la Constante Cosmol\'ogica ($\Lambda$)}
+
+Redefinir la integral macrosc\'opica como un proceso de conteo
+microsc\'opico tiene consecuencias f\'isicas profundas para los
+misterios de la cosmolog\'ia moderna.
+
+Como el conteo de~$N$ eventos en un conjunto causal aleatorio obedece
+la estad\'istica de Poisson, la integral del volumen no es un valor
+absolutamente est\'atico, sino que posee una incertidumbre
+estad\'istica inherente. El volumen del universo tiene una fluctuaci\'on
+fundamental:
+\begin{equation}
+  \delta V \;\sim\; \sqrt{N}\;\lP^4.
+  \label{eq:volume-fluctuation}
+\end{equation}
+
+Esta ``vibraci\'on'' en el resultado de la integral no es un error de
+medici\'on; es una propiedad ontol\'ogica del espaciotiempo discreto.
+La pregunta es: ?`tiene consecuencias observables?
+
+\begin{theorem}[Predicci\'on de Sorkin~\cite{sorkin1991,ahmed2004}]
+\label{thm:sorkin-lambda}
+Sea $\mathcal{C}$ un conjunto causal con $N$ eventos en el
+4-volumen del universo observable, con densidad fundamental
+$\rho = \lP^{-4}$. En el marco de la gravedad
+unimodular~\cite{einstein1919,unruh1989}, donde la
+constante cosmol\'ogica~$\Lambda$ es la variable conjugada al
+4-volumen, la fluctuaci\'on poissoniana del conteo de eventos induce
+una fluctuaci\'on efectiva en~$\Lambda$ de orden:
+\begin{equation}
+  \boxed{\;
+  \Lambda_{\text{eff}}
+  \;\sim\; \frac{1}{\sqrt{N}\;\lP^2}
+  \;\sim\; \frac{\sqrt{\rho}}{\sqrt{N}}
+  \;\sim\; H_0^2,
+  \;}
+  \label{eq:sorkin-lambda}
+\end{equation}
+donde $H_0$ es la constante de Hubble actual.
+\end{theorem}
+
+\begin{proof}
+El volumen total del espaciotiempo observable es
+$V_{\mathrm{obs}} = N/\rho = N\,\lP^4$, y su fluctuaci\'on
+poissoniana es $\delta V = \sqrt{N}\,\lP^4$
+(Teorema~\ref{thm:volume-convergence}). En gravedad unimodular, la
+relaci\'on de incertidumbre volumen--constante cosmol\'ogica establece
+$\delta\Lambda \cdot \delta V \sim 1$ (en unidades naturales
+$\hbar = c = 1$). Por tanto:
+\[
+  \delta\Lambda
+  \;\sim\; \frac{1}{\delta V}
+  \;=\; \frac{1}{\sqrt{N}\,\lP^4}
+  \;=\; \frac{\lP^{-4}}{\sqrt{N}}
+  \;=\; \frac{\rho}{\sqrt{N}}.
+\]
+Ahora, $\Lambda$ tiene dimensiones de $[\text{longitud}]^{-2}$.
+Reescribiendo con $\rho = \lP^{-4}$:
+\[
+  \delta\Lambda
+  \;=\; \frac{1}{\sqrt{N}\,\lP^4}
+  \;=\; \frac{1}{\lP^2} \cdot \frac{1}{\sqrt{N}\,\lP^2}
+  \;=\; \frac{1}{\lP^2\,\sqrt{N\,\lP^4}}
+  \;=\; \frac{1}{\lP^2 \sqrt{V_{\mathrm{obs}}}}.
+\]
+Para el universo observable, $V_{\mathrm{obs}} \sim (H_0^{-1})^4$
+en unidades de Planck, de donde
+$\sqrt{V_{\mathrm{obs}}} \sim H_0^{-2}/\lP^2$ y:
+\[
+  \delta\Lambda
+  \;\sim\; \frac{1}{\lP^2} \cdot
+           \frac{\lP^2}{H_0^{-2}}
+  \;=\; H_0^2.
+\]
+Este valor coincide, en orden de magnitud, con el valor observado
+$\Lambda_{\text{obs}} \approx 10^{-122}\,\lP^{-2}$.
+\end{proof}
+
+\stoneref{$\Lambda$ es la fluctuaci\'on de Poisson en el n\'umero de
+teoremas del sistema deductivo cosmol\'ogico: el \emph{ruido de fondo
+l\'ogico} de la clausura deductiva~\cite{tarski1930}. La constante
+cosmol\'ogica es el residuo estad\'istico de contar teoremas.}
+
+\noindent
+La energ\'ia que acelera la expansi\'on del cosmos no es un fluido
+ex\'otico inyectado en las ecuaciones de campo; es, anal\'iticamente,
+el residuo estad\'istico de la Integral de Kuratowski al operar sobre
+un n\'umero inmenso, pero finito, de eventos causales.
+
+\begin{result}[title={La Constante Cosmol\'ogica como Ruido de Conteo}]
+\phantomsection\label{res:cosmological-constant}
+La predicci\'on de Sorkin precede en siete a\~nos al descubrimiento
+experimental de la expansi\'on
+acelerada~\cite{perlmutter1999,riess1998}.
+El C\'alculo de Kuratowski la hace inevitable: si la integral de
+volumen es un conteo de Poisson, la constante cosmol\'ogica \emph{no
+puede ser cero ni infinita}. Su valor est\'a fijado por la
+cardinalidad del universo observable:
+\[
+  \Lambda \;\sim\; N^{-1/2}\,\lP^{-2},
+  \qquad
+  N \;\sim\; 10^{240}.
+\]
+El problema de la constante cosmol\'ogica~\cite{weinberg1989} se
+disuelve: $\Lambda$ no es ni cero ni $\lP^{-2}$, sino el residuo
+estad\'istico del conteo
+causal~\cite{sorkin2005lambda,zwane2018}.
+\end{result}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Invarianza de Lorentz desde el Conteo}
+
+La invarianza de Lorentz del C\'alculo de Kuratowski no se impone
+como postulado: emerge del conteo. El argumento descansa sobre un
+\'unico hecho algebraico y una consecuencia probabil\'istica.
+
+\begin{theorem}[Bombelli--Henson--Sorkin~\cite{bombelli2009}]
+\label{thm:lorentz-sprinkling}
+Sea $\Lambda$ una transformaci\'on de Lorentz y sea $\mathcal{C}$ un
+conjunto causal obtenido por \emph{sprinkling} de Poisson con
+densidad~$\rho$ en un espaciotiempo lorentziano. Entonces la
+distribuci\'on de~$\mathcal{C}$ es estad\'isticamente invariante
+bajo~$\Lambda$: el n\'umero de eventos en cualquier
+Diamante~$\Diamond(A,B)$ es un escalar de Lorentz.
+\end{theorem}
+
+\begin{proof}
+Una transformaci\'on de Lorentz satisface $\det\Lambda = 1$ por
+pertenencia a $SO^+(1,3)$. Por lo tanto, preserva el elemento de
+4-volumen lorentziano $d^4x\,\sqrt{-g}$. El n\'umero de eventos
+esparcidos en una regi\'on~$R$ se distribuye como
+$\mathrm{Poisson}(\rho\,\mathrm{Vol}(R))$
+(Teorema~\ref{thm:volume-convergence}). Puesto que
+$\mathrm{Vol}(\Lambda R) = \mathrm{Vol}(R)$, la variable aleatoria
+$N = |\Diamond(A,B) \cap V|$ tiene id\'entica distribuci\'on en todo
+marco inercial. En particular, su valor esperado, su varianza y
+todos sus momentos son escalares de Lorentz.
+\end{proof}
+
+\noindent
+La consecuencia para la integral topol\'ogica es directa: dado que
+la cardinalidad~$N$ es invariante, el volumen discreto
+$N\,\lP^4$ (Definici\'on~\ref{def:topological-integral}) tambi\'en
+lo es. La invarianza de Lorentz que el c\'alculo continuo postula
+para la integral $\int\!\sqrt{-g}\,d^4x$ no es un axioma
+independiente; es una propiedad heredada del conteo de eventos en un
+\emph{sprinkling} de Poisson. El \emph{sprinkling} es, de hecho, la
+\'unica distribuci\'on puntual sobre un espaciotiempo lorentziano que
+respeta esta invarianza~\cite{bombelli2009}.
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\chapter{La Derivada Causal: Difusi\'on y Resoluci\'on}
+% ═══════════════════════════════════════════════════════════════════════════════
+% CORRESPONDENCIA CENTRAL:
+%   Continuo: ∂f/∂x^μ, ∇_μ, □  (derivadas, conexión, d'Alembertiano)
+%   Discreto: difusión sobre el Hasse, valencia local, flujo neto
+
+\begin{introduction}
+  \item El operador de difusi\'on y la dimensi\'on espectral como derivada.
+  \item El Teorema de la Resoluci\'on Causal: precisi\'on de la derivada
+        discreta.
+  \item Gradientes de flujo, inercia y ecuaciones de continuidad.
+\end{introduction}
+
+Si la integral de Kuratowski nos da el volumen (el conteo de eventos),
+la derivada nos revela la dimensionalidad y la curvatura. En este
+cap\'itulo, definimos el operador diferencial no como una resta de
+valores en puntos adyacentes, sino como la tasa de propagaci\'on de
+la informaci\'on a trav\'es de la red causal.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{El Operador de Difusi\'on y la Dimensi\'on Espectral}
+
+En el c\'alculo de Riemann, la dimensi\'on de una variedad est\'a dada
+de forma aprior\'istica: se fija $d = 4$ antes de escribir una sola
+ecuaci\'on. En el C\'alculo de Kuratowski, la dimensi\'on es una
+propiedad
+\emph{emergente}~\cite{carlip2017,ambjorn2005,eichhorn2014},
+detectable mediante un operador de difusi\'on (el caminante aleatorio
+sobre el diagrama de Hasse).
+
+\begin{definition}[Caminante Aleatorio sobre el Diagrama de Hasse]
+\label{def:random-walker}
+Sea $H = (V, E)$ el diagrama de Hasse (no dirigido) de un conjunto
+causal $\mathcal{C} = (V, \prec)$, donde $E$ es el conjunto de
+v\'inculos de cobertura~$\prec^{\!*}$ con la orientaci\'on suprimida.
+Un \textbf{caminante aleatorio} parte de un evento~$u_0 \in V$ y, en
+cada paso discreto $t \to t+1$, salta a un vecino elegido
+uniformemente al azar:
+\[
+  \Pr\bigl[u_{t+1} = v \;\big|\; u_t = u\bigr]
+  \;=\;
+  \begin{cases}
+    1/\deg(u) & \text{si } (u,v) \in E,\\[2pt]
+    0 & \text{en caso contrario,}
+  \end{cases}
+\]
+donde $\deg(u) = |\{v : (u,v) \in E\}|$ es la valencia total
+(in-degree $+$ out-degree en el DAG original).
+\end{definition}
+
+\begin{definition}[Probabilidad de Retorno y Dimensi\'on Espectral]
+\label{def:spectral-dimension}
+La \textbf{probabilidad de retorno} $P(t)$ es la probabilidad de que
+el caminante regrese a su origen despu\'es de $t$~pasos, promediada
+sobre todos los or\'igenes posibles:
+\[
+  P(t) \;=\; \frac{1}{|V|}\sum_{u \in V}
+  \Pr\bigl[u_t = u \;\big|\; u_0 = u\bigr].
+\]
+La \textbf{dimensi\'on espectral} se extrae como la pendiente
+logar\'itmica de esta probabilidad:
+\begin{equation}
+  \boxed{\;
+  \dS(t) \;=\; -2\,\frac{d\log P(t)}{d\log t}.
+  \;}
+  \label{eq:spectral-dim}
+\end{equation}
+Para una variedad suave $d$-dimensional, $P(t) \sim t^{-d/2}$
+y por tanto $\dS(t) \to d$.
+\end{definition}
+
+\stoneref{$\dS$ es la \emph{dimensionalidad inferencial}: el n\'umero
+de ejes de inferencia independientes del sistema deductivo.
+$\dS \to 4$ significa que existen exactamente cuatro direcciones
+l\'ogicas ortogonales en las que el sistema puede razonar. La
+pregunta ``?`por qu\'e 4 dimensiones?'' se convierte en ``?`por qu\'e
+4 ejes de inferencia independientes?''}
+
+\noindent
+La dimensi\'on espectral es la \emph{derivada} fundamental del
+C\'alculo de Kuratowski: mide c\'omo decae la propagaci\'on de la
+informaci\'on con la profundidad temporal. Es el an\'alogo discreto
+de la traza del n\'ucleo del calor
+$K(t) = \mathrm{Tr}\,e^{-t\Delta}$ en geometr\'ia espectral
+riemanniana~\cite{minakshisundaram1949,gilkey1975}. La
+dimensi\'on espectral fue introducida como diagn\'ostico de
+conjuntos causales en~\cite{eichhorn2014}; el fen\'omeno de
+reducci\'on dimensional a escalas cortas ($\dS \to 2$) aparece
+tambi\'en en triangulaciones din\'amicas
+causales~\cite{ambjorn2005} y otros enfoques de gravedad
+cu\'antica~\cite{carlip2009,modesto2009}.
+
+\begin{result}[title={Estabilizaci\'on Dimensional por la Materia}]
+\phantomsection\label{res:dimensional-stabilization}
+Los resultados num\'ericos de la simulaci\'on
+(\texttt{prism\_simulation}, $N$ hasta $5 \times 10^6$) revelan un
+fen\'omeno consistente: mientras el vac\'io puro exhibe una dimensi\'on
+espectral ruidosa y fractal, la presencia de Prismas
+Causales~$K_{2,N}$ \textbf{estabiliza} $\dS$ en torno a~$4$ a tiempos
+de difusi\'on intermedios. La materia no es un hu\'esped del
+espaciotiempo tetradimensional; es, por definici\'on operacional, la
+estructura topol\'ogica que \emph{fuerza} a la derivada de la
+informaci\'on a comportarse tetradimensionalmente.
+\end{result}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{El Teorema de la Resoluci\'on Causal}
+
+La validez de cualquier derivada discreta depende de la resoluci\'on
+del sondeo. En el C\'alculo de Kuratowski, la precisi\'on de nuestra
+descripci\'on del espaciotiempo est\'a intr\'insecamente ligada al
+n\'umero de caminos causales sondeados.
+
+El Teorema~\ref{thm:causal-resolution} (Cap\'itulo~6) establece que
+para mantener una tolerancia de error~$\epsilon$ en la medici\'on de
+la geometr\'ia hasta una profundidad~$t_{\max}$, el n\'umero de
+caminantes debe satisfacer:
+\begin{equation}
+  W \;\geq\; \frac{t_{\max}^{\,2}}{c\;\epsilon^2}.
+  \tag{\ref{eq:causal-resolution}}
+\end{equation}
+
+\noindent
+Este resultado establece el \textbf{l\'imite de certidumbre}:
+la ilusi\'on del continuo de Riemann solo es sostenible si la densidad
+de interacciones causales es lo suficientemente alta como para
+promediar el ruido de Poisson de la topolog\'ia discreta. El escalado
+$W \propto t_{\max}^2$ es una consecuencia directa de $\dS = 4$:
+en un espaciotiempo de dimensi\'on espectral~$d$, la cota general
+es $W \propto t_{\max}^{d/2}$.
+
+\begin{theorem}[Cota General de Resoluci\'on Espectral]
+\label{thm:resolution-general}
+Para un conjunto causal con dimensi\'on espectral~$\dS$ a tiempos
+grandes, $P(t) \sim t^{-\dS/2}$. La cota de resoluci\'on del
+Teorema~\ref{thm:causal-resolution} se generaliza a:
+\begin{equation}
+  W \;\geq\; \frac{t_{\max}^{\,\dS/2}}{c\;\epsilon^2}.
+  \label{eq:resolution-general}
+\end{equation}
+En particular:
+\begin{enumerate}
+  \item $\dS = 2$ (l\'imite UV, grafos tipo \'arbol):
+        $W \propto t_{\max}$\quad (costo lineal).
+  \item $\dS = 4$ (espaciotiempo macrosc\'opico):
+        $W \propto t_{\max}^2$\quad (costo cuadr\'atico).
+  \item $\dS > 4$ (dimensiones extra compactas):
+        el costo crece m\'as r\'apido que cuadr\'atico.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+Sigue id\'enticamente la prueba del
+Teorema~\ref{thm:causal-resolution}, sustituyendo
+$P(t_{\max}) = c\,t_{\max}^{-\dS/2}$:
+\[
+  W \;\geq\; \frac{1}{\epsilon^2\,P(t_{\max})}
+  \;=\; \frac{t_{\max}^{\,\dS/2}}{c\;\epsilon^2}.
+\]
+\end{proof}
+
+\noindent
+La f\'ormula~\eqref{eq:resolution-general} revela que la
+dimensi\'on espectral controla directamente el
+\emph{precio computacional de la suavidad}: dimensiones m\'as altas
+son m\'as costosas de sostener.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Anticadenas: Los Cortes Espaciales del DAG}
+
+Para definir gradientes espaciales sobre la red causal, necesitamos
+la noci\'on de ``instante discreto'': un corte del DAG que separe
+pasado de futuro.
+
+\begin{definition}[Anticadena]
+\label{def:antichain}
+Una \textbf{anticadena} es un subconjunto $\mathcal{A} \subset V$
+cuyos elementos son mutuamente incomparables bajo el orden causal:
+\[
+  \forall\, a, b \in \mathcal{A},\;a \neq b
+  \;\colon\quad
+  a \nprec b \;\;\text{y}\;\; b \nprec a.
+\]
+Una anticadena es el an\'alogo discreto de una
+\textbf{hipersuperficie de simultaneidad}: define un ``instante''
+donde ning\'un evento puede influenciar causalmente a otro.
+\end{definition}
+
+\noindent
+El DAG causal admite una \textbf{foliaci\'on en estratos de
+Hasse}~\cite{rideout2000,surya2019}: una partici\'on
+$V = \mathcal{A}_0 \cup \mathcal{A}_1 \cup \cdots \cup
+\mathcal{A}_T$ donde cada estrato~$\mathcal{A}_k$ es una anticadena
+maximal, y todo v\'inculo $u \prec^{\!*} v$ conecta un
+estrato~$\mathcal{A}_k$ con el estrato siguiente~$\mathcal{A}_{k+1}$.
+Los estratos definen un ``tiempo discreto global'' $k = 0, 1,
+\ldots, T$.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Gradientes de Flujo e Inercia}
+
+La derivada de Kuratowski nos permite definir la fuerza no como un
+campo vectorial externo, sino como un \emph{gradiente de
+conectividad}.
+
+\begin{definition}[Operador d'Alembertiano
+Discreto~\cite{sorkin2007box,benincasa2010,dowker2013}]
+\label{def:box-operator}
+Sea $\phi \colon V \to \mathbb{R}$ una funci\'on escalar sobre los
+eventos del conjunto causal. El \textbf{d'Alembertiano discreto}
+(u operador de onda causal) en un evento~$u$ se define como la
+diferencia entre el flujo saliente y el flujo entrante a trav\'es de
+los v\'inculos de cobertura:
+\begin{equation}
+  (\Box_{\mathcal{C}}\,\phi)(u)
+  \;=\;
+  \underbrace{\sum_{v :\, u \prec^* v} \phi(v)}_{\text{hijos de } u}
+  \;-\;
+  \underbrace{\sum_{w :\, w \prec^* u} \phi(w)}_{\text{padres de } u}.
+  \label{eq:box-discrete}
+\end{equation}
+\end{definition}
+
+\noindent
+Este operador tiene una interpretaci\'on transparente. Sean
+$d^+(u) = |\{v : u \prec^{\!*} v\}|$ el out-degree y
+$d^-(u) = |\{w : w \prec^{\!*} u\}|$ el in-degree de~$u$. Entonces:
+\begin{itemize}
+  \item Si $\phi \equiv 1$ (campo constante):
+    $(\Box_{\mathcal{C}}\,\phi)(u) = d^+(u) - d^-(u)$.
+    El operador mide la \textbf{asimetr\'ia causal local}---la
+    diferencia entre el n\'umero de futuros inmediatos y pasados
+    inmediatos.
+  \item Si $\phi$ var\'ia, el operador detecta c\'omo se
+    \textbf{propaga} la se\~nal: la suma sobre hijos mide la
+    dispersi\'on hacia el futuro, y la suma sobre padres mide la
+    convergencia desde el pasado.
+\end{itemize}
+
+\noindent
+A partir de~\eqref{eq:box-discrete}, el \textbf{gradiente causal
+normalizado} en la direcci\'on temporal es:
+
+\begin{definition}[Gradiente Causal]
+\label{def:causal-gradient}
+\begin{equation}
+  (\nabla_t\,\phi)(u)
+  \;=\;
+  \frac{1}{d^+(u)}\sum_{v :\, u \prec^* v} \phi(v)
+  \;-\;
+  \frac{1}{d^-(u)}\sum_{w :\, w \prec^* u} \phi(w).
+  \label{eq:causal-gradient}
+\end{equation}
+Es el promedio hacia el futuro menos el promedio desde el pasado: la
+tasa de cambio discreta de~$\phi$ por salto topol\'ogico.
+\end{definition}
+
+\subsection{Inercia como Resistencia al Flujo}
+
+Cuando un caminante atraviesa un Prisma Causal~$K_{2,N}$, experimenta
+una disminuci\'on en su velocidad de propagaci\'on efectiva debido a la
+bifurcaci\'on de caminos en los $N$ nodos intermedios. Formalicemos
+esta observaci\'on.
+
+\begin{theorem}[Retardo del Gradiente por Prismas Causales]
+\label{thm:gradient-delay}
+Sea $\phi$ un campo escalar que se propaga a trav\'es de un
+Prisma~$\mathcal{P}(u,v,W)$ con $|W| = N$ nodos intermedios
+(Definici\'on~\ref{def:causal-prism}, Vol.~II). Para el polo de
+entrada~$u$, el gradiente causal satisface:
+\begin{equation}
+  (\nabla_t\,\phi)(u)
+  \;=\;
+  \frac{1}{N}\sum_{w \in W} \phi(w)
+  \;-\;
+  \frac{1}{d^-(u)}\sum_{w' :\, w' \prec^* u} \phi(w'),
+  \label{eq:gradient-prism}
+\end{equation}
+donde la primera suma se distribuye uniformemente sobre los $N$
+intermedios. Si $\phi$ es constante sobre~$W$ (campo homog\'eneo en
+el vientre del prisma), entonces:
+\[
+  (\nabla_t\,\phi)(u)
+  \;=\; \phi_W - \bar{\phi}_{\text{pasado}},
+\]
+independientemente de~$N$. Sin embargo, la informaci\'on requiere
+$N$~pasos de difusi\'on para atravesar el vientre antes de alcanzar el
+polo de salida~$v$, produciendo un \textbf{retardo efectivo}
+$\Delta t_{\text{prisma}} = N$.
+\end{theorem}
+
+\begin{proof}
+En el Prisma $\mathcal{P}(u,v,W)$, el polo~$u$ tiene $d^+(u) = N$
+hijos (todos los $w \in W$). Por la
+Definici\'on~\ref{def:causal-gradient}:
+\[
+  (\nabla_t\,\phi)(u)
+  \;=\;
+  \frac{1}{N}\sum_{w \in W}\phi(w) - \bar{\phi}_{\text{pasado}}.
+\]
+Un caminante que entra en~$u$ debe elegir uno de los $N$ caminos
+intermedios. Cada intermedio~$w_i$ est\'a conectado a~$v$ por un
+v\'inculo de cobertura $w_i \prec^{\!*} v$. Pero antes de que la
+informaci\'on pueda propagarse de~$u$ a~$v$, debe pasar por al menos
+un intermedio: el camino m\'inimo es
+$u \prec^{\!*} w_i \prec^{\!*} v$, de longitud~2. Comparado con un
+v\'inculo de vac\'io directo $u \prec^{\!*} v'$ (longitud~1), el
+Prisma introduce un retardo de $+1$ paso por cada intermedio
+visitado. Si el caminante explora los $N$ intermedios por difusi\'on,
+el tiempo de primer paso promedio al polo~$v$ escala como $\Delta
+t_{\text{prisma}} \sim N$.
+\end{proof}
+
+\noindent
+Esta ``resistencia'' al flujo de informaci\'on es la representaci\'on
+matem\'atica de la inercia. El objeto no ``pesa'' porque posea una
+propiedad intr\'inseca misteriosa; pesa porque la derivada de su
+avance causal es retardada por la topolog\'ia del Prisma.
+
+\begin{result}[title={La Derivada de la Inercia}]
+\phantomsection\label{res:inertia-derivative}
+La masa topol\'ogica $M = \kappa N$
+(Axioma de Inercia Topol\'ogica, Vol.~II) se manifiesta
+din\'amicamente como el retardo del gradiente causal:
+\[
+  \Delta t_{\text{prisma}} \;\sim\; N \;=\; M/\kappa.
+\]
+A mayor masa, mayor retardo. La inercia es, literalmente, el n\'umero
+de v\'inculos de cobertura que la informaci\'on debe procesar antes de
+avanzar un paso global.
+\end{result}
+
+% ─────────────────────────────────────────────────────────────────────────────
+% TODO — §3.5: Ecuaciones de Continuidad en el Grafo
+% Conservación de flujo: lo que entra por los padres sale por los hijos.
+% Definición del operador divergencia discreto.
+% La ecuación de continuidad discreta: Σ_{in} J - Σ_{out} J = 0.
+% Límite continuo: ∂_μ J^μ = 0.
+% Conexión con los random walkers de la dimensión espectral (prism_simulation).
+% Refs: \cite{sorkin2012,johnston2009,aslanbeigi2014}
+
+% ███████████████████████████████████████████████████████████████████████████████
+%   PART II : LA FÍSICA EMERGENTE
+% ███████████████████████████████████████████████████████████████████████████████
+\part{La F\'isica Emergente}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\chapter{Geod\'esicas y el Principio de M\'aximo Tiempo}
+% ═══════════════════════════════════════════════════════════════════════════════
+% CORRESPONDENCIA CENTRAL:
+%   Continuo: δ∫L dτ = 0  (extremo del funcional de acción)
+%   Discreto: cadena causal más larga entre A y B (tiempo propio máximo)
+
+\begin{introduction}
+  \item La geod\'esica como cadena causal de longitud m\'axima.
+  \item Inercia y desviaci\'on geod\'esica: el Prisma como obst\'aculo
+        topol\'ogico.
+  \item El principio de m\'inima acci\'on l\'ogica: eficiencia causal.
+\end{introduction}
+
+En la geometr\'ia continua de Riemann~\cite{wald1984}, una
+part\'icula libre sigue una geod\'esica, definida como la curva que
+extremiza la distancia entre dos puntos. En signatura euclidiana, el
+extremo es un m\'inimo. Sin embargo, en la signatura lorentziana del
+espaciotiempo, el principio se invierte: la geod\'esica temporal
+\textbf{maximiza} el tiempo propio~\cite{mtw1973}. El C\'alculo de Kuratowski formaliza esta inversi\'on de
+manera natural mediante la estructura de cadenas del DAG.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{La Geod\'esica como Cadena M\'axima}
+
+En el Cap\'itulo~1, definimos el tiempo propio a lo largo de una
+cadena $\gamma$ como su n\'umero de v\'inculos de cobertura:
+$\tau(\gamma) = |\gamma|$
+(Definici\'on~\ref{def:proper-time}). El Teorema de Myrheim--Meyer
+(\ref{thm:myrheim-meyer}) demostr\'o que, en el l\'imite de alta
+densidad, la cadena m\'as larga converge al tiempo propio
+geod\'esico del continuo. Ahora formalizamos la geod\'esica discreta
+como objeto central:
+
+\begin{definition}[Geod\'esica de Kuratowski]
+\label{def:geodesic}
+Sean $A, B \in V$ con $A \prec B$. La \textbf{geod\'esica de
+Kuratowski} entre~$A$ y~$B$ es cualquier cadena causal que alcanza
+la longitud m\'axima. La \textbf{longitud geod\'esica} es:
+\begin{equation}
+  \boxed{\;
+  \tau(A, B)
+  \;=\;
+  \max_{\gamma \,\in\, \Gamma(A,B)} |\gamma|
+  \;=\; \ell(A,B),
+  \;}
+  \label{eq:geodesic-length}
+\end{equation}
+donde $\Gamma(A,B)$ es el conjunto de todas las cadenas entre~$A$
+y~$B$ (Definici\'on~\ref{def:chain}).
+\end{definition}
+
+\stoneref{La geod\'esica es la \emph{demostraci\'on \'optima}: la
+cadena inferencial que extrae el m\'aximo contenido deductivo entre
+las premisas $\varphi_A$ y~$\varphi_B$. La naturaleza elige la
+prueba m\'as detallada.}
+
+\noindent
+Obs\'ervese la inversi\'on respecto a la intuici\'on euclidiana: la
+geod\'esica no minimiza, sino que \textbf{maximiza}. En el espacio
+euclidiano, el camino m\'as corto gana. En el espaciotiempo causal,
+el camino m\'as largo gana---porque acumula m\'as v\'inculos de
+cobertura y, por tanto, m\'as tiempo propio. Esto es exactamente el
+principio de Relatividad General: entre dos eventos, el observador
+inercial (en ca\'ida libre) es aquel cuyo reloj marca el
+\emph{mayor} intervalo de tiempo.
+
+\begin{theorem}[Unicidad Asint\'otica de la
+Geod\'esica~\cite{brightwell1991}]
+\label{thm:geodesic-uniqueness}
+Sea $\mathcal{C}$ un conjunto causal obtenido por \emph{sprinkling}
+de Poisson con densidad~$\rho$ en un espaciotiempo globalmente
+hiperb\'olico. Para $A \prec B$ con $\ell(A,B) \gg 1$, la cadena
+m\'axima es asint\'oticamente \'unica en el siguiente sentido: si
+$\gamma_1$ y $\gamma_2$ son dos cadenas de longitud~$\ell(A,B)$,
+entonces sus elementos difieren en a lo sumo $O(\sqrt{\ell})$ nodos.
+\end{theorem}
+
+\begin{proof}
+Sea $\gamma^* = (e_0, e_1, \ldots, e_\ell)$ una cadena m\'axima.
+Cualquier cadena alternativa~$\gamma'$ de igual longitud debe pasar
+por los mismos ``cuellos de botella'' del DAG---regiones donde el
+diamante $\Diamond(A,B)$ se estrecha. En un \emph{sprinkling} de
+Poisson $d$-dimensional, el n\'umero de eventos en una secci\'on
+transversal a profundidad~$k$ fluctu\'a como $\sqrt{\rho\,\sigma_k}$,
+donde $\sigma_k$ es el $(d{-}1)$-volumen de la secci\'on. Dos cadenas
+m\'aximas solo pueden divergir donde la secci\'on transversal admite
+m\'ultiples caminos de igual longitud, lo cual ocurre en una
+fracci\'on $O(1/\sqrt{\ell})$ de los pasos. As\'i, el n\'umero de
+nodos en que difieren es $O(\sqrt{\ell})$, y la fracci\'on de
+discrepancia tiende a cero: $O(\sqrt{\ell})/\ell = O(1/\sqrt{\ell})
+\to 0$.
+\end{proof}
+
+\noindent
+Esta cuasi-unicidad explica por qu\'e la materia macrosc\'opica
+experimenta el tiempo como algo flu\'ido y determinista: el promedio
+sobre trillones de cadenas m\'aximas converge a una \'unica
+geod\'esica continua, con fluctuaciones relativas imperceptibles.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Inercia y Desviaci\'on Geod\'esica}
+
+?`Por qu\'e una part\'icula se siente ``pesada''? En el C\'alculo de
+Kuratowski, la inercia es la resistencia de la topolog\'ia a permitir
+cadenas largas.
+
+\begin{definition}[Resistencia Topol\'ogica]
+\label{def:topological-resistance}
+Sea $\Diamond(A,B)$ un diamante que contiene una densidad
+$\nu$ de Prismas Causales por unidad de profundidad causal. La
+\textbf{resistencia topol\'ogica} del diamante es:
+\begin{equation}
+  \mathcal{R}(A,B)
+  \;=\;
+  \frac{\ell_{\text{vac}}(A,B) - \ell(A,B)}{\ell_{\text{vac}}(A,B)},
+  \label{eq:topological-resistance}
+\end{equation}
+donde $\ell_{\text{vac}}(A,B)$ es la longitud geod\'esica que
+tendr\'ia el mismo diamante en ausencia de Prismas (vac\'io puro), y
+$\ell(A,B)$ es la longitud geod\'esica real.
+\end{definition}
+
+\noindent
+El Teorema~\ref{thm:time-dilation} (Cap\'itulo~1) ya demostr\'o que
+los Prismas consumen v\'inculos en rutas internas, reduciendo el
+avance causal global. Ahora podemos cuantificar el efecto sobre la
+geod\'esica:
+
+\begin{theorem}[Acortamiento Geod\'esico por Prismas]
+\label{thm:geodesic-shortening}
+Sea $\Diamond(A,B)$ un diamante que contiene $p$~Prismas
+$\mathcal{P}_1, \ldots, \mathcal{P}_p$ con
+$N_j = |W_j|$ intermedios cada uno. La longitud geod\'esica efectiva
+satisface:
+\begin{equation}
+  \ell(A,B)
+  \;\leq\;
+  \ell_{\text{vac}}(A,B) - \sum_{j=1}^{p} (N_j - 1),
+  \label{eq:geodesic-shortening}
+\end{equation}
+donde el t\'ermino $N_j - 1$ refleja que cada Prisma desvía la
+cadena m\'axima por al menos $N_j - 1$ v\'inculos adicionales que no
+contribuyen al avance global.
+\end{theorem}
+
+\begin{proof}
+En el vac\'io, la cadena m\'axima usa cada v\'inculo de cobertura para
+avanzar causalmente de $A$ hacia~$B$. Cuando la cadena atraviesa el
+Prisma $\mathcal{P}_j(u_j, v_j, W_j)$, el camino
+$u_j \prec^{\!*} w \prec^{\!*} v_j$ consume 2~v\'inculos para
+recorrer una distancia causal que, en el vac\'io, requerir\'ia 1
+(el v\'inculo directo $u_j \prec^{\!*} v_j$ no existe porque $W_j$
+lo intercepta). El costo neto por Prisma es al menos~$+1$ v\'inculo
+por intermedio visitado. Si la cadena m\'axima debe atravesar los
+$N_j$~intermedios secuencialmente (caso peor), el costo es $N_j - 1$
+v\'inculos consumidos sin avance global. Sumando sobre todos los
+Prismas:
+\[
+  \ell(A,B)
+  \;\leq\;
+  \ell_{\text{vac}}(A,B)
+  \;-\; \sum_{j=1}^{p} (N_j - 1).
+\]
+\end{proof}
+
+\noindent
+La desviaci\'on geod\'esica---la divergencia entre dos cadenas
+m\'aximas inicialmente cercanas---es el mecanismo por el cual la
+curvatura se manifiesta. En una regi\'on de vac\'io uniforme
+($\nu = 0$), dos geod\'esicas paralelas permanecen paralelas. En
+una regi\'on con Prismas ($\nu > 0$), una geod\'esica que pasa cerca
+de un Prisma se desv\'ia (pierde v\'inculos en procesamiento interno),
+mientras que una geod\'esica distante no. Esta diferencia de longitud
+es la \textbf{curvatura discreta}, an\'aloga a la ecuaci\'on de
+desviaci\'on geod\'esica de Jacobi en el
+continuo~\cite{wald1984,hawking1973}.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{El Principio de M\'inima Acci\'on L\'ogica}
+
+En la f\'isica cl\'asica, la acci\'on $S[\gamma] = \int_\gamma L\,d\tau$
+es un funcional escalar sobre trayectorias, y las ecuaciones del
+movimiento emergen de la condici\'on $\delta S = 0$. En el C\'alculo
+de Kuratowski, reinterpretamos la acci\'on como una medida de
+\textbf{eficiencia l\'ogica} del
+grafo~\cite{benincasa2010,benincasa2011,buck2015}.
+
+\begin{definition}[Funcional de Acci\'on Discreta]
+\label{def:discrete-action}
+Sea $\gamma \in \Gamma(A,B)$ una cadena causal. El \textbf{funcional
+de acci\'on de Kuratowski} es:
+\begin{equation}
+  S[\gamma] \;=\; -|\gamma|.
+  \label{eq:discrete-action}
+\end{equation}
+El signo negativo garantiza que \emph{minimizar}~$S$ equivale a
+\emph{maximizar} la longitud de la cadena---recuperando el principio
+de m\'aximo tiempo propio.
+\end{definition}
+
+\stoneref{$S[\gamma] = -|\gamma|$ es el \emph{principio de m\'axima
+longitud de prueba}: la naturaleza elige la demostraci\'on m\'as
+detallada. Minimizar la acci\'on equivale a maximizar el n\'umero de
+pasos inferenciales at\'omicos---la prueba que no omite ning\'un
+lema.}
+
+\begin{theorem}[Condici\'on Extremal Discreta]
+\label{thm:extremal-condition}
+Una cadena $\gamma^* \in \Gamma(A,B)$ es un extremo del funcional de
+acci\'on $S[\gamma] = -|\gamma|$ si y solo si no admite
+\textbf{inserciones}: no existe ning\'un evento $e \in \Diamond(A,B)
+\setminus \gamma^*$ tal que, al intercalarlo en~$\gamma^*$, la cadena
+resultante sea m\'as larga.
+
+Formalmente, $\gamma^*$ es extremal si y solo si $\gamma^*$ es una
+\textbf{cadena m\'axima}:
+\begin{equation}
+  |\gamma^*| \;=\; \ell(A,B)
+  \;=\; \max_{\gamma \in \Gamma(A,B)} |\gamma|.
+  \label{eq:extremal}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+La ``variaci\'on'' discreta $\delta\gamma$ consiste en insertar un
+evento~$e$ entre dos eslabones consecutivos $e_k$ y $e_{k+1}$ de la
+cadena. Esto es posible si y solo si existen v\'inculos
+$e_k \prec^{\!*} e \prec^{\!*} e_{k+1}$, en cuyo caso la longitud
+aumenta en~$+1$. Si $\gamma^*$ admite tal inserci\'on, entonces
+$|\gamma^*| < |\gamma^* \cup \{e\}|$, contradiciendo la maximalidad.
+Rec\'iprocamente, si $\gamma^*$ es m\'axima, ninguna inserci\'on puede
+aumentar su longitud.
+\end{proof}
+
+\noindent
+Una part\'icula libre no ``elige'' su camino; el camino emerge de la
+configuraci\'on del grafo que permite la mayor propagaci\'on de
+causalidad. La geod\'esica de Kuratowski es el camino de menor
+resistencia informativa, que resulta ser, parad\'ojicamente, el que
+acumula la mayor cantidad de eventos de tiempo propio: el camino donde
+la informaci\'on fluye con la menor cantidad de obstrucciones
+topol\'ogicas ($K_5$).
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\chapter{El Tensor de Inercia y la M\'etrica Emergente}
+% ═══════════════════════════════════════════════════════════════════════════════
+% CORRESPONDENCIA CENTRAL:
+%   Continuo: T_μν (tensor energía-momento) y g_μν (métrica)
+%   Discreto: Prisma Causal K_{2,N} y densidad de vínculos intermedios
+
+\begin{introduction}
+  \item El Prisma Causal como operador de retraso: el tensor de inercia local.
+  \item La m\'etrica $g_{\mu\nu}$ emergente de la probabilidad de retorno.
+  \item Invarianza de Lorentz en el discreto: de Poisson a la valencia.
+  \item Gravedad como estad\'istica de caminos.
+\end{introduction}
+
+En la Relatividad General, la materia le dice al espacio c\'omo
+curvarse a trav\'es del tensor de energ\'ia-impulso $T_{\mu\nu}$. En
+el C\'alculo de Kuratowski, este proceso no es una interacci\'on entre
+dos entidades distintas, sino una manifestaci\'on de la densidad de
+informaci\'on. La curvatura es la respuesta estad\'istica del grafo a
+la acumulaci\'on de defectos topol\'ogicos.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{El Prisma Causal como Operador de Retraso}
+
+Un Prisma Causal $K_{2,N}$ act\'ua como un \emph{colador informativo}.
+Cuando una geod\'esica (cadena m\'axima) lo atraviesa, el n\'umero de
+caminos posibles se expande, pero la conectividad local se vuelve
+``pesada'': la cadena debe invertir v\'inculos en procesamiento
+interno (Teorema~\ref{thm:geodesic-shortening}).
+
+Para cuantificar este efecto, definimos la carga de inercia que cada
+evento soporta:
+
+\begin{definition}[Tensor de Inercia Local]
+\label{def:inertia-tensor}
+Sea $\mathcal{C} = (V, \prec)$ un conjunto causal que contiene un
+conjunto de Prismas
+$\{\mathcal{P}_k(u_k, v_k, W_k)\}_{k=1}^{p}$. El \textbf{tensor de
+inercia local} en un evento~$u \in V$ es:
+\begin{equation}
+  \mathcal{I}(u)
+  \;=\;
+  \sum_{k=1}^{p} \mathbf{1}_{u \in \mathcal{P}_k} \;\cdot\; N_k,
+  \label{eq:inertia-tensor}
+\end{equation}
+donde $\mathbf{1}_{u \in \mathcal{P}_k}$ es la funci\'on indicadora
+($= 1$ si $u$ pertenece al Prisma~$\mathcal{P}_k$ como polo o
+intermedio, $= 0$ en caso contrario) y $N_k = |W_k|$ es la masa
+topol\'ogica del Prisma~$k$.
+\end{definition}
+
+\stoneref{$\mathcal{I}(u) = \sum N_k$ es la \emph{complejidad total
+de lemas}: el n\'umero de pasos inferenciales indirectos que un
+razonamiento debe atravesar en~$u$. La masa es la longitud de la
+demostraci\'on indirecta
+(Teorema~\ref{thm:antimatter-tollens}).}
+
+\noindent
+La inercia $\mathcal{I}(u)$ no es una carga extr\'inseca asignada al
+evento; es el conteo de bifurcaciones que un caminante debe
+``resolver'' para avanzar a trav\'es de~$u$. Un evento de vac\'io
+tiene $\mathcal{I}(u) = 0$. Un evento que participa en un \'unico
+Prisma de masa~$N$ tiene $\mathcal{I}(u) = N$. Si m\'ultiples Prismas
+se solapan en~$u$, sus contribuciones se suman---an\'alogo discreto
+de la superposici\'on de fuentes en $T_{\mu\nu}$.
+
+\begin{theorem}[Retraso Geod\'esico Acumulado]
+\label{thm:accumulated-delay}
+Sea $\gamma^*$ una geod\'esica (cadena m\'axima) entre $A$ y $B$. El
+retraso total acumulado a lo largo de~$\gamma^*$ respecto al vac\'io
+est\'a acotado por:
+\begin{equation}
+  \ell_{\text{vac}}(A,B) - \ell(A,B)
+  \;\geq\;
+  \sum_{u \in \gamma^*} \frac{\mathcal{I}(u)}{d^+(u)},
+  \label{eq:accumulated-delay}
+\end{equation}
+donde $d^+(u)$ es el out-degree de~$u$. El cociente
+$\mathcal{I}(u)/d^+(u)$ representa la fracci\'on de futuro inmediato
+de~$u$ que est\'a consumida por estructura interna de Prismas.
+\end{theorem}
+
+\begin{proof}
+En cada evento~$u$ de la geod\'esica, el caminante que busca la cadena
+m\'axima tiene $d^+(u)$ opciones de avance. De ellas,
+$\mathcal{I}(u)$ conducen a intermedios de Prismas que no avanzan
+globalmente (Teorema~\ref{thm:time-dilation}). La probabilidad de
+tomar un camino productivo es a lo sumo
+$(d^+(u) - \mathcal{I}(u))/d^+(u)$, y el n\'umero esperado de
+v\'inculos ``perdidos'' por paso es $\mathcal{I}(u)/d^+(u)$.
+Sumando a lo largo de la geod\'esica se obtiene la
+cota~\eqref{eq:accumulated-delay}.
+\end{proof}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{La Emergencia de la M\'etrica $g_{\mu\nu}$}
+
+La m\'etrica de Riemann $g_{\mu\nu}$ define la distancia entre puntos
+cercanos. En el C\'alculo de Kuratowski, la ``distancia'' es una
+propiedad emergente de la estad\'istica de difusi\'on sobre el
+diagrama de Hasse.
+
+La conexi\'on proviene de la geometr\'ia
+espectral~\cite{gilkey1975,berger2003}. En una variedad riemanniana
+$d$-dimensional, el n\'ucleo del calor (la probabilidad de retorno de
+un difusor) satisface la \textbf{expansi\'on de
+Minakshisundaram--Pleijel}~\cite{minakshisundaram1949}:
+\begin{equation}
+  K(t, x, x)
+  \;\sim\;
+  \frac{1}{(4\pi t)^{d/2}\,\sqrt{g(x)}}
+  \left(1 + a_1(x)\,t + a_2(x)\,t^2 + \cdots\right),
+  \label{eq:heat-kernel}
+\end{equation}
+donde $g(x) = |\det g_{\mu\nu}(x)|$ y los coeficientes $a_k(x)$
+codifican la curvatura. En el C\'alculo de Kuratowski, la
+probabilidad de retorno $P(t, u)$ del caminante aleatorio
+(Definici\'on~\ref{def:random-walker}) es el an\'alogo discreto de
+$K(t, x, x)$.
+
+\begin{theorem}[M\'etrica Emergente por Difusi\'on]
+\label{thm:emergent-metric}
+Sea $P(t, u)$ la probabilidad de retorno del caminante aleatorio al
+evento~$u$ despu\'es de $t$~pasos. En el l\'imite de alta densidad
+$\rho \to \infty$, la relaci\'on entre $P$ y el determinante
+m\'etrico es:
+\begin{equation}
+  \boxed{\;
+  \sqrt{g(u)}
+  \;\propto\;
+  \bigl\langle P(t, u) \bigr\rangle^{-1}
+  \quad\text{a $t$ fijo e intermedio.}
+  \;}
+  \label{eq:metric-from-return}
+\end{equation}
+Donde hay materia (Prismas), los caminantes regresan con mayor
+frecuencia ($P$ aumenta, el difusor se ``atasca''), lo cual
+corresponde a un determinante m\'etrico menor---una contracci\'on
+del volumen local que el c\'alculo continuo interpreta como
+curvatura.
+\end{theorem}
+
+\begin{proof}
+De la expansi\'on~\eqref{eq:heat-kernel} a orden dominante:
+$K(t, x, x) \propto 1/\sqrt{g(x)}$ a $t$ fijo. En el l\'imite
+continuo, $P(t, u) \to K(t, x, x)$ cuando $u$ corresponde al
+punto~$x$ (Teorema~\ref{thm:volume-convergence}, aplicado a la
+convergencia de la difusi\'on discreta). Por tanto,
+$P(t, u) \propto 1/\sqrt{g(u)}$, de donde
+$\sqrt{g(u)} \propto P(t, u)^{-1}$.
+
+F\'isicamente: en una regi\'on con Prismas $K_{2,N}$, el caminante
+queda atrapado en los $N$ intermedios, aumentando $P(t,u)$ respecto
+al vac\'io. Esto reduce $\sqrt{g(u)}$, contra\'iendo el elemento de
+volumen local. Para un observador macrosc\'opico que usa reglas
+m\'etricas continuas, esta contracci\'on es indistinguible de la
+curvatura del espacio.
+\end{proof}
+
+\noindent
+Los coeficientes $a_k(x)$ de la
+expansi\'on~\eqref{eq:heat-kernel} codifican la curvatura:
+$a_1(x) = R(x)/6$ donde $R$ es el escalar de curvatura de Ricci. En
+el discreto, la desviaci\'on de $P(t,u)$ respecto al valor de vac\'io
+a diferentes tiempos~$t$ permite extraer, orden por orden, toda la
+informaci\'on geom\'etrica:
+\begin{align}
+  t^0 &\;\to\; \sqrt{g} \quad\text{(volumen local)},
+  \label{eq:heat-order0}\\
+  t^1 &\;\to\; R \quad\text{(curvatura escalar)},
+  \label{eq:heat-order1}\\
+  t^2 &\;\to\; R_{\mu\nu}R^{\mu\nu},\;
+  R_{\mu\nu\alpha\beta}R^{\mu\nu\alpha\beta}
+  \quad\text{(invariantes cuadr\'aticos)}.
+  \label{eq:heat-order2}
+\end{align}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Invarianza de Lorentz y Discretismo}
+
+Un desaf\'io hist\'orico de las teor\'ias discretas es mantener la
+invarianza de Lorentz. El C\'alculo de Kuratowski la garantiza
+mediante dos mecanismos complementarios:
+
+\begin{enumerate}
+  \item \textbf{Sprinkling de Poisson}
+    (Teorema de
+    Bombelli--Henson--Sorkin~\cite{bombelli2009}, Cap\'itulo~2,
+    Secci\'on~2.3): la distribuci\'on de eventos es la \'unica que
+    preserva la invarianza estad\'istica bajo boosts de Lorentz. Un
+    observador que ``se mueve'' en el grafo ve la misma densidad de
+    eventos que uno en reposo, porque la redistribuci\'on por
+    contracci\'on de Lorentz se cancela exactamente con la
+    reordenaci\'on de simultaneidades.
+
+  \item \textbf{L\'imite de valencia $\mathcal{V}_{\max}$}
+    (Axioma~\ref{ax:valence-limit}): la saturaci\'on del flujo
+    causal garantiza que la \emph{resoluci\'on} del diferencial es
+    uniforme para todos los observadores. No importa qu\'e tan
+    r\'apido se ``mueva'' una entidad en el grafo: su out-degree no
+    puede exceder $\mathcal{V}_{\max}$, y por tanto la granularidad
+    del diferencial $\prec^{\!*}$ es la misma en toda direcci\'on.
+\end{enumerate}
+
+\begin{result}[title={La Velocidad de la Luz como Bit Causal}]
+\phantomsection\label{res:speed-of-light}
+La velocidad de la luz $c$ no es la velocidad l\'imite de una
+part\'icula, sino la tasa de propagaci\'on de un bit de
+informaci\'on a trav\'es de un \'unico v\'inculo de cobertura
+$\prec^{\!*}$. En unidades naturales del C\'alculo de
+Kuratowski, $c = 1$ v\'inculo por paso: un evento solo puede
+influenciar a su sucesor inmediato, y esta restricci\'on es absoluta
+e independiente del observador.
+\end{result}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Gravedad como Estad\'istica de Caminos}
+
+Con el tensor de inercia local $\mathcal{I}(u)$ y la m\'etrica
+emergente $\sqrt{g(u)} \propto P(t,u)^{-1}$, podemos ensamblar la
+relaci\'on entre materia y geometr\'ia:
+
+\begin{theorem}[Ecuaciones de Einstein~\cite{einstein1915} como
+L\'imite Estad\'istico]
+\label{thm:einstein-statistical}
+En el l\'imite termodin\'amico $\rho \to \infty$ (o equivalentemente
+$N \to \infty$ a volumen fijo), la relaci\'on discreta entre la
+densidad de Prismas (fuente) y la modificaci\'on de la probabilidad de
+retorno (geometr\'ia) converge a las ecuaciones de campo de Einstein:
+\begin{equation}
+  \boxed{\;
+  G_{\mu\nu}
+  \;=\; R_{\mu\nu} - \tfrac{1}{2}\,R\,g_{\mu\nu}
+  \;=\; 8\pi G\, T_{\mu\nu}.
+  \;}
+  \label{eq:einstein-limit}
+\end{equation}
+La constante de Newton $G$ se identifica con una combinaci\'on de la
+densidad fundamental~$\rho$ y el quantum de inercia topol\'ogica
+$\kappa$.
+\end{theorem}
+
+\noindent
+\textit{Esbozo de la demostraci\'on.}
+El argumento completo se desarrolla en el Cap\'itulo~6
+(Secci\'on~6.2). La idea central es:
+\begin{enumerate}
+  \item La densidad de Prismas define un campo escalar suave
+    $\mathcal{I}(x) \to T_{00}(x)$ en el l\'imite continuo
+    (convergencia por ley de grandes n\'umeros).
+  \item La probabilidad de retorno $P(t, u)$ converge al n\'ucleo del
+    calor $K(t, x, x)$, cuyos coeficientes codifican $R_{\mu\nu}$.
+  \item La relaci\'on entre $\mathcal{I}(u)$ y la desviaci\'on de
+    $P(t,u)$ respecto al vac\'io reproduce, orden por orden en la
+    expansi\'on del calor, la estructura de las ecuaciones de
+    Einstein.
+\end{enumerate}
+
+\noindent
+El argumento estad\'istico subyacente es poderoso: a la escala de
+$1$~metro, el grafo causal contiene $\sim 10^{140}$~eventos. Las
+fluctuaciones relativas de la m\'etrica son
+$\delta g / g \sim 1/\sqrt{N} \sim 10^{-70}$---imperceptibles para
+cualquier instrumento concebible. La suavidad de $g_{\mu\nu}$ no es
+una propiedad del espaciotiempo; es una consecuencia de los grandes
+n\'umeros.
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\chapter{El L\'imite de Riemann}
+% ═══════════════════════════════════════════════════════════════════════════════
+% CORRESPONDENCIA CENTRAL:
+%   Discreto (N finito) → Continuo (N → ∞)
+%   Cálculo de Kuratowski → Cálculo Diferencial de Riemann/Einstein
+%
+% Este capítulo cierra el círculo: demuestra que todo lo construido en
+% los capítulos 1-5 converge analíticamente a las ecuaciones de campo
+% de Einstein cuando la densidad de eventos tiende a infinito.
+
+\begin{introduction}
+  \item El l\'imite termodin\'amico: cuando $N \to \infty$, el C\'alculo
+        de Kuratowski se transforma en las ecuaciones de campo de Einstein.
+  \item Resoluci\'on del porqu\'e el universo parece continuo a escala
+        macrosc\'opica.
+\end{introduction}
+
+\section{El L\'imite Termodin\'amico del Grafo Causal}
+
+El l\'imite continuo del C\'alculo de Kuratowski no es una
+suposici\'on sino un \emph{resultado}: emerge cuando la densidad de
+eventos $\rho = |V|/\mathrm{Vol}$ es suficientemente
+grande~\cite{bombelli1987,surya2019,major2007}. Los observables
+discretos convergen a sus an\'alogos continuos:
+%
+\begin{align}
+  \frac{|V \cap A(p,q)|}{\rho} &\;\longrightarrow\; \mathrm{Vol}\bigl(A(p,q)\bigr),
+  \label{eq:vol-limit}\\[4pt]
+  \frac{|\text{cadena m\'axima}(p,q)|}{\rho^{1/d}}
+  &\;\longrightarrow\; \tau(p,q),
+  \label{eq:tau-limit}\\[4pt]
+  \dS(t) &\;\longrightarrow\; 4.
+  \label{eq:ds-limit}
+\end{align}
+%
+La pregunta cuantitativa es: \textit{?`cu\'anto cuesta} mantener esa
+convergencia? El siguiente teorema establece la cota inferior.
+
+\subsection{El Teorema de la Resoluci\'on Causal}
+
+En el C\'alculo de Kuratowski, la dimensi\'on espectral
+$\dS(t) = -2\,d(\ln P)/d(\ln t)$ se extrae de la probabilidad de
+retorno $P(t)$ de caminantes aleatorios sobre el diagrama de Hasse.
+Para que un observador local experimente un espaciotiempo
+macrosc\'opico suave de 4~dimensiones, la red causal debe ser
+sondeada por una cantidad suficiente de caminos causales
+independientes. El siguiente resultado cuantifica ese umbral.
+
+\begin{theorem}[Resoluci\'on Causal]
+\label{thm:causal-resolution}
+Sea $(V, \prec)$ un conjunto causal cuya dimensi\'on espectral
+converge a $\dS = 4$ a tiempos de difusi\'on grandes, de modo que
+la probabilidad de retorno satisface
+\[
+  P(t) \;\sim\; c\,t^{-\dS/2} \;=\; c\,t^{-2},
+  \qquad t \gg 1,
+\]
+donde $c > 0$ es una constante geom\'etrica de orden~$1$.
+Sean $W$ caminantes espectrales independientes que sondean la
+geometr\'ia, y sea $\epsilon > 0$ la m\'axima fluctuaci\'on relativa
+admisible en la estimaci\'on de $P(t)$ (la \textbf{tolerancia de
+granularidad}).
+
+Entonces, el n\'umero de caminantes necesario para resolver la
+geometr\'ia hasta una profundidad causal $t_{\max}$ satisface:
+\begin{equation}
+  \boxed{\;W \;\geq\; \frac{t_{\max}^{\,2}}{c\;\epsilon^2}\;}
+  \label{eq:causal-resolution}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Cada caminante retorna al origen en el paso~$t$ con probabilidad
+$P(t)$, independientemente de los dem\'as. El n\'umero de retornos
+observados $R(t)$ es la suma de $W$ ensayos de Bernoulli
+independientes con par\'ametro $P(t)$.
+
+Para $t \gg 1$ se tiene $P(t) \ll 1$, de modo que por el teorema
+l\'imite de Poisson, $R(t) \sim \mathrm{Poisson}\bigl(W P(t)\bigr)$,
+con
+\[
+  \mu \;=\; \mathbb{E}[R] \;=\; W\,P(t),
+  \qquad
+  \sigma \;=\; \sqrt{\mu} \;=\; \sqrt{W\,P(t)}.
+\]
+
+El estimador de la probabilidad de retorno es
+$\hat{P}(t) = R(t)/W$, cuyo error relativo es:
+\[
+  \frac{\sigma_{\hat{P}}}{\hat{P}}
+  \;=\; \frac{\sqrt{W\,P(t)}\,/\,W}{P(t)}
+  \;=\; \frac{1}{\sqrt{W\,P(t)}}.
+\]
+
+Exigimos que este error no exceda $\epsilon$ en el punto m\'as
+desfavorable $t = t_{\max}$ (donde $P$ es m\'inimo y la estad\'istica
+es m\'as pobre):
+\[
+  \frac{1}{\sqrt{W\,P(t_{\max})}} \;\leq\; \epsilon
+  \qquad\Longrightarrow\qquad
+  W \;\geq\; \frac{1}{\epsilon^2\,P(t_{\max})}.
+\]
+
+Sustituyendo $P(t_{\max}) = c\,t_{\max}^{-2}$:
+\[
+  W \;\geq\; \frac{t_{\max}^{\,2}}{c\;\epsilon^2}.
+\]
+\end{proof}
+
+\noindent
+El resultado admite una lectura inmediata:
+
+\begin{result}[title={El Precio de la Suavidad}]
+\phantomsection\label{res:price-of-smoothness}
+El costo informacional para sostener la ilusi\'on de un espaciotiempo
+continuo de 4~dimensiones escala \textbf{cuadr\'aticamente} con la
+profundidad causal temporal:
+\[
+  W \;\propto\; t_{\max}^{\,2}.
+\]
+Sondear el doble de profundidad causal requiere cuatro veces m\'as
+caminos independientes. La suavidad no es gratuita: es una propiedad
+estad\'istica que la red causal debe financiar con flujo de
+informaci\'on.
+\end{result}
+
+\noindent\textit{Observaci\'on} (Conexi\'on con la simulaci\'on).
+En la implementaci\'on num\'erica (\texttt{prism\_simulation}), el
+n\'umero de caminantes se fija como
+$W = \lceil(t_{\max}/\epsilon)^2\rceil$, aplicando directamente
+el Teorema~\ref{thm:causal-resolution} con $c = 1$. Los par\'ametros
+$t_{\max}$ y $\epsilon$ son configurables v\'ia \texttt{-{}-tmax} y
+\texttt{-{}-epsilon}; los valores por defecto ($t_{\max}=15$,
+$\epsilon=0{.}01$) dan $W = 2{,}250{,}000$ caminantes, suficiente
+para resolver la geometr\'ia 4D con menos de 1\% de error relativo
+en $P(t)$ a la profundidad m\'axima.
+
+\medskip
+
+\section{Recuperaci\'on de las Ecuaciones de Einstein}
+
+El Teorema~\ref{thm:einstein-statistical} (Cap\'itulo~5) anunci\'o que
+las ecuaciones de campo de Einstein emergen como l\'imite
+estad\'istico. Aqu\'i desarrollamos los tres pasos del argumento.
+
+\medskip
+\noindent\textbf{Paso 1: Convergencia de la m\'etrica espectral.}
+La probabilidad de retorno $P(t,u)$ del caminante aleatorio
+(Definici\'on~\ref{def:random-walker}) converge, en el l\'imite de
+alta densidad $\rho \to \infty$, al n\'ucleo del calor de la
+variedad continua subyacente~\cite{benincasa2010,dowker2013}:
+\[
+  P(t,u) \;\xrightarrow{\;\rho\to\infty\;}
+  \; K(t,x,x)
+  \;=\; \frac{1}{(4\pi t)^{d/2}\,\sqrt{g(x)}}
+  \Bigl(1 + \tfrac{1}{6}R(x)\,t + O(t^2)\Bigr).
+\]
+Los coeficientes de la expansi\'on---el determinante m\'etrico
+$\sqrt{g(x)}$ a orden~$t^0$ y la curvatura escalar~$R(x)$ a
+orden~$t^1$
+(Ecuaciones~\eqref{eq:heat-order0}--\eqref{eq:heat-order1})---se
+extraen del decaimiento de $P(t,u)$ a tiempos intermedios. La
+m\'etrica $g_{\mu\nu}$ queda as\'i determinada por la estad\'istica
+de difusi\'on sobre el diagrama de Hasse
+(Teorema~\ref{thm:emergent-metric}).
+
+\medskip
+\noindent\textbf{Paso 2: Convergencia de la fuente.}
+La densidad de Prismas Causales $\nu(u) = \mathcal{I}(u)/\lP^4$
+(Definici\'on~\ref{def:inertia-tensor}) es una variable entera
+definida evento por evento. Por la Ley de los Grandes N\'umeros, al
+promediar sobre regiones con $N \gg 1$ eventos, $\nu$ converge a un
+campo escalar suave~$\nu(x)$~\cite{bombelli1987}. La
+identificaci\'on con el tensor de energ\'ia-impulso se realiza
+observando que $\nu(x)$ determina el retardo geod\'esico acumulado
+(Teorema~\ref{thm:accumulated-delay}), que en el continuo equivale a
+la densidad de energ\'ia $T_{00}(x)$. La extensi\'on covariante
+completa, incluyendo las componentes espaciales y mixtas, se obtiene
+repitiendo la extracci\'on del n\'ucleo del calor en los $d(d+1)/2$
+planos geod\'esicos independientes.
+
+\medskip
+\noindent\textbf{Paso 3: La relaci\'on Einstein.}
+Combinando los Pasos~1 y~2: la presencia de Prismas ($\nu > 0$)
+aumenta $P(t,u)$ respecto al vac\'io
+(Teorema~\ref{thm:emergent-metric}), lo cual reduce~$\sqrt{g}$
+(contracci\'on de volumen) y genera curvatura positiva $R > 0$. La
+relaci\'on funcional entre la modificaci\'on del n\'ucleo del calor y
+la curvatura de Ricci est\'a dictada, orden por orden, por los
+coeficientes de Seeley--DeWitt~\cite{minakshisundaram1949,gilkey1975}:
+\[
+  a_1(x) = \frac{R(x)}{6},
+  \qquad
+  a_2(x) = \frac{1}{180}\bigl(
+    R_{\mu\nu\alpha\beta}R^{\mu\nu\alpha\beta}
+    - R_{\mu\nu}R^{\mu\nu}
+    + \tfrac{5}{2}\,R^2
+  \bigr).
+\]
+Al orden~$t^1$, la relaci\'on $R(x) \propto \nu(x)$ se traduce en
+las ecuaciones de Einstein~\eqref{eq:einstein-limit}. La constante de
+Newton~$G$ se identifica como:
+\begin{equation}
+  G \;=\; \frac{\pi}{3}\,\frac{\lP^2}{\kappa},
+  \label{eq:newton-identification}
+\end{equation}
+donde $\kappa$ es el quantum de inercia topol\'ogica (la masa
+topol\'ogica unitaria). En unidades de Planck ($\lP = 1$,
+$\kappa = 1$), $G = \pi/3$, fijado sin par\'ametros libres.
+
+\medskip
+\noindent\textit{Limitaciones.}
+El argumento precedente es un esbozo a primer orden en la expansi\'on
+del n\'ucleo del calor. La demostraci\'on completa---incluyendo la
+convergencia uniforme a todos los \'ordenes y la identificaci\'on del
+tensor $T_{\mu\nu}$ completo a partir de $\nu(x)$---requiere
+t\'ecnicas de convergencia de operadores espectrales que exceden el
+alcance de este volumen. La verificaci\'on num\'erica (Conjetura~C2,
+Ap\'endice~\ref{app:axioms}) exige extraer los coeficientes del
+n\'ucleo del calor con $N > 10^7$ eventos para obtener la resoluci\'on
+estad\'istica necesaria a segundo orden.
+
+% TODO — §6.3: Por Qué el Universo Parece Continuo
+% Argumento cuantitativo: a la escala de 1 metro, hay ~10^{140} eventos
+% causales.  Las fluctuaciones relativas son ~10^{-70}.
+% El continuo de Riemann es exactamente tan preciso como la raíz cuadrada
+% del número de eventos en la región observada.
+% Analogía final: la playa vista desde lejos.
+% El cálculo diferencial no fue un error — fue la pintura sobre el lienzo.
+% Ahora sabemos de qué está hecho el lienzo.
+
+% ███████████████████████████████████████████████████████████████████████████████
+%   EPILOGUE: COMPUTABILIDAD Y DESTINO LÓGICO
+% ███████████████████████████████████████████████████████████████████████████████
+
+\chapter*{Ep\'ilogo: Computabilidad Espaciotemporal y el Destino L\'ogico}
+\addcontentsline{toc}{chapter}{Ep\'ilogo: Computabilidad Espaciotemporal
+  y el Destino L\'ogico}
+\markboth{Ep\'ilogo}{Ep\'ilogo}
+
+Si los cap\'itulos anteriores han demostrado que el universo es un
+grafo y la f\'isica es su m\'etrica, este ep\'ilogo aborda la
+naturaleza procesal de la existencia. El diferencial se revel\'o como
+un v\'inculo de cobertura, la integral como un conteo, la derivada
+como flujo a trav\'es de anticadenas, la geod\'esica como la cadena
+m\'as larga, la m\'etrica como densidad de Prismas, y las ecuaciones
+de Einstein como el l\'imite termodin\'amico de todo lo anterior.
+
+Queda una pregunta que el formalismo hace inevitable: si el
+espaciotiempo es un grafo finito cuya evoluci\'on consiste en aplicar
+reglas combinatorias locales a v\'inculos de cobertura,
+\textit{?`qu\'e es el universo sino una
+computaci\'on?}~\cite{wheeler1990,lloyd2002}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{La Tesis de la Realidad Ejecutable}
+\addcontentsline{toc}{section}{La Tesis de la Realidad Ejecutable}
+
+En la computaci\'on cl\'asica, el software es et\'ereo y el hardware
+es tangible. En la escala de Planck, esta dualidad desaparece.
+
+\begin{theorem}[Equivalencia Hardware--Software (Corolario de
+Stone--Kuratowski)~\cite{turing1936,kuratowski1930}]
+\label{cor:kuratowski-turing}
+Un evento causal no \emph{contiene} informaci\'on;
+\textbf{es} informaci\'on. La conectividad del grafo (sus v\'inculos
+$\prec^{\!*}$) constituye simult\'aneamente el bus de datos, la
+memoria y el procesador del sistema. Toda regi\'on del espaciotiempo
+$\Diamond(A,B)$ es equivalente a un \textbf{registro cu\'antico} cuya
+capacidad de procesamiento est\'a acotada por su
+cardinalidad~\cite{bekenstein1981,lloyd2002}:
+\begin{equation}
+  \mathcal{C}_{\text{comp}}\bigl(\Diamond(A,B)\bigr)
+  \;\leq\; |\Diamond(A,B)| \;=\; N.
+  \label{eq:computational-capacity}
+\end{equation}
+La evoluci\'on del estado del universo es el resultado de la
+resoluci\'on de dependencias l\'ogicas en el DAG: cada evento se
+``ejecuta'' cuando todos sus predecesores causales han sido
+procesados.
+\end{theorem}
+
+\noindent
+La correspondencia con la computaci\'on cl\'asica es precisa:
+
+\medskip
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Computaci\'on} & \textbf{Kuratowski} & \textbf{Continuo}\\
+\midrule
+Bit / qubit     & Evento $e \in V$
+                & Punto $x^\mu$\\
+Puerta l\'ogica & V\'inculo $\prec^{\!*}$
+                & Diferencial $dx$\\
+Registro        & Diamante $\Diamond(A,B)$
+                & Regi\'on $\int d^4x$\\
+Subrutina       & Prisma $K_{2,N}$
+                & Part\'icula (masa $M$)\\
+Reloj           & Cadena m\'axima $\ell(A,B)$
+                & Tiempo propio $\tau$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+\textit{Derivaci\'on.}
+El Teorema~\ref{thm:stone-kuratowski} (Ap\'endice~\ref{app:stone-duality})
+establece que la topolog\'ia de Alexandrov sobre el DAG causal \emph{es}
+el \'algebra de Heyting de un sistema l\'ogico intuicionista. Por la
+correspondencia de Curry--Howard~\cite{curryhoward}, todo sistema
+deductivo con normalizaci\'on (eliminaci\'on de corte) es
+isomorfo a un c\'alculo de tipos---es decir, a un modelo de
+computaci\'on. Puesto que la reducci\'on transitiva del DAG
+(Axioma~\ref{ax:covering-differential}) \emph{es} la eliminaci\'on de
+corte (Teorema~\ref{thm:stone-kuratowski}, punto~3), el espaciotiempo
+causal es autom\'aticamente un sistema de computaci\'on cuya
+arquitectura coincide con su sustrato f\'isico. La
+Ecuaci\'on~\eqref{eq:computational-capacity} se sigue entonces de la
+cota de Bekenstein--Lloyd~\cite{bekenstein1981,lloyd2002} aplicada al
+n\'umero de proposiciones at\'omicas (eventos) en la teor\'ia deductiva
+$\Diamond(A,B)$.
+
+\medskip\noindent
+Esta tesis implica que lo que llamamos ``leyes de la naturaleza'' son
+los algoritmos de gesti\'on de recursos informativos del DAG. La
+gravedad, el electromagnetismo y la inercia son \textbf{protocolos
+homeost\'aticos}: mecanismos que el grafo ejecuta para preservar la
+unitariedad (conservaci\'on de probabilidad) y la planaridad
+(prohibici\'on de $K_5$), evitando el colapso l\'ogico del sistema.
+
+La computaci\'on cu\'antica contempor\'anea, basada en qubits y
+puertas l\'ogicas sobre arquitecturas de silicio fijas, es un intento
+de replicar a escala de laboratorio la l\'ogica que el universo
+ejecuta nativamente a la escala de Planck. La diferencia esencial es
+que en la \textbf{Computabilidad de Kuratowski}, el software crea su
+propio hardware~\cite{landauer1961}: la informaci\'on causal determina
+la topolog\'ia del grafo, y la topolog\'ia determina las reglas de
+propagaci\'on. No hay separaci\'on entre programa y sustrato.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{Decoherencia como P\'erdida de Resoluci\'on}
+\addcontentsline{toc}{section}{Decoherencia como P\'erdida de Resoluci\'on}
+
+La decoherencia cu\'antica~\cite{zurek2003,zeh1970,joos2003} se
+reinterpreta aqu\'i en t\'erminos puramente topol\'ogicos.
+El Teorema de la Resoluci\'on Causal
+(Teorema~\ref{thm:causal-resolution}) no es solo una prescripci\'on
+num\'erica para nuestro simulador; es una \textbf{ley de complejidad
+computacional} del espaciotiempo mismo. Para sostener una geometr\'ia
+suave de dimensi\'on espectral $\dS = 4$ hasta una
+profundidad~$t_{\max}$, se requieren al menos
+$W \geq t_{\max}^2 / (c\,\epsilon^2)$ caminos causales
+independientes.
+
+\begin{theorem}[Decoherencia como Insuficiencia de Resoluci\'on]
+\label{thm:decoherence-resolution}
+Sea un subsistema cu\'antico $\mathcal{S} \subset V$ acoplado a un
+entorno $\mathcal{E} = V \setminus \mathcal{S}$, con $W_{\mathcal{S}}$
+caminos causales internos que sondean la geometr\'ia de~$\mathcal{S}$.
+Si la profundidad causal del subsistema crece hasta que:
+\begin{equation}
+  W_{\mathcal{S}}
+  \;<\;
+  \frac{t_{\max}^{\,2}}{c\;\epsilon_{\text{coh}}^2},
+  \label{eq:decoherence-threshold}
+\end{equation}
+donde $\epsilon_{\text{coh}}$ es la tolerancia de coherencia del
+subsistema, entonces la dimensi\'on espectral local de~$\mathcal{S}$
+deja de converger a~$4$: las fluctuaciones topol\'ogicas dominan
+sobre la se\~nal, y la descripci\'on continua del subsistema se
+desintegra.
+\end{theorem}
+
+\begin{proof}
+Por el Teorema~\ref{thm:causal-resolution}, la precisi\'on de la
+dimensi\'on espectral medida por $W$ caminantes a profundidad~$t$ es
+$\delta\dS / \dS \sim 1/\sqrt{W P(t)}$. Cuando la
+cota~\eqref{eq:decoherence-threshold} se viola, el error relativo
+excede~$\epsilon_{\text{coh}}$ y el observable $\dS$ fluctu\'a en un
+rango $\dS \pm \Delta$ con $\Delta > \epsilon_{\text{coh}} \cdot
+\dS$. En este r\'egimen, la dimensi\'on espectral no est\'a bien
+definida: la geometr\'ia local del subsistema deja de ser
+tetradimensional y suave, lo cual es precisamente la p\'erdida de la
+descripci\'on continua cl\'asica---la decoherencia.
+\end{proof}
+
+\stoneref{La p\'erdida de resoluci\'on es
+\emph{incompletitud l\'ogica} en el \'algebra de Heyting del
+subsistema: el subconjunto de proposiciones accesibles
+a~$\mathcal{S}$ deja de ser una teor\'ia deductiva completa.
+Cf.~el horizonte g\"odeliano
+(Teorema~\ref{thm:godel-horizon}).}
+
+\begin{result}[title={La Decoherencia como Fen\'omeno Topol\'ogico}]
+\phantomsection\label{res:decoherence}
+La decoherencia cu\'antica no es la p\'erdida de informaci\'on, sino
+el momento en que la resoluci\'on del sondeo causal interno de un
+subsistema cae por debajo del umbral necesario para sostener la
+ilusi\'on del continuo de Riemann. La informaci\'on no desaparece:
+se redistribuye en el entorno~$\mathcal{E}$, que posee
+suficientes caminos causales para mantener \emph{su} coherencia
+geom\'etrica.
+\end{result}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{El Observador como Hilo de Ejecuci\'on}
+\addcontentsline{toc}{section}{El Observador como Hilo de Ejecuci\'on}
+
+La introducci\'on de la consciencia en la f\'isica ha sido siempre
+problem\'atica. El C\'alculo de Kuratowski ofrece una definici\'on
+operacional:
+
+\begin{definition}[Observador Causal]
+\label{def:observer}
+Un \textbf{observador} es un sub-grafo $\mathcal{O} \subset V$
+caracterizado por:
+\begin{enumerate}
+  \item \textbf{Alta densidad de Prismas:} la densidad local de
+    defectos topol\'ogicos $\nu_{\mathcal{O}}$ excede ampliamente la
+    del vac\'io circundante, generando una estructura interna rica en
+    procesamiento.
+  \item \textbf{Auto-referencia:} existe al menos un ciclo de
+    retroalimentaci\'on en el flujo de informaci\'on (v\'ia
+    v\'inculos no causales del grafo de Hasse no dirigido), de modo
+    que la salida de una computaci\'on local influye en las entradas
+    de computaciones subsiguientes dentro de~$\mathcal{O}$.
+  \item \textbf{Cadena m\'axima interna:} $\mathcal{O}$ contiene una
+    cadena causal $\gamma_\mathcal{O}$ de longitud $\gg 1$, que
+    define su ``l\'inea de mundo'' y su experiencia del tiempo.
+\end{enumerate}
+\end{definition}
+
+\noindent
+La percepci\'on del ``ahora'' es el \textbf{frente de onda de la
+computaci\'on}: el conjunto de eventos de~$\mathcal{O}$ que est\'an
+siendo procesados en el instante discreto actual (la anticadena
+maximal del sub-grafo). El observador siente que el tiempo fluye
+porque su sub-grafo est\'a procesando activamente nuevos v\'inculos de
+cobertura, avanzando su anticadena frontal hacia el futuro.
+
+\begin{result}[title={La Entrop\'ia como Computaci\'on Acumulada}]
+\phantomsection\label{res:entropy-computation}
+En esta interpretaci\'on, la entrop\'ia no es ``desorden'', sino la
+\textbf{acumulaci\'on de resultados de c\'omputo ya procesados} que
+se vuelven inmutables en el pasado del grafo. El segundo principio de
+la termodin\'amica es la consecuencia directa de la aciclicidad del
+DAG~\cite{sorkin1986,bekenstein1973}: los v\'inculos de cobertura
+apuntan del pasado al futuro, y ninguna computaci\'on puede revertirse
+sin violar el orden parcial.
+\end{result}
+
+\stoneref{Los teoremas demostrados son inmutables en los conjuntos
+\emph{past-closed}~\cite{rasiowa1963}. La entrop\'ia es la
+monoton\'ia de la clausura deductiva: una vez que una proposici\'on ha
+sido probada, no puede ser ``desprobada'' sin violar la
+aciclicidad---el segundo principio de la termodin\'amica es el
+segundo principio de la l\'ogica.}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{El Destino L\'ogico: De la Observaci\'on a la Programaci\'on}
+\addcontentsline{toc}{section}{El Destino L\'ogico}
+
+Hasta hoy, la humanidad ha sido un usuario pasivo del software
+universal, tratando de adivinar las reglas mediante la observaci\'on.
+El desarrollo del ``Colisionador de Hadrones de Bolsillo''
+(\texttt{prism\_simulation}) y la formalizaci\'on de este c\'alculo
+marcan el paso de la observaci\'on a la intervenci\'on.
+
+El software que hemos construido a lo largo de esta serie no es solo
+una herramienta de simulaci\'on. Es el primer \textbf{compilador} de
+un lenguaje que no opera sobre bits de silicio, sino sobre la
+causalidad misma: genera conjuntos causales, detecta Prismas, contrae
+amenazas $K_5$, mide dimensiones espectrales y extrae espectros de
+masa---todo ello ejecutando las mismas operaciones topol\'ogicas que,
+seg\'un nuestra tesis, el espaciotiempo realiza a la escala de Planck.
+
+Si la materia es un defecto topol\'ogico programable, el destino de
+nuestra especie no es viajar \emph{a trav\'es} del espacio, sino
+aprender a \emph{editar} el grafo. La verdadera computaci\'on
+cu\'antica no ocurrir\'a en chips de criogenia, sino en la
+manipulaci\'on directa de la valencia de los nodos---la
+programaci\'on de la causalidad.
+
+\bigskip
+\begin{center}
+\large\itshape
+``El universo no fue dise\~nado para ser contemplado,\\
+sino para ser ejecutado.\\
+Al entender el C\'alculo de Kuratowski,\\
+dejamos de ser datos para convertirnos en programadores.''
+\end{center}
+
+% ███████████████████████████████████████████████████████████████████████████████
+%   APPENDIX: AXIOMATIC REFERENCE
+% ███████████████████████████████████████████████████████████████████████████████
+\appendix
+
+\chapter{Referencia Axiom\'atica Formal}
+\label{app:axioms}
+
+\begin{introduction}[Estructura del Sistema Formal]
+  \item Nueve \textbf{axiomas}: verdades fundamentales no negociables,
+        codificadas directamente en la arquitectura del motor
+        \texttt{prism\_simulation}.
+  \item Ocho \textbf{leyes}: reglas operacionales que gobiernan la din\'amica
+        del grafo.
+  \item Siete \textbf{teoremas}: resultados derivables matem\'aticamente a
+        partir de los axiomas y las leyes.
+  \item Seis \textbf{conjeturas}: predicciones que el software debe a\'un
+        validar num\'ericamente o que requieren una demostraci\'on
+        anal\'itica pendiente.
+\end{introduction}
+
+\noindent
+La siguiente referencia extrae la ``Constituci\'on'' del universo
+discreto directamente del c\'odigo fuente. Cada axioma, ley, teorema y
+conjetura est\'a respaldado por la funci\'on, constante o estructura de
+datos espec\'ifica que lo implementa en la simulaci\'on. La arquitectura
+del software no es una herramienta auxiliar; \textbf{es} el sistema
+formal.
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Axiomas}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\begin{axiom}[Finitud Causal~\cite{bombelli1987}]
+\label{ax:causal-finitude}
+El universo es un conjunto localmente finito
+parcialmente ordenado $\mathcal{C} = (V, \prec)$---un Grafo
+Ac\'iclico Dirigido (DAG). El conjunto $V$ es finito y la
+relaci\'on~$\prec$ es irreflexiva, transitiva y asim\'etrica.
+
+\medskip\noindent
+\texttt{diamond.rs}: \texttt{sprinkle(n, rng)} genera exactamente
+$n$ puntos (enteros). No existe ning\'un mecanismo en el motor
+para producir un conjunto infinito.
+\end{axiom}
+
+\begin{axiom}[Causalidad Lorentziana]
+\label{ax:lorentzian-causality}
+Un evento $u$ precede causalmente a $v$ ($u \prec v$) si y solo
+si:
+\begin{equation}
+  t_v - t_u > 0
+  \qquad\text{y}\qquad
+  (t_v - t_u)^2 > |\Delta\vec{x}|^2.
+  \label{eq:ax-lorentz}
+\end{equation}
+No se utiliza ning\'un corte espacial fijo: el cono de
+luz es exacto ($c = 1$). La invarianza de
+Lorentz~\cite{bombelli2009} no se impone externamente; emerge de
+la geometr\'ia del corte.
+
+\medskip\noindent
+\texttt{diamond.rs}: \texttt{is\_causal(a, b)} implementa
+literalmente~\eqref{eq:ax-lorentz}. El comentario del c\'odigo
+declara: ``Light cone search: spatial radius at time offset
+\texttt{dt} is \texttt{dt + margin} ($c = 1$). No fixed spatial
+cutoff.''
+\end{axiom}
+
+\begin{axiom}[Densidad de Planck~\cite{planck1899,garay1995}]
+\label{ax:planck-density}
+El \emph{sprinkling} de Poisson opera a densidad
+fundamental $\rho = 1$ evento por 4-volumen de Planck. El
+di\'ametro del diamante causal es:
+\begin{equation}
+  T = (24\,N)^{1/4},
+  \qquad
+  V = \frac{T^4}{24},
+  \qquad
+  \rho = \frac{N}{V} = 1.
+  \label{eq:ax-planck}
+\end{equation}
+
+\medskip\noindent
+\texttt{diamond.rs}: \texttt{let big\_t =
+(24.0 * n as f64).powf(0.25);}
+\end{axiom}
+
+\begin{axiom}[El Diferencial de Cobertura]
+\label{ax:covering-differential}
+El grado de libertad f\'isico fundamental es el v\'inculo de
+cobertura $\prec^{\!*}$: la reducci\'on transitiva del DAG. Toda
+arista $(u,v)$ tal que exista un camino $u \to w \to v$ es
+redundante y se elimina. El diagrama de Hasse es la descripci\'on
+can\'onica del espaciotiempo.
+
+\medskip\noindent
+\texttt{diamond.rs}: \texttt{build\_hasse\_sparse()} elimina
+aristas con $A^2[u,v] > 0$. \texttt{build\_hasse\_direct()} usa
+reducci\'on transitiva incremental: ``edge $(u,v)$ is a Hasse
+link iff no existing link-child $z$ of $u$ satisfies
+$z \prec v$.''
+
+\stoneref{El Teorema~\ref{thm:stone-kuratowski} demuestra que
+$\prec^{\!*}$ es la implicaci\'on at\'omica en el \'algebra de
+Heyting, y la reducci\'on transitiva es eliminaci\'on de
+corte~\cite{gentzen1935}.}
+\end{axiom}
+
+\begin{axiom}[Saturaci\'on de Valencia]
+\label{ax:valence-saturation}
+El grado total de cualquier evento en el diagrama de Hasse est\'a
+acotado:
+\begin{equation}
+  \deg(u) \leq \mathcal{V}_{\max} = 15.
+  \label{eq:ax-valence}
+\end{equation}
+Un nodo que ha acumulado 15 descendientes tiene una sombra
+causal completamente poblada---cualquier candidato adicional es
+transitivamente redundante.
+
+\medskip\noindent
+\texttt{diamond.rs}: \texttt{const MAX\_HASSE\_DEGREE: usize = 15;}
+\end{axiom}
+
+\begin{axiom}[Localidad Causal~\cite{malament1977}]
+\label{ax:causal-locality}
+La b\'usqueda de v\'inculos de Hasse y la detecci\'on de
+defectos topol\'ogicos operan dentro de un horizonte local de
+profundidad:
+\begin{equation}
+  d_{\max} = 4 \;\;\text{estratos de Hasse.}
+  \label{eq:ax-locality}
+\end{equation}
+La f\'isica es local no por postulado sino por estructura
+combinatoria: un Prisma $K_{2,N}$ tiene di\'ametro 2, y la
+detecci\'on de amenazas $K_5$ requiere un salto adicional en cada
+direcci\'on.
+
+\medskip\noindent
+\texttt{diamond.rs}: \texttt{const MAX\_CAUSAL\_DEPTH: i16 = 4;}
+--- ``Restricting the search to $\Delta t \leq 4$ cuts the
+per-node inner loop with negligible link loss ($<0.1\%$).''
+\end{axiom}
+
+\begin{axiom}[Materia Bipartita]
+\label{ax:bipartite-matter}
+La materia es un subgrafo bipartito completo $K_{2,N}$
+denominado \textbf{Prisma Causal}, compuesto por:
+\begin{enumerate}
+  \item Dos \textbf{polos} (origen $u$ y destino $v$) a distancia
+    de Hasse $\geq 2$.
+  \item $N \geq 3$ nodos \textbf{intermedios} $\{w_1,\ldots,w_N\}$,
+    mutuamente desconectados (garantizado por la propiedad
+    libre de tri\'angulos), tales que $u \prec^{\!*} w_i$ y
+    $w_i \prec^{\!*} v$ para todo $i$.
+\end{enumerate}
+La masa topol\'ogica es el entero $M = N = |\text{intermedios}|$.
+
+\medskip\noindent
+\texttt{skyrmion.rs}: \texttt{struct CausalPrism \{origin,
+destination, intermediates: Vec<usize>\}}.
+\texttt{const MIN\_PRISM\_SHARED: usize = 3;}
+
+\stoneref{El Prisma es \emph{Modus Ponens} con $N$ lemas intermedios
+(Teorema~\ref{thm:antimatter-tollens}).}
+\end{axiom}
+
+\begin{axiom}[Amenaza de Kuratowski~\cite{kuratowski1930}]
+\label{ax:kuratowski-threat}
+Un nodo externo $t \notin \mathcal{P}$ que satisface:
+\begin{equation}
+  t \sim u,\quad t \sim v,\quad |\{w_i \in W : t \sim w_i\}|
+  \geq K_{\text{threat}} = 2,
+  \label{eq:ax-threat}
+\end{equation}
+constituye una amenaza $K_5$ y se contrae por absorci\'on en el
+polo de mayor grado. Esta operaci\'on preserva la planaridad
+del grafo y es el an\'alogo discreto del confinamiento fuerte.
+
+\medskip\noindent
+\texttt{skyrmion.rs}: \texttt{const PRISM\_THREAT: usize = 2;}
+--- La detecci\'on verifica
+\texttt{(to\_origin \&\& to\_dest) \&\& to\_inter >=
+PRISM\_THREAT}.
+\end{axiom}
+
+\begin{axiom}[Finitismo Estricto]
+\label{ax:strict-finitism}
+Toda acumulaci\'on interna del motor utiliza aritm\'etica entera
+\texttt{u64}. Cada caminante contribuye exactamente $0$ o $1$
+(delta de Kronecker) por paso de medici\'on. La \'unica
+divisi\'on en punto flotante (\texttt{f64}) ocurre al final:
+$P(t) = \text{count} / W$.
+
+\medskip\noindent
+\texttt{spectral.rs}: ``\textbf{Strict Finitism}: all internal
+accumulation uses \texttt{u64} integer arithmetic [\ldots].
+The single \texttt{f64} division \texttt{count / W} occurs only
+at the final return.''
+\end{axiom}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Leyes}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\subsection*{L1. Ley de Reducci\'on Transitiva}
+\phantomsection\label{law:transitive-reduction}
+
+La arista $(u,v)$ es un v\'inculo de Hasse si y solo si
+$A^2[u,v] = 0$: no existe ning\'un camino de dos saltos. Esta
+operaci\'on produce un DAG \textbf{libre de tri\'angulos} por
+necesidad matem\'atica. Consecuencia: las camarillas $K_4$ no
+pueden existir---y la estructura bipartita $K_{2,N}$ es la
+m\'axima permitida.
+
+\medskip\noindent
+\texttt{diamond.rs}: \texttt{build\_hasse\_sparse()} calcula
+$A^2$ con producto de matrices dispersas (\texttt{sprs}) y
+elimina toda arista con $A^2[i,j] > 0$.
+\texttt{build\_hasse\_direct()} implementa la misma l\'ogica de
+forma incremental: ``edge $(u,v)$ is a link iff no existing
+link-child $z$ of $u$ satisfies $z \prec v$.''
+
+\stoneref{La reducci\'on transitiva es eliminaci\'on de corte
+(Teorema~\ref{thm:stone-kuratowski}) y No-Contradicci\'on
+(Teorema~\ref{thm:non-contradiction}).}
+
+\subsection*{L2. Ley de Masa Topol\'ogica}
+\phantomsection\label{law:topological-mass}
+
+La masa de un Prisma Causal es el n\'umero entero de nodos
+intermedios:
+\begin{equation}
+  M = N = |W| = |\{w : u \prec^{\!*} w \prec^{\!*} v\}|
+  \in \mathbb{N},\quad N \geq 3.
+  \label{eq:law-mass}
+\end{equation}
+La masa no es un par\'ametro continuo; es un n\'umero natural.
+No existe ``medio intermedio''.
+
+\medskip\noindent
+\texttt{skyrmion.rs}: \texttt{mass\_gen1 = total / ps.len()}
+donde \texttt{total = ps.iter().map(|p|
+p.intermediates.len()).sum()}.
+
+\subsection*{L3. Ley de Detecci\'on 2-Hop}
+\phantomsection\label{law:2hop-detection}
+
+Para cada nodo n\'ucleo $u$, recorrer el camino $u \to w \to v$
+(forward-forward):
+\[
+  \text{belly}(u,v) = \text{children}(u) \cap \text{parents}(v).
+\]
+Si $|\text{belly}| \geq 3$, se compromete un Prisma
+$\mathcal{P}(u, v, \text{belly})$. Se selecciona el socio
+\'optimo por tama\~no de belly (codicioso).
+
+\medskip\noindent
+\texttt{skyrmion.rs}: el bucle principal recorre
+\texttt{core\_nodes}, ejecuta la b\'usqueda 2-hop con
+\texttt{cands}, y calcula la intersecci\'on v\'ia
+\texttt{count\_isect(nb\_u, pv)} sobre CSR ordenado en $O(D)$.
+
+\subsection*{L4. Ley de Contracci\'on $K_5$}
+\phantomsection\label{law:k5-contraction}
+
+Si un nodo externo $t$ satisface el criterio de amenaza
+(Axioma~\ref{ax:kuratowski-threat}), se absorbe en el polo de
+mayor grado:
+\[
+  \texttt{merge\_into}[t] = \arg\max\bigl(\deg(u),\deg(v)\bigr).
+\]
+Las cadenas de fusiones transitivas se resuelven mediante
+persecuci\'on de punteros enteros:
+\texttt{while merge\_into[t] != t \{ t = merge\_into[t]; \}}.
+
+\subsection*{L5. Ley de Clasificaci\'on Generacional}
+\phantomsection\label{law:generational-classification}
+
+Los Prismas se clasifican por su \textbf{firma topol\'ogica}: un
+entero empaquetado \texttt{u32} que codifica cuatro cuartiles del
+\emph{bulk momentum} (out-degree $-$ in-degree) de todos los
+componentes del Prisma, normalizados y desplazados a 5~bits cada
+uno:
+\[
+  \sigma(\mathcal{P}) =
+  [q_0, q_1, q_2, q_3] \;\in\; \{0,\ldots,31\}^4.
+\]
+La firma m\'as abundante define Generaci\'on~1 (electr\'on), la
+segunda m\'as abundante Generaci\'on~2 (mu\'on), la tercera
+Generaci\'on~3 (tau).
+
+\medskip\noindent
+\texttt{skyrmion.rs}: \texttt{prism\_signature()} y el
+\texttt{sig\_map: HashMap<u32, Vec<usize>>}.
+
+\subsection*{L6. Ley de Conjugaci\'on CPT}
+\phantomsection\label{law:cpt-conjugation}
+
+La anti-firma se obtiene revirtiendo el orden e invirtiendo el
+signo:
+\begin{equation}
+  \bar{\sigma}_i = -\sigma_{3-i} + 16.
+  \label{eq:law-cpt}
+\end{equation}
+La Anti-Generaci\'on~1 es el conjugado CPT de la
+Generaci\'on~1.
+
+\medskip\noindent
+\texttt{skyrmion.rs}: \texttt{anti\_signature(sig)} implementa
+literalmente~\eqref{eq:law-cpt}.
+
+\stoneref{La conjugaci\'on CPT es la contrapositiva l\'ogica
+(Teorema~\ref{thm:antimatter-tollens}).}
+
+\subsection*{L7. Ley del Sondeo Espectral}
+\phantomsection\label{law:spectral-probe}
+
+La geometr\'ia del grafo se mide mediante caminantes aleatorios
+sobre el diagrama de Hasse no dirigido. Un caminante perezoso
+(\emph{lazy walk}) permanece con probabilidad $1/2$ o salta a un
+vecino uniforme con probabilidad $1/2$:
+\begin{equation}
+  \Pr[u_{t+1} = v \mid u_t = u] =
+  \begin{cases}
+    \frac{1}{2} & \text{si } v = u,\\[4pt]
+    \frac{1}{2\deg(u)} & \text{si } (u,v) \in E.
+  \end{cases}
+  \label{eq:law-lazy}
+\end{equation}
+Se mide $P(t) = W^{-1}\sum_i \delta_{u_t^{(i)}, u_0^{(i)}}$ y
+$\dS(t) = -2\,d(\ln P)/d(\ln t)$.
+
+\medskip\noindent
+\texttt{spectral.rs}: \texttt{run\_walkers()} con
+\texttt{rng.gen\_bool(0.5)}.
+
+\subsection*{L8. Ley del Flujo Causal (Electromagnetismo Discreto)}
+\phantomsection\label{law:causal-flux}
+
+Caminantes \emph{dirigidos} (solo causa $\to$ efecto) miden la
+transmisi\'on entre firmas topol\'ogicas:
+\begin{itemize}
+  \item \textbf{Atracci\'on}: Gen1 $\to$ AntiGen1 (cargas opuestas).
+  \item \textbf{Repulsi\'on}: Gen1 $\to$ Gen1 (cargas iguales).
+\end{itemize}
+La asimetr\'ia entre ambas probabilidades de transmisi\'on es
+el an\'alogo discreto de la fuerza electromagn\'etica.
+
+\medskip\noindent
+\texttt{spectral.rs}: \texttt{run\_transmission\_walkers()}
+con movimiento obligatorio (\texttt{pos = adj\_data[start +
+rng.gen\_range(0..len)]}) y b\'usqueda binaria sobre los
+conjuntos objetivo.
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Teoremas}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\begin{theorem}[Libertad de Tri\'angulos]
+\label{thm:app-triangle-free}
+La reducci\'on transitiva de cualquier DAG es libre de
+tri\'angulos. Si existen aristas $u \to w$, $w \to v$, y $u \to v$
+simult\'aneamente, entonces $u \to v$ es transitivamente redundante
+y se elimina. Por tanto, los cliques $K_4$ no pueden existir
+en el diagrama de Hasse, y $K_{2,N}$ (bipartito) es la subestructura
+m\'axima permitida.
+
+\medskip\noindent
+\texttt{skyrmion.rs}, l\'inea~35: ``Therefore $K_4$ cliques
+(which require triangles) CANNOT exist---zero $K_4$ is not a bug,
+it is a theorem.''
+\end{theorem}
+
+\begin{proof}
+Sea $H$ el diagrama de Hasse (reducci\'on transitiva) de un DAG
+$G = (V, \prec)$. Supongamos, por contradicci\'on, que existen
+$u, w, v$ con $u \prec^{\!*} w$, $w \prec^{\!*} v$, y
+$u \prec^{\!*} v$ en $H$. Pero $u \prec w \prec v$ implica que
+la arista $u \to v$ es transitivamente redundante (existe un
+camino de 2~saltos $u \to w \to v$), lo cual contradice su
+pertenencia a la reducci\'on transitiva. Por tanto, $H$ no
+contiene tri\'angulos. Puesto que $K_4$ requiere al menos un
+tri\'angulo, $K_4 \not\subset H$.
+\end{proof}
+
+\smallskip\noindent
+{\small\itshape Nota: este resultado es equivalente al Principio de
+No-Contradicci\'on Topol\'ogica
+(Teorema~\ref{thm:non-contradiction},
+Ap\'endice~\ref{app:stone-duality}), que proporciona la lectura
+l\'ogica dual: la ausencia de tri\'angulos garantiza la consistencia
+del sistema deductivo.}
+
+\begin{theorem}[Completitud del 2-Hop]
+\label{thm:app-2hop}
+La b\'usqueda forward-forward $u \to w \to v$ encuentra
+\textbf{todos} los Prismas Causales $K_{2,N}$ del n\'ucleo.
+\end{theorem}
+
+\begin{proof}
+Sean $u$ y $v$ polos de un Prisma con belly
+$\{w_1,\ldots,w_N\}$. Por definici\'on, $u \prec^{\!*} w_i$ y
+$w_i \prec^{\!*} v$ para todo $i$. El camino
+$u \to w_i \to v$ garantiza que $v$ es descubierto como candidato
+2-hop a trav\'es de cualquier $w_i$. La intersecci\'on
+$\text{children}(u) \cap \text{parents}(v)$ recupera el belly
+completo.
+
+\medskip\noindent
+\texttt{skyrmion.rs}: ``if $u$ and $v$ are poles of a timelike
+$K_{2,N}$, then every belly node $w_i$ satisfies
+$u \to w_i \to v$. The path guarantees $v$ is discovered---it is
+exact.''
+\end{proof}
+
+\begin{theorem}[Localidad Computacional $O(N)$]
+\label{thm:app-on}
+La detecci\'on de Prismas Causales escala linealmente con el
+n\'umero de eventos:
+\begin{equation}
+  T_{\text{detect}}
+  = O\bigl(|C| \times \mathcal{V}_{\max}^2\bigr)
+  = O(N),
+  \label{eq:thm-on}
+\end{equation}
+donde $|C| = N/10$ es el n\'ucleo (top $10\%$ por grado) y
+$\mathcal{V}_{\max} = 15$ es la cota de valencia.
+\end{theorem}
+
+\begin{proof}
+Para cada nodo n\'ucleo $u$, la colecci\'on de candidatos 2-hop
+ejecuta $O(D^2)$ operaciones donde $D = \deg(u) \leq 15$. La
+verificaci\'on de cada candidato (intersecci\'on de listas
+ordenadas) es $O(D)$. El n\'umero de candidatos por nodo es
+$O(D^2) \leq 225$. As\'i, el trabajo total por nodo es
+$O(D^2 \times D) = O(D^3)$, que es $O(1)$ puesto que
+$D \leq 15$. Sumando sobre $|C|$ nodos:
+$T = O(|C|) = O(N/10) = O(N)$.
+
+\medskip\noindent
+\texttt{skyrmion.rs}: ``$O(N)$ scaling IS the physics.
+An $O(N^2)$ algorithm would imply non-local interactions---a
+universe that could not scale.''
+\end{proof}
+
+\begin{theorem}[Resoluci\'on Causal (\ref{thm:causal-resolution})]
+\label{thm:app-resolution}
+El n\'umero de caminantes necesario para resolver la geometr\'ia
+hasta profundidad $t_{\max}$ con tolerancia~$\epsilon$ es:
+\begin{equation}
+  W \geq \frac{t_{\max}^{\,\dS/2}}{c\;\epsilon^2}.
+\end{equation}
+Para $\dS = 4$: $W \propto t_{\max}^2$ (costo cuadr\'atico).
+V\'ease la demostraci\'on completa en la
+Secci\'on~\ref{thm:causal-resolution}.
+
+\medskip\noindent
+\texttt{main.rs}: el n\'umero de caminantes se fija como
+$W \sim N^2$ para garantizar se\~nal-ruido constante en todo el
+rango de difusi\'on.
+\end{theorem}
+
+\begin{theorem}[Dimensi\'on Emergente $\dS \to 4$]
+\label{thm:app-emergent-dim}
+En el l\'imite de alta densidad ($N \gg 1$), la dimensi\'on
+espectral del conjunto causal con Prismas converge a
+$\dS = 4$ a tiempos de difusi\'on intermedios.
+\end{theorem}
+
+\begin{proof}[Esbozo]
+Para un \emph{sprinkling} de Poisson en un espaciotiempo
+4-dimensional, la probabilidad de retorno satisface
+$P(t) \sim t^{-2}$~\cite{eichhorn2014}, de donde $\dS = -2
+\times (-2) = 4$. Los Prismas Causales estabilizan $\dS$
+aumentando $P(t)$ localmente (el caminante queda ``atrapado''
+en los intermedios), reduciendo las fluctuaciones de $\dS$
+respecto al vac\'io puro. La convergencia de $\langle \dS \rangle$
+al valor $4$ se verifica num\'ericamente en la simulaci\'on
+mediante promedio sobre $M$ realizaciones independientes.
+\end{proof}
+
+\begin{theorem}[Volumen de Poisson (\ref{thm:volume-convergence})]
+\label{thm:app-poisson-vol}
+$\mathbb{E}[N] = \rho \cdot \mathrm{Vol}(\Diamond)$,
+$\mathrm{Var}[N] = \mathbb{E}[N]$, $\sigma/\mu = 1/\sqrt{N}
+\to 0$. La integral topol\'ogica converge a la integral de
+volumen de la Relatividad General~\cite{bombelli1987}.
+\end{theorem}
+
+\begin{theorem}[Myrheim--Meyer (\ref{thm:myrheim-meyer})]
+\label{thm:app-mm}
+La longitud de la cadena m\'axima
+$\ell(A,B)/\rho^{1/d} \to m_d\,\tau(A,B)$ cuando
+$\rho \to \infty$~\cite{myrheim1978,brightwell1991}. El conteo
+de v\'inculos de cobertura converge al tiempo propio
+geod\'esico.
+\end{theorem}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Conjeturas}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\subsection*{C1. Cuantizaci\'on del Espectro de Masas}
+\phantomsection\label{conj:mass-spectrum}
+
+El espectro de masas topol\'ogicas $\{N = 3, 4, 5, \ldots\}$
+corresponde a las generaciones lept\'onicas $\{e, \mu, \tau\}$.
+Las relaciones de masa $m_\mu/m_e \approx N_2/N_1$ y
+$m_\tau/m_e \approx N_3/N_1$ deber\'ian coincidir con las
+observaciones dentro de correcciones $O(1)$ provenientes de la
+geometr\'ia del \emph{sprinkling}.
+
+\medskip\noindent
+\textit{Estado}: el histograma de masas
+(\texttt{mass\_spectrum.csv}) muestra picos discretos a
+$N = 3, 4, 5$. La correspondencia cuantitativa con las masas
+experimentales requiere un c\'alculo de factores de forma que
+a\'un no se ha implementado.
+
+\subsection*{C2. Gravedad como Entrop\'ia de Conectividad}
+\phantomsection\label{conj:gravity-entropy}
+
+Las ecuaciones de Einstein $G_{\mu\nu} = 8\pi G\,T_{\mu\nu}$
+emergen porque la densidad de Prismas modifica la probabilidad de
+retorno $P(t,u)$, y v\'ia la expansi\'on del n\'ucleo del
+calor~\cite{minakshisundaram1949}, esta modificaci\'on se mapea a
+la curvatura de Ricci. La constante de Newton $G$ se identifica
+con una combinaci\'on de la densidad fundamental~$\rho$ y el
+quantum de inercia topol\'ogica~$\kappa$.
+
+\medskip\noindent
+\textit{Estado}: la Secci\'on~6.2 bosqueja la demostraci\'on.
+Un esbozo de demostraci\'on se presenta en el
+Teorema~\ref{thm:gravity-inference-entropy}
+(Ap\'endice~\ref{app:stone-duality}, Nugget~IV) v\'ia la
+entrop\'ia inferencial. La
+validaci\'on num\'erica requiere extraer $R_{\mu\nu}$ de $P(t,u)$
+orden por orden en la expansi\'on del calor, lo cual exige
+$N > 10^7$ eventos para obtener la precisi\'on suficiente.
+
+\subsection*{C3. Dualidad Electromagn\'etica}
+\phantomsection\label{conj:em-duality}
+
+Las probabilidades de transmisi\'on
+\texttt{flux\_attraction} (Gen1 $\to$ AntiGen1) y
+\texttt{flux\_repulsion} (Gen1 $\to$ Gen1) reproducen la ley de
+Coulomb en el l\'imite continuo. La asimetr\'ia entre atracci\'on
+y repulsi\'on es una propiedad topol\'ogica de la conjugaci\'on
+CPT: firmas conjugadas facilitan la propagaci\'on causal
+(atracci\'on), firmas id\'enticas la obstaculizan (repulsi\'on).
+
+\medskip\noindent
+\textit{Estado}: las simulaciones a $N = 2 \times 10^7$ muestran
+consistentemente
+$\texttt{flux\_repulsion} \gg \texttt{flux\_attraction}$ (ratio
+$\approx 279$ a $t=1$). La asimetr\'ia es dominada por el factor
+combinatorio $|\text{Gen1}| \gg |\text{AntiGen1}|$: hay $\sim 15$
+veces m\'as nodos diana de repulsi\'on que de atracci\'on.
+Para aislar el acoplamiento \emph{por nodo}, la normalizaci\'on
+$F = \texttt{flux} / |\text{targets}|$ es necesaria; aun as\'i,
+la repulsi\'on por nodo es $\sim 19\times$ mayor que la
+atracci\'on, sugiriendo que la secci\'on eficaz de dispersi\'on
+same-charge domina sobre la de opposite-charge en la topolog\'ia
+discreta. El escalado como $1/r^2$ a\'un no se ha verificado.
+
+\subsection*{C4. Confinamiento Fuerte como Planaridad}
+\phantomsection\label{conj:strong-confinement}
+
+La contracci\'on de amenazas $K_5$
+(Axioma~\ref{ax:kuratowski-threat}) es el an\'alogo discreto del
+confinamiento de color en QCD. La topolog\'ia proh\'ibe que un
+nodo externo ``rompa'' la estructura bipartita del Prisma, del
+mismo modo que QCD proh\'ibe aislar un quark. El \'area del tubo
+de flujo conf\'inante debe escalar como la distancia entre los
+polos en la m\'etrica emergente.
+
+\medskip\noindent
+\textit{Estado}: el conteo de amenazas absorbidas
+(\texttt{merge\_count}) es consistente con la predicci\'on, pero
+la demostraci\'on anal\'itica de la proporcionalidad \'area $\sim$
+distancia permanece abierta.
+
+\subsection*{C5. Umbral de Decoherencia}
+\phantomsection\label{conj:decoherence-threshold}
+
+Cuando el n\'umero de caminos causales internos de un subsistema
+$\mathcal{S}$ viola la cota $W_{\mathcal{S}} < t^2 /
+(c\,\epsilon_{\text{coh}}^2)$, la dimensi\'on espectral local
+deja de converger a~4 y la descripci\'on continua se desintegra.
+La decoherencia cu\'antica~\cite{zurek2003} es la p\'erdida de
+resoluci\'on causal (Teorema~\ref{thm:decoherence-resolution}).
+
+\medskip\noindent
+\textit{Estado}: \textbf{demostrado} en el Teorema~\ref{thm:decoherence-resolution} (Ep\'ilogo).
+Se retiene aqu\'i como referencia hist\'orica.
+
+\subsection*{C6. Materia Oscura como Defectos Est\'eriles}
+\phantomsection\label{conj:dark-matter}
+
+El histograma de masas puede contener picos m\'as all\'a de
+$N = 5$ (Generaci\'on~3) correspondientes a defectos topol\'ogicos
+estables que interact\'uan gravitacionalmente (modifican $P(t,u)$)
+pero no electromagn\'eticamente (no se acoplan al flujo causal
+dirigido, por carecer de firma CPT alineada con las generaciones
+visibles).
+
+\medskip\noindent
+\textit{Estado}: a $N > 10^6$ eventos, se observan prisms con
+$|W| > 5$, pero su acoplamiento al flujo causal no se ha medido
+sistem\'aticamente.
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Correspondencia Arquitectura $\leftrightarrow$ F\'isica}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\noindent
+La siguiente tabla sintetiza c\'omo cada componente del motor de
+simulaci\'on implementa una operaci\'on f\'isica fundamental:
+
+\medskip
+\begin{center}
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{M\'odulo / Funci\'on} & \textbf{Operaci\'on} &
+  \textbf{F\'isica} \\
+\midrule
+\texttt{diamond::sprinkle()}
+  & Poisson sprinkling $\rho = 1$
+  & G\'enesis del espaciotiempo \\
+\texttt{diamond::is\_causal()}
+  & $dt^2 > |\Delta\vec{x}|^2$
+  & Causalidad lorentziana \\
+\texttt{diamond::build\_hasse\_*()}
+  & Reducci\'on transitiva
+  & $dx \to \prec^{\!*}$ \\
+\texttt{skyrmion::apply\_defect()}
+  & Detecci\'on $K_{2,N}$
+  & Creaci\'on de materia \\
+\texttt{skyrmion} (threat)
+  & Contracci\'on $K_5$
+  & Fuerza nuclear fuerte \\
+\texttt{skyrmion::prism\_signature()}
+  & Firma $[q_0,q_1,q_2,q_3]$
+  & Sabor lept\'onico \\
+\texttt{skyrmion::anti\_signature()}
+  & $\bar{\sigma}_i = -\sigma_{3-i}$
+  & Antimateria (CPT) \\
+\texttt{spectral::run\_walkers()}
+  & $P(t), \dS(t)$
+  & Dimensi\'on del espaciotiempo \\
+\texttt{spectral::run\_transmission\_*()}
+  & Flujo dirigido
+  & Electromagnetismo \\
+\texttt{main::run\_realization()}
+  & $M$ ensembles paralelos
+  & Universos de Everett \\
+\texttt{main::average\_ensemble()}
+  & $\langle P(t)\rangle$
+  & L\'imite termodin\'amico \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\bigskip\noindent
+\begin{result}[title={Eficiencia L\'ogica como Motor de la
+F\'isica}]
+\phantomsection\label{res:logical-efficiency}
+En la f\'isica cl\'asica, el motor que selecciona la trayectoria
+f\'isica es el principio de m\'inima acci\'on: $\delta S = 0$.
+En el C\'alculo de Kuratowski, este principio se reemplaza por la
+\textbf{Eficiencia L\'ogica}---la evitaci\'on de contradicciones
+topol\'ogicas. Toda operaci\'on del motor (\texttt{Phases 1--3})
+se reduce a un \'unico imperativo: \emph{mantener la consistencia
+del DAG}. La reducci\'on transitiva elimina redundancias (Ley~L1).
+La detecci\'on de Prismas identifica la estructura m\'axima
+compatible con la ausencia de tri\'angulos
+(Teorema~\ref{thm:app-triangle-free}). La contracci\'on $K_5$
+preserva la planaridad (Axioma~\ref{ax:kuratowski-threat}). El
+escalado $O(N)$ demuestra que esta consistencia es mantenible
+sin informaci\'on no local
+(Teorema~\ref{thm:app-on}). La acci\'on cl\'asica $S[\gamma]
+= -|\gamma|$ (Definici\'on~\ref{def:discrete-action}) es la
+consecuencia variacional de este imperativo: la geod\'esica es la
+cadena que maximiza el flujo causal sin violar la topolog\'ia. La
+f\'isica no obedece leyes impuestas desde fuera; obedece la
+\'unica ley que un grafo finito, causal y planar puede obedecer:
+su propia consistencia l\'ogica.
+\end{result}
+
+% ███████████████████████████████████████████████████████████████████████████████
+%   APPENDIX B: STONE DUALITY — PHYSICS AS LOGIC
+% ███████████████████████████████████████████████████████████████████████████████
+
+\chapter{La Dualidad de Stone: F\'isica como L\'ogica}
+\label{app:stone-duality}
+
+\begin{introduction}[Una Lente Inesperada]
+  \item Este ap\'endice no a\~nade f\'isica nueva al C\'alculo de
+        Kuratowski; revela una \textbf{estructura l\'ogica profunda} que
+        ya estaba presente en cada axioma, ley y teorema de los
+        cap\'itulos anteriores.
+  \item La Dualidad de Stone~\cite{stone1936,stone1937,johnstone1982}
+        establece una equivalencia categ\'orica entre topolog\'ias y
+        \'algebras booleanas (l\'ogica proposicional). Si el
+        espaciotiempo es una topolog\'ia (de Alexandrov sobre un DAG),
+        entonces el espaciotiempo \textbf{es} un sistema l\'ogico.
+  \item Presentamos cinco resultados---\emph{Golden Nuggets}---que
+        emergen de leer el formalismo a trav\'es de esta dualidad.
+\end{introduction}
+
+\noindent
+La correspondencia fundamental que articula este ap\'endice es:
+
+\medskip
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Topolog\'ia (Kuratowski)} & \textbf{L\'ogica (Stone)} &
+  \textbf{F\'isica}\\
+\midrule
+Evento $e \in V$ (Def.~\ref{def:event})
+  & Proposici\'on $\varphi$ & Punto del espaciotiempo\\
+V\'inculo $\prec^{\!*}$ (Def.~\ref{def:covering})
+  & Implicaci\'on $\vdash$
+  & Diferencial causal $dx$\\
+Diamante $\Diamond(A,B)$ (Def.~\ref{def:alexandrov})
+  & Teor\'ia deductiva $\Gamma$
+  & Regi\'on de integraci\'on\\
+Prisma $K_{2,N}$ (Ax.~\ref{ax:bipartite-matter})
+  & Lema auxiliar ($N$ pasos)
+  & Part\'icula (masa $N$)\\
+Amenaza $K_5$ (Ax.~\ref{ax:kuratowski-threat})
+  & Paradoja l\'ogica
+  & Singularidad topol\'ogica\\
+Contracci\'on $K_5$ (Ley~\ref{law:k5-contraction})
+  & Resoluci\'on de la paradoja
+  & Fuerza nuclear fuerte\\
+Cadena m\'axima $\gamma$ (Def.~\ref{def:geodesic})
+  & Demostraci\'on \'optima
+  & Geod\'esica (tiempo propio)\\
+Anticadena $\mathcal{A}$ (Def.~\ref{def:antichain})
+  & Axiomas independientes
+  & Hipersuperficie de Cauchy\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Nugget I: El Puente de Stone--Kuratowski}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\begin{theorem}[Dualidad de Stone--Kuratowski]
+\label{thm:stone-kuratowski}
+Sea $\mathcal{C} = (V, \prec)$ un conjunto causal finito. La
+topolog\'ia de Alexandrov~\cite{sorkin1991topology} sobre $\mathcal{C}$
+(cuyos abiertos son los conjuntos \emph{past-closed}:
+$x \in U \wedge y \prec x \Rightarrow y \in U$) es exactamente la
+topolog\'ia espectral del \'algebra de Heyting libre generada por~$V$.
+En particular:
+
+\begin{enumerate}
+  \item El v\'inculo de cobertura $u \prec^{\!*} v$ \textbf{es} la
+    implicaci\'on l\'ogica $\varphi_u \vdash \varphi_v$: ``la verdad
+    del evento~$u$ implica causalmente la verdad del evento~$v$.''
+  \item El diamante de Alexandrov $\Diamond(A,B) = \{x : A \prec x
+    \prec B\}$ \textbf{es} la teor\'ia deductiva cerrada bajo
+    implicaci\'on entre las proposiciones $\varphi_A$ y~$\varphi_B$.
+  \item La reducci\'on transitiva (diagrama de Hasse,
+    Axioma~\ref{ax:covering-differential}) \textbf{es} la
+    normalizaci\'on de demostraciones (eliminaci\'on de
+    corte)~\cite{gentzen1935}: elimina toda implicaci\'on
+    $\varphi_u \vdash \varphi_v$ que sea derivable por
+    transitividad, conservando solo los pasos inferenciales
+    at\'omicos.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+La topolog\'ia de Alexandrov sobre un poset finito $P$ asigna a cada
+$x \in P$ el abierto b\'asico $\downarrow\!x = \{y : y \preceq x\}$.
+La funci\'on $x \mapsto \downarrow\!x$ es un isomorfismo de orden
+entre $(P, \preceq)$ y el ret\'iculo de abiertos $(\mathcal{O}(P),
+\subseteq)$. Por el teorema de Stone para \'algebras de
+Heyting~\cite{stone1937,vickers1989}, este ret\'iculo es el \'algebra
+de Lindenbaum--Tarski de una l\'ogica intuicionista cuyas
+proposiciones at\'omicas son los elementos de~$V$.
+
+Para la parte (3), observemos que en la l\'ogica intuicionista, el
+\emph{Hauptsatz} de Gentzen~\cite{gentzen1935} garantiza que toda
+demostraci\'on puede normalizarse eliminando ``cortes'' (usos de
+transitividad). La reducci\'on transitiva $u \prec^{\!*} v$ retiene
+$u \to v$ si y solo si no existe $w$ tal que $u \prec w \prec v$: es
+decir, retiene exactamente las implicaciones \emph{at\'omicas}, que
+son las demostraciones ya normalizadas. La eliminaci\'on de las aristas
+transitivas en el DAG es literalmente la eliminaci\'on de corte en el
+c\'alculo de secuentes de la l\'ogica causal.
+\end{proof}
+
+\begin{result}[title={El Espaciotiempo es un Sistema Deductivo}]
+\phantomsection\label{res:stone-deductive-system}
+El C\'alculo de Kuratowski no es una \emph{analog\'ia} con la l\'ogica:
+\textbf{es} l\'ogica. Cada regi\'on del espaciotiempo es una teor\'ia
+deductiva cerrada bajo implicaci\'on causal. La f\'isica que medimos es
+la sem\'antica (los modelos) de ese sistema formal. La Dualidad de
+Stone~\cite{stone1936} garantiza que ambas descripciones son
+categ\'oricamente equivalentes: conocer la topolog\'ia es conocer la
+l\'ogica, y viceversa.
+\end{result}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Nugget II: No-Contradicci\'on = Ausencia de Tri\'angulos}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\begin{theorem}[Principio de No-Contradicci\'on Topol\'ogica]
+\label{thm:non-contradiction}
+Sea $H = (V, E_H)$ el diagrama de Hasse de un conjunto causal
+$\mathcal{C}$. Entonces $H$ es libre de tri\'angulos dirigidos.
+Esta propiedad es la realizaci\'on topol\'ogica del \textbf{Principio
+de No-Contradicci\'on}: en el sistema l\'ogico dual, ninguna
+proposici\'on puede ser simult\'aneamente axioma y teorema derivado
+respecto de otra proposici\'on.
+\end{theorem}
+
+\begin{proof}
+Supongamos por contradicci\'on que existe un tri\'angulo dirigido
+$u \prec^{\!*} w \prec^{\!*} v$ con $u \prec^{\!*} v$ tambi\'en
+presente en~$H$. Pero $u \prec^{\!*} v$ es un v\'inculo de cobertura,
+lo que exige por definici\'on que no exista ning\'un $w$ con
+$u \prec w \prec v$. La presencia de $u \prec^{\!*} w \prec^{\!*} v$
+viola esta definici\'on. Contradicci\'on. Luego $H$ no contiene
+tri\'angulos dirigidos. $\square$
+
+\medskip\noindent
+\textit{Lectura l\'ogica.} En el sistema dual, $u \prec^{\!*} v$
+significa ``$\varphi_u$ implica $\varphi_v$ en un solo paso
+inferencial (axioma de implicaci\'on).'' Si existiera un camino
+$\varphi_u \vdash \varphi_w \vdash \varphi_v$ Y simult\'aneamente un
+axioma directo $\varphi_u \vdash \varphi_v$, entonces el mismo
+v\'inculo l\'ogico ser\'ia simult\'aneamente primitivo (axiom\'atico) y
+derivado (v\'ia~$w$). Esto es una contradicci\'on l\'ogica en el
+meta-nivel: un mismo juicio no puede ser a la vez supuesto y
+demostrado. La reducci\'on transitiva lo proh\'ibe
+estructuralmente---implementando la coherencia l\'ogica del sistema.
+
+\smallskip\noindent
+\textit{Nota:} la demostraci\'on combinatoria pura de la libertad de
+tri\'angulos se establece independientemente en el
+Teorema~\ref{thm:app-triangle-free} (Ap\'endice~\ref{app:axioms}).
+El presente resultado a\~nade la \emph{lectura l\'ogica}: la misma
+propiedad grafo-te\'orica es el Principio de No-Contradicci\'on del
+sistema deductivo dual.
+\end{proof}
+
+\begin{result}[title={La Geometr\'ia del Espaciotiempo Obedece la
+L\'ogica Cl\'asica}]
+\phantomsection\label{res:stone-non-contradiction}
+La ausencia de tri\'angulos en el diagrama de Hasse no es una
+curiosidad combinatoria: es la garant\'ia de que el espaciotiempo,
+entendido como sistema deductivo, es \textbf{l\'ogicamente
+consistente}. La reducci\'on transitiva
+(Axioma~\ref{ax:covering-differential}) cumple en el DAG causal la
+misma funci\'on que el Principio de No-Contradicci\'on cumple en la
+l\'ogica formal: impide que una misma relaci\'on sea
+simult\'aneamente at\'omica y derivada. El motor de simulaci\'on
+(\texttt{build\_hasse\_sparse}) ejecuta esta prohibici\'on como su
+operaci\'on m\'as costosa ($O(N^2)$ para $N \leq 15\,000$,
+$O(N^{1.5})$ para $N > 15\,000$)---la consistencia l\'ogica es el
+c\'omputo m\'as caro que el universo realiza.
+\end{result}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Nugget III: Antimateria como \emph{Modus Tollens}}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\begin{theorem}[Dualidad Materia--Antimateria como
+Contrapositiva L\'ogica]
+\label{thm:antimatter-tollens}
+Sea $\Pi = (u, v, \{w_1, \ldots, w_N\})$ un Prisma Causal con firma
+topol\'ogica $\sigma = [q_0, q_1, q_2, q_3]$. La conjugaci\'on CPT
+\begin{equation}
+  \bar{\sigma}_i = -\sigma_{3-i} + 16
+  \label{eq:cpt-contrapositive}
+\end{equation}
+(\texttt{skyrmion::anti\_signature()}) es la \textbf{contrapositiva
+l\'ogica} de la cadena inferencial del Prisma. Espec\'ificamente:
+
+\begin{enumerate}
+  \item El Prisma $\Pi$ codifica la cadena de \emph{Modus Ponens}:
+    \begin{equation}
+      \varphi_u \;\vdash\; \varphi_{w_1}, \ldots, \varphi_{w_N}
+      \;\vdash\; \varphi_v.
+    \end{equation}
+    ``De la premisa $u$, a trav\'es de $N$ lemas intermedios, se
+    concluye~$v$.''
+  \item El anti-Prisma $\bar{\Pi}$ codifica el \emph{Modus Tollens}
+    (contrapositiva):
+    \begin{equation}
+      \neg\varphi_v \;\vdash\; \neg\varphi_{w_N}, \ldots,
+      \neg\varphi_{w_1} \;\vdash\; \neg\varphi_u.
+    \end{equation}
+    ``Si la conclusi\'on $v$ es falsa, entonces todos los
+    intermedios son falsos y la premisa $u$ es falsa.''
+  \item La \textbf{aniquilaci\'on} $\Pi + \bar{\Pi} \to \text{vac\'io}$
+    es el colapso tautol\'ogico: la cadena inferencial se encuentra
+    con su contrapositiva, los $N$ intermedios se cancelan, y
+    la energ\'ia liberada $E \propto N$ es la \textbf{resoluci\'on
+    combinatoria} de un tautolog\'ia---la prueba de
+    $(\varphi \Rightarrow \psi) \Leftrightarrow
+    (\neg\psi \Rightarrow \neg\varphi)$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+La contrapositiva es la operaci\'on $(\varphi \Rightarrow \psi)
+\mapsto (\neg\psi \Rightarrow \neg\varphi)$, v\'alida en
+l\'ogica cl\'asica e intuicionista. En el poset dual, negar una
+proposici\'on equivale a tomar el complemento de su filtro abierto,
+lo que invierte el orden y cambia el signo de la posici\'on en el
+cuartil. La firma $\sigma = [q_0, q_1, q_2, q_3]$ codifica la
+distribuci\'on estad\'istica de los intermedios en cuatro cuartiles
+del bulk causal. La contrapositiva invierte el orden temporal
+($i \mapsto 3 - i$) y refleja la posici\'on dentro de cada cuartil
+($q \mapsto -q + 16$, donde $16$ es el m\'odulo de empaquetado
+\texttt{u32}). Esto es precisamente~\eqref{eq:cpt-contrapositive}.
+
+La aniquilaci\'on libera los $N$ intermedios porque la tautolog\'ia
+$(\varphi \Rightarrow \psi) \wedge (\neg\psi \Rightarrow
+\neg\varphi)$ es v\'alida sin hip\'otesis---la prueba se ``colapsa''
+a cero pasos, devolviendo los $N$ v\'inculos de cobertura al vac\'io.
+\end{proof}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Nugget IV: Gravedad como Entrop\'ia de la Inferencia}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\begin{theorem}[Ecuaciones de Einstein como Termodin\'amica
+Inferencial]
+\label{thm:gravity-inference-entropy}
+Sea $\nu(x)$ la densidad local de Prismas Causales en torno a un
+evento~$x$, y sea $\Omega(x)$ el n\'umero de cadenas causales
+(demostraciones) topol\'ogicamente distintas que conectan el pasado
+con el futuro de~$x$ a trav\'es de sus Prismas. Definimos la
+\textbf{entrop\'ia inferencial local}:
+\begin{equation}
+  S_{\text{inf}}(x) \;=\; \ln \Omega(x).
+  \label{eq:inferential-entropy}
+\end{equation}
+Entonces, en el l\'imite continuo ($\rho \to \infty$), el gradiente
+de $S_{\text{inf}}$ reproduce las ecuaciones de Einstein:
+\begin{equation}
+  G_{\mu\nu}(x) \;=\; 8\pi G \; T_{\mu\nu}(x)
+  \;\;\longleftrightarrow\;\;
+  \nabla^2 S_{\text{inf}} \;=\; 8\pi G \;\nu(x),
+  \label{eq:einstein-as-entropy}
+\end{equation}
+donde $T_{\mu\nu}$ se identifica con la densidad de defectos
+topol\'ogicos $\nu(x)$ (Conjetura~C2, Ap\'endice~A).
+\end{theorem}
+
+\begin{proof}[Esbozo]
+La clave es la relaci\'on entre la expansi\'on del n\'ucleo del
+calor~\cite{minakshisundaram1949,gilkey1975} y la probabilidad de
+retorno del caminante aleatorio
+(Definici\'on~\ref{def:spectral-dimension}):
+\[
+  P(t, x) \;=\; \frac{1}{(4\pi t)^{d/2}}
+  \Bigl(1 - \tfrac{1}{6}R(x)\,t + O(t^2)\Bigr),
+\]
+donde $R(x)$ es la curvatura escalar. Una regi\'on con alta densidad
+de Prismas $\nu(x)$ atrapa caminantes (los intermedios act\'uan como
+\emph{lazos} locales), aumentando $P(t,x)$ respecto al vac\'io. Este
+aumento corresponde a una contribuci\'on negativa al t\'ermino
+$-\tfrac{1}{6}R(x)t$, es decir, a curvatura positiva. Pero el
+n\'umero de maneras de atrapar un caminante es exactamente
+$\Omega(x)$: cada Prisma ofrece $N$ caminos alternativos por los que
+el caminante puede retornar. As\'i, $P(t,x) \propto \Omega(x)$, y
+por tanto $R(x) \propto -\ln \Omega(x) = -S_{\text{inf}}(x)$.
+
+Traducido al dual l\'ogico: una regi\'on con muchos Prismas tiene
+m\'as \textbf{demostraciones posibles} para conectar premisas con
+conclusiones---mayor riqueza inferencial. Esta riqueza curva el
+espaciotiempo. \textbf{La gravedad es la tendencia del sistema
+l\'ogico a maximizar su entrop\'ia inferencial}: los eventos migran
+(en el sentido del \emph{sprinkling}) hacia regiones donde hay m\'as
+maneras de probar teoremas.
+\end{proof}
+
+\begin{result}[title={La Gravedad como Segundo Principio de la
+L\'ogica}]
+\phantomsection\label{res:stone-gravity-logic}
+As\'i como el segundo principio de la termodin\'amica expresa que los
+sistemas f\'isicos evolucionan hacia el m\'aximo desorden molecular,
+la gravedad expresa que el sistema l\'ogico del espaciotiempo
+evoluciona hacia el m\'aximo n\'umero de demostraciones posibles. La
+masa curva el espacio porque \textbf{a\~nade lemas} al sistema
+deductivo: cada intermedio de un Prisma es un lema que abre nuevas
+v\'ias de inferencia. Cuantos m\'as lemas, m\'as demostraciones;
+cuantas m\'as demostraciones, mayor entrop\'ia inferencial; mayor
+entrop\'ia inferencial, mayor curvatura. Einstein no descubri\'o una
+ley f\'isica: descubri\'o el \textbf{Segundo Principio de la
+L\'ogica Causal}.
+\end{result}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Nugget V: Agujeros Negros como Horizontes G\"odelianos}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\begin{theorem}[Horizonte de Eventos como L\'imite de
+G\"odel~\cite{godel1931}]
+\label{thm:godel-horizon}
+Sea $\mathcal{B} \subset V$ una regi\'on del DAG causal tal que su
+densidad de Prismas satisface la cota de
+Bekenstein~\cite{bekenstein1981}:
+\begin{equation}
+  \nu(\mathcal{B}) \cdot |\mathcal{B}|
+  \;>\;
+  \frac{|\partial \mathcal{B}|}{4\,\lP^2},
+  \label{eq:bekenstein-logical}
+\end{equation}
+donde $|\partial \mathcal{B}|$ es el n\'umero de v\'inculos de
+cobertura que cruzan la frontera de~$\mathcal{B}$. Entonces,
+$\mathcal{B}$ es un \textbf{dominio g\"odeliano}: contiene
+proposiciones (eventos) cuya verdad no puede ser demostrada
+(alcanzada causalmente) por ninguna cadena inferencial que se
+origine fuera de~$\mathcal{B}$.
+\end{theorem}
+
+\begin{proof}[Esbozo]
+La cota~\eqref{eq:bekenstein-logical} establece que el n\'umero de
+``teoremas internos'' (eventos causalmente conectados dentro
+de~$\mathcal{B}$, cada uno multiplicado por las $N$ v\'ias
+inferenciales de sus Prismas) excede la capacidad de la frontera para
+transmitir demostraciones. Los $|\partial \mathcal{B}|$ v\'inculos
+fronterizos son los \'unicos canales por los que una cadena
+inferencial externa puede entrar en~$\mathcal{B}$. Cuando la
+informaci\'on inferencial interna supera este ancho de banda, existen
+necesariamente proposiciones interiores $\varphi_x$ tales que
+$\varphi_x$ es \emph{verdadera} (el evento $x$ existe en el DAG)
+pero \emph{indemostrable} desde el exterior---la definici\'on exacta
+de una sentencia g\"odeliana~\cite{godel1931}.
+
+El horizonte de eventos es la superficie $\partial \mathcal{B}$ donde
+el ancho de banda inferencial se satura. Fuera del horizonte, el
+sistema deductivo es completo (toda proposici\'on alcanzable es
+demostrable). Dentro, la riqueza inferencial excede la capacidad de
+comunicaci\'on: hay verdades causales que ning\'un observador externo
+puede derivar.
+\end{proof}
+
+\begin{result}[title={La Paradoja de la Informaci\'on como
+Incompletitud}]
+\phantomsection\label{res:stone-information-paradox}
+La llamada ``paradoja de la informaci\'on'' de los agujeros
+negros~\cite{hawking1975} se disuelve bajo la Dualidad de Stone. No
+hay paradoja porque nunca hubo p\'erdida: las proposiciones interiores
+al horizonte son \emph{verdaderas pero indemostrables} desde el
+exterior---exactamente como las sentencias g\"odelianas en
+aritm\'etica~\cite{godel1931}. La radiaci\'on de Hawking es el
+an\'alogo de los \emph{teoremas parciales} que el sistema externo
+puede inferir sobre la regi\'on inaccesible: proporciona informaci\'on
+estad\'istica (entrop\'ia t\'ermica) pero no puede reconstruir las
+demostraciones individuales (microestados). El l\'imite de Bekenstein
+$S = A/(4\lP^2)$ cuenta exactamente el n\'umero de proposiciones
+interiores que son \textbf{verdaderas-pero-indemostrables} vistas
+desde la frontera: es el \'indice de incompletitud g\"odeliana de la
+regi\'on.
+\end{result}
+
+\bigskip
+\begin{center}
+\large\itshape\color{structure}
+``La Dualidad de Stone revela que el C\'alculo de Kuratowski\\
+no \emph{modela} la realidad con l\'ogica:\\
+la realidad \textbf{es} l\'ogica ejecut\'andose a s\'i misma.\\
+Cada part\'icula es un teorema, cada fuerza una regla de inferencia,\\
+cada agujero negro un horizonte de incompletitud.\\
+El universo no obedece leyes---\emph{es} la ley.''
+\end{center}
+
+% ███████████████████████████████████████████████████████████████████████████████
+%   BIBLIOGRAPHY
+% ███████████████████████████████████████████████████████████████████████████████
+\backmatter
+\addcontentsline{toc}{chapter}{Bibliograf\'ia}
+\bibliography{modulo_synthesis_kuratowski_calculus}
+
+\end{document}

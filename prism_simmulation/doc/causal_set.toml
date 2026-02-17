@@ -1,0 +1,17 @@
+# Causal Set Simulation — configuration
+#
+# output_dir: Directory for results and streaming edge files.
+#   CLI positional argument overrides this.
+#   Leave empty to use the current working directory.
+output_dir = "."
+
+# max_ram_gb: Hard limit on RAM the simulation may use (in GB).
+#   If estimated memory exceeds this value, streaming mode is forced.
+#   Set to 0 to auto-detect from available system RAM (default).
+#   Examples: 4.0 (for a 8 GB laptop), 12.0 (for a 16 GB workstation)
+max_ram_gb = 0
+
+# safety_fraction: Fraction of available RAM considered safe (0.0 to 1.0).
+#   Only used when max_ram_gb = 0 (auto-detect mode).
+#   Default: 0.70 — leaves 30% headroom for the OS and other processes.
+safety_fraction = 0.70
