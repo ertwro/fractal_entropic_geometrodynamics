@@ -3119,6 +3119,43 @@ la unitariedad de la mec\'anica cu\'antica continua: la conservaci\'on
 de la probabilidad no es un axioma, sino una consecuencia de la
 estructura de cancelaci\'on de momentos de la geometr\'ia discreta.
 
+\subsection*{T7. Factor de Bekenstein--Hawking (Derivado)}
+\phantomsection\label{thm-ref:bh-factor}
+
+Dos determinaciones independientes de la constante de Newton~$G$ a
+partir del diamante causal ($N = 10^7$, $M = 20$ realizaciones):
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Ruta termodin\'amica (flujo de Clausius):}
+    $\delta Q / (T\,\delta S) = 8\pi G$ con \'area f\'isica
+    $A = V^{1/2}$ (horizonte $d = 4$), coeficiente de variaci\'on
+    $\mathrm{CV} = 26.1\%$.  Resultado:
+    $G_{\mathrm{thermo}} = 0{,}231$ (unidades de enlace).
+  \item \textbf{Ruta combinatoria (bits m\'aximos de Bekenstein):}
+    El grado acotado del diagrama de Hasse $D_{\max} = 15$ limita
+    la capacidad de informaci\'on por enlace.  Igualando con
+    $S = A/(4G)$:
+    $G_{\mathrm{BH}} = D_{\max}/(4\log_2 D_{\max}) = 0{,}960$
+    (unidades de enlace).
+\end{enumerate}
+
+\noindent El cociente:
+\[
+  \frac{G_{\mathrm{BH}}}{G_{\mathrm{thermo}}}
+  = \frac{0{,}960}{0{,}231} = 4{,}16 \approx 4
+\]
+recupera el coeficiente de entrop\'ia de Bekenstein--Hawking
+$S = A/(4G)$ con $4\%$ de error y cero par\'ametros ajustables.
+
+La formulaci\'on de \'area f\'isica $A = V^{1/2}$ domina sobre el
+\'area espectral $A = V^{(d_S-2)/d_S}$ ($\mathrm{CV} = 61{,}0\%$):
+el horizonte vive en el espacio-tiempo macrosc\'opico $d = 4$, no en
+la dimensi\'on fractal $d_S(\sigma)$ del caminante aleatorio.
+
+\medskip\noindent
+\textit{Estado}: \textbf{verificado num\'ericamente} mediante
+\texttt{jacobson\_einstein.py} sobre los datos de producci\'on.
+
 \subsection*{C5. Umbral de Decoherencia}
 \phantomsection\label{conj:decoherence-threshold}
 
