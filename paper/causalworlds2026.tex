@@ -40,20 +40,23 @@
 
 \begin{abstract}
 An $O(N)$ simulation of $N = 10^7$ Poisson-sprinkled causal set events
-($M = 2$ realisations) produces three particle generations from topology alone.
+($M = 20$ realisations) produces three particle generations from topology alone.
 The engine detects \emph{Causal Prisms}---$K_{2,n}$ bipartite subgraphs in
 the Hasse diagram---and classifies them by a discrete phase invariant whose
 sign trichotomy bounds the generation number to $g \leq 3$.
-Spectral dimension $d_S(\sigma{=}1) = 1.946 \pm 0.002$ (UV), crossing $4.0$
+Spectral dimension $d_S(\sigma{=}1) = 1.949 \pm 0.003$ (UV), crossing $4.0$
 at $\sigma \approx 3$--$4$ (IR);
-mass hierarchy Gen\,1\,:\,Gen\,2\,:\,Gen\,3 $ = 4.56 : 6.54 : 7.73$;
-CPT symmetry between matter and antimatter ($\Delta m/m = 2.4\%$).
-The framework rests on two axioms---spacetime as a Poisson-sprinkled
-causal set, and macroscopic geometry from the Petz--Chentsov quantum
-information metric---with dynamics governed by a single principle:
-preservation of unitarity across discrete, non-commutative causal links.
-Bounded Hasse degree ($D \leq 15$) makes the simulation $O(N)$,
-providing a computational proof that the physics is local.
+mass hierarchy Gen\,1\,:\,Gen\,2\,:\,Gen\,3 $= 4.555 : 6.531 : 7.732$;
+CPT symmetry between matter and antimatter ($\Delta m/m = 2.3\%$).
+Finite-size scaling across five lattice sizes ($10^5$--$10^7$,
+$M \geq 8$ each) confirms the 4D scaling law
+$\mathcal{O}(N) = \mathcal{O}_\infty + a\,N^{-1/4}$
+and extrapolates
+$\alpha^{-1}_0 \to 165 \pm 1$ (bare Planck coupling) and
+$\Omega_{\mathrm{energy}} \to 5.57$ (Planck~2018: $5.36$),
+with $R^2 = 0.9996$.
+Bounded Hasse degree ($D \leq 15$) makes the simulation $O(N)$;
+the entire suite runs in 8\,hours on a ThinkPad~T480.
 \end{abstract}
 
 \maketitle
@@ -72,11 +75,11 @@ geometry.  Fractal Entropic Geometrodynamics (FEG) departs entirely from
 geometric embeddings: \emph{topology strictly precedes geometry}.
 
 Rather than argue theoretically, we built it.  An $O(N)$ Rust engine
-processes $10^7$ causal set events ($M = 2$ realisations) in
-24\,minutes on standard hardware, producing three particle generations,
+processes $10^7$ causal set events ($M = 20$ realisations) in
+4.5\,hours on an 8-year-old ThinkPad~T480 (Intel i5-8250U, 16\,GB RAM),
+producing three particle generations,
 a mass hierarchy, and CPT symmetry---from nothing but Poisson-sprinkled
-points and integer combinatorics.  This paper presents the engine, its
-results, and the theoretical framework that explains them.
+points and integer combinatorics.
 
 FEG rests upon two axioms:
 
@@ -143,59 +146,113 @@ accumulation~\cite{eichhorn2014}.
 \section{Computational Results}\label{sec:results}
 % ═══════════════════════════════════════════════════════════════════════════════
 
-Fig.~\ref{fig:results} and Table~\ref{tab:results} present results from
-$N = 10^7$ ($M = 2$ realisations, seeds\,42--43, runtime 24\,min).
+Fig.~\ref{fig:results} presents the production ensemble
+($N = 10^7$, $M = 20$ realisations, seed~42, runtime 4.5\,h on a
+ThinkPad~T480).
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_composite.pdf}
-\caption{$N = 10^7$ simulation ($M{=}2$, 24\,min, no free parameters).
-  \textbf{(a)}~Spectral dimension: $d_S = 1.95$ (UV) $\to$ $4.94$ (IR);
+\caption{$N = 10^7$ ($M{=}20$, 4.5\,h, zero free parameters).
+  \textbf{(a)}~Spectral dimension: $d_S = 1.95$ (UV) $\to$ $4.96$ (IR);
   defect peak $9.06$.
-  \textbf{(b)}~771{,}589 prisms; exponential tail $\sim e^{-0.53n}$.
-  \textbf{(c)}~Mass hierarchy $1{:}1.43{:}1.69$; CPT: $\Delta m/m = 2.4\%$.
-  \textbf{(d)}~$\Omega_{\mathrm{energy}} = 1/\mathcal{Q}_{\mathrm{topo}} - 1 = 4.25$ (observed $\approx 5.36$).}
+  \textbf{(b)}~7.7M prisms; exponential tail $\sim e^{-0.53n}$.
+  \textbf{(c)}~Mass hierarchy $1{:}1.43{:}1.70$; CPT: $\Delta m/m = 2.3\%$.
+  \textbf{(d)}~$\Omega_{\mathrm{energy}} = 1/\mathcal{Q}_{\mathrm{topo}} - 1 = 4.24$.}
 \label{fig:results}
 \end{figure}
 
 \begin{table}[H]
-\caption{Observables at $N = 10^7$ ($M = 2$, 24\,min runtime).}
+\caption{Key observables at $N = 10^7$ ($M = 20$).}
 \label{tab:results}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}lc@{}}
 \toprule
 \textbf{Observable} & \textbf{Value} \\
 \midrule
-$d_S$ vacuum ($\sigma{=}1$, UV) & $1.946 \pm 0.002$ \\
-$d_S$ vacuum ($\sigma{=}4$, IR) & $4.944 \pm 0.001$ \\
+$d_S$ vacuum ($\sigma{=}1$, UV) & $1.949 \pm 0.003$ \\
+$d_S$ vacuum ($\sigma{=}4$, IR) & $4.956 \pm 0.001$ \\
 $d_S$ defect (peak)             & 9.06 \\
 \midrule
-Total prisms                    & 771{,}589 \\
-$g{=}1$ / $g{=}2$ / $g{=}3$
-                          & 46{,}688 / 299{,}012 / 40{,}095 \\
-Mass: Gen\,1 / Gen\,2 / Gen\,3
-                          & $4.56$ / $6.54$ / $7.73$ \\
-CPT: Gen\,1 vs Anti-1     & 4.56 vs 4.45 ($2.4\%$) \\
-$\Omega_{\mathrm{dark}}/\Omega_{\mathrm{vis}}$
-                          & 4.25 (self-energy: $1/\mathcal{Q}_{\mathrm{topo}} - 1$) \\
+Total prisms                    & 7{,}723{,}943 \\
+$g{=}1$ / $g{=}2$ / $g{=}3$    & 2.1\% / 84.9\% / 13.0\% \\
+Mass: Gen\,1 / Gen\,2 / Gen\,3 & $4.555$ / $6.531$ / $7.732$ \\
+CPT: Gen\,1 vs Anti-1           & 4.555 vs 4.45 ($2.3\%$) \\
+$\mathcal{Q}_{\mathrm{topo}}$  & 0.1907 \\
+$\alpha = \mathcal{Q}/(8\pi)$  & $1/131.8$ \\
+$\Omega_{\mathrm{energy}} = 1/\mathcal{Q} - 1$ & 4.24 \\
+$\alpha\,(1 + \Omega)$         & $1/(8\pi)$ \textbf{(exact at every $N$)} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Spectral dimension.}
-$d_S(\sigma{=}1) = 1.946 \pm 0.002$: UV dimensional reduction consistent
+$d_S(\sigma{=}1) = 1.949 \pm 0.003$: UV dimensional reduction consistent
 with CDT~\cite{ambjorn2005,carlip2017}.
-By $\sigma = 4$, $d_S = 4.944$: the 4D continuum has emerged.
+By $\sigma = 4$, $d_S = 4.956$: the 4D continuum has emerged.
 Defect-core peak $d_S = 9.06$: Causal Prisms \emph{trap} walkers---mass
 is topological probability retention.
 
 \textbf{Mass hierarchy.}
-$4.56 < 6.54 < 7.73$ (ratio $1 : 1.43 : 1.69$): higher-generation prisms
+$4.555 < 6.531 < 7.732$ (ratio $1 : 1.43 : 1.70$): higher-generation prisms
 trap walkers more strongly due to more complex phase structures.
 
 \textbf{CPT symmetry.}
-Gen\,1 $= 4.56$ vs Anti-1 $= 4.45$ ($\Delta m/m = 2.4\%$
-at $M{=}2$), expected to sharpen under larger ensemble averaging.
+Gen\,1 $= 4.555$ vs Anti-1 $= 4.45$ ($\Delta m/m = 2.3\%$
+at $M{=}20$).
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Finite-Size Scaling}\label{sec:fss}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+Boundary effects in a 4D causal diamond scale as $T^3/T^4 = 1/T \sim N^{-1/4}$.
+Five lattice sizes ($N = 10^5$ to $10^7$, $M \geq 8$ realisations each)
+confirm that all boundary-sensitive observables follow
+\begin{equation}
+  \mathcal{O}(N) = \mathcal{O}_\infty + a\,N^{-1/4}
+\end{equation}
+Fig.~\ref{fig:fss} shows the scaling; Table~\ref{tab:fss} lists the
+extrapolations.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_fss_composite.pdf}
+\caption{Finite-size scaling across five lattice sizes ($N = 10^5$--$10^7$).
+  \textbf{(a)}~$\mathcal{Q}_{\mathrm{topo}} \to 0.152$ ($R^2 = 0.9996$).
+  \textbf{(b)}~Mass ratios are $N$-independent ($R^2 < 0.1$).
+  \textbf{(c)}~$\Omega_{\mathrm{energy}} \to 5.57$ (Planck~2018: $5.36$).
+  \textbf{(d)}~$d_S$: UV $\to 1.95$, IR $\to 5.00$.
+  All data reproducible on a single laptop.}
+\label{fig:fss}
+\end{figure}
+
+\begin{table}[H]
+\caption{Finite-size scaling extrapolations ($N \to \infty$).}
+\label{tab:fss}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Observable} & $N{=}10^7$ & $N{\to}\infty$ & $R^2$ \\
+\midrule
+$\mathcal{Q}_{\mathrm{topo}}$            & 0.191 & $0.152 \pm 0.001$ & 0.9996 \\
+$\alpha^{-1}_0$ (bare, Planck)            & 131.8 & $165.1 \pm 1.0$   & --- \\
+$\Omega_{\mathrm{energy}}$               & 4.24  & 5.57              & 0.990 \\
+$d_S$ (UV, $\sigma{=}1$)                 & 1.949 & 1.953             & 0.890 \\
+$d_S$ (IR, $\sigma{=}4$)                 & 4.956 & 5.002             & 0.988 \\
+\midrule
+Mass ratio $m_2/m_1$                      & 1.43  & $1.44 \pm 0.01$   & 0.04 \\
+Mass ratio $m_3/m_1$                      & 1.70  & $1.69 \pm 0.03$   & 0.37 \\
+Gen fractions                             & \multicolumn{2}{c}{$N$-independent} & $<0.1$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The bare coupling $\alpha^{-1}_0 = 165.1 \pm 1.0$ is the UV-cutoff value
+at the Planck scale; the 20\% gap to the physical $\alpha^{-1} = 137.036$
+is the domain of renormalization-group running from Planck to laboratory
+energies.  Mass ratios and generation fractions are \textbf{$N$-independent
+topological invariants} ($R^2 < 0.1$ against $N^{-1/4}$): the internal
+structure of Causal Prisms does not feel the boundary.
 
 % ═══════════════════════════════════════════════════════════════════════════════
 \section{The Three Geometries}\label{sec:geometries}
@@ -232,12 +289,6 @@ would create a forbidden $K_5$ topological minor~\cite{kuratowski1930},
 so prism constituents cannot be separated---mirroring colour confinement
 in QCD.
 
-The $S_n$ permutation symmetry of the $n$ intermediates (the ``belly''
-of the prism) is not a hint of gauge structure---it \emph{is} the gauge
-structure.  For $n = 3$ intermediates, $S_3$ is the Weyl group of $SU(3)$:
-the colour charge algebra of QCD derived from the bipartite combinatorics
-of the Hasse diagram.
-
 \textbf{Geometry of Logic.}
 $D \leq 15 \Rightarrow O(N)$.  This bound is not imposed---it is
 a geometric consequence of $\rho \approx 1$ sprinkling into the Hasse
@@ -246,110 +297,63 @@ the computational manifestation of physical
 locality~\cite{stone1936,bombelli2009}.
 
 % ═══════════════════════════════════════════════════════════════════════════════
-\section{Macroscopic Emergence}\label{sec:ir}
-% ═══════════════════════════════════════════════════════════════════════════════
-
-\textbf{Gravity as information cost.}
-By Chentsov's theorem~\cite{chentsov1982}, the unique metric on the space
-of causal histories is the Fisher information metric:
-$g_{\mu\nu} \propto I_{\mu\nu}(\theta)$.
-Gravity is the statistical resistance of the causal network to
-information deformation.
-As Jacobson showed~\cite{jacobson1995}, when causal flux is bounded by
-a horizon, $S \propto A/4G$ and the Einstein equations emerge as a
-thermodynamic equation of state~\cite{dou2003,bekenstein1973}.
-
-\textbf{Dark energy as Poisson noise.}
-Volume fluctuations $\delta V \sim \sqrt{N}$~\cite{ahmed2004} yield
-\begin{equation}
-    \Lambda \propto \frac{1}{\sqrt{N}} \propto H^2
-\end{equation}
-Dark energy is the statistical jitter of counting causal events;
-it is tiny because $N \gg 1$~\cite{weinberg1989}.
-
-% ═══════════════════════════════════════════════════════════════════════════════
-\section{Implications}\label{sec:pheno}
-% ═══════════════════════════════════════════════════════════════════════════════
-
-By strictly adhering to the Kuratowski Calculus, major anomalies dissolve
-as artefacts of the continuum assumption:
-\begin{enumerate}[itemsep=0pt,parsep=0pt,topsep=2pt,partopsep=0pt,leftmargin=1.8em]
-    \item \textbf{Singularity:} Holographic capacity bounds Planck volumes
-      to 1~bit; infinite density is obstructed.
-    \item \textbf{Dark energy:} Poisson noise, not vacuum energy
-      (Eq.~5)~\cite{ahmed2004}.
-    \item \textbf{Proton stability:} Prisms are topological knots;
-      decay requires reordering ${\sim}10^{60}$ links.
-    \item \textbf{Strong CP:} $\theta$ is the average of ${\sim}10^{60}$
-      random link phases; by the CLT, $\theta \to 0$.
-    \item \textbf{Baryogenesis:} Forward-growing DAGs favour
-      $\Phi > 0$ (matter) over $\Phi < 0$ (antimatter);
-      the simulation confirms ${\sim}13{:}1$.
-\end{enumerate}
-
-% ═══════════════════════════════════════════════════════════════════════════════
 \section{Falsifiable Predictions}\label{sec:predictions}
 % ═══════════════════════════════════════════════════════════════════════════════
 
 The framework is an \emph{overconstrained system}: zero free parameters,
-seven independent predictions. Every observable is coupled to every
-other through the belly-size distribution $f(N)$ of Causal Prisms.
-There is nothing to tune; failure of any single prediction is fatal.
+seven independent predictions.  Failure of any single one is fatal.
 
 \textbf{P1.\ Generation Exclusion ($g_{\max} = 3$).}
-The generation number $g = |\{\text{distinct } \varphi(w_i)\}|$
-takes values in $\{1,2,3\}$ because
+$g = |\{\text{distinct } \varphi(w_i)\}| \in \{1,2,3\}$ because
 $\operatorname{sgn} \colon \mathbb{R} \to \{-1,0,+1\}$.
 A fourth generation is topologically forbidden---a theorem, not a bound.
 
-\textbf{P2.\ Neutrino mass sum ($\sum m_\nu \approx 58$--$62$\,meV).}
-Bulk diffusion gives
-$m_1 \approx M_{\rm Pl}(\ell_P/L_\Lambda)^{1/2} \approx 3$\,meV.
-Combined with measured $\Delta m^2$ splittings:
-$\sum m_\nu \approx 62$\,meV, normal ordering.
-Testable by DESI + Euclid + CMB-S4 lensing ($\sigma \sim 20$\,meV).
+\textbf{P2.\ The $\alpha$--$\Omega$ Lock.}
+$\mathcal{Q}_{\mathrm{topo}} = \sum|\Phi|^2/\sum N^2$
+determines \emph{both}: $\alpha = \mathcal{Q}/(8\pi)$
+and $\Omega_{\mathrm{energy}} = 1/\mathcal{Q} - 1$.
+The exact identity $\alpha\,(1 + \Omega) = 1/(8\pi)$ locks them:
+one cannot vary dark matter without altering~$\alpha$.
+FSS extrapolates $\alpha^{-1}_0 = 165 \pm 1$ (bare Planck coupling);
+the 20\% gap to 137 is RG running.
 
-\textbf{P3.\ No primordial tensor modes ($r < 10^{-3}$).}
+\textbf{P3.\ Null WIMP prediction ($\sigma_{\chi N} = 0$).}
+Dark matter is the phase-cancelled ($\Phi = 0$) tail of the belly-size
+distribution, not a new particle species.
+Cross-section is identically zero.
+LZ, XENONnT, and DARWIN will report null.
+
+\textbf{P4.\ No primordial tensor modes ($r < 10^{-3}$).}
 UV dimensional reduction $d_S \to 2$ kills graviton propagation
 (Weyl tensor vanishes in 2D).
-Distinguishes from slow-roll inflation ($r \sim 10^{-2}$--$10^{-1}$).
 Testable by CMB-S4 and LiteBIRD.
 
-\textbf{P4.\ The $\alpha$--$\Omega$ Lock.}
-The topological charge ratio $\mathcal{Q}_{\mathrm{topo}} = \sum|\Phi|^2/\sum N^2$
-determines \emph{both} observables: $\alpha = \mathcal{Q}_{\mathrm{topo}}/(8\pi)$
-and $\Omega_{\mathrm{energy}} = 1/\mathcal{Q}_{\mathrm{topo}} - 1$
-(the self-energy dark matter ratio). The exact identity
-$\alpha\,(1 + \Omega) = 1/(8\pi)$ locks them:
-one cannot vary dark matter without altering~$\alpha$.
-With $\mathcal{Q}_{\mathrm{topo}} \approx 0.190$:
-$\alpha^{-1} \approx 132$ (within $3\%$),
-$\Omega_{\mathrm{energy}} \approx 4.25$ (within $21\%$ of Planck $5.36$).
-The residual gap quantifies the baryonic confinement contribution
-($K_{3,3}$) not yet modelled.
-
-\textbf{P5.\ Null WIMP prediction ($\sigma_{\chi N} = 0$).}
-Dark matter is the phase-cancelled ($\Phi = 0$) tail of $f(N)$,
-not a new particle species.
-Cross-section is identically zero.
-All direct detection experiments (LZ, XENONnT, DARWIN) will report null.
+\textbf{P5.\ Neutrino mass sum ($\sum m_\nu \approx 58$--$62$\,meV).}
+Bulk diffusion gives
+$m_1 \approx M_{\rm Pl}(\ell_P/L_\Lambda)^{1/2} \approx 3$\,meV;
+combined with $\Delta m^2$ splittings: normal ordering.
+Testable by DESI + Euclid + CMB-S4 ($\sigma \sim 20$\,meV).
 
 % ═══════════════════════════════════════════════════════════════════════════════
 \section*{Conclusion}
 % ═══════════════════════════════════════════════════════════════════════════════
 
-From two axioms and one principle, the $N = 10^7$ simulation produces:
+From two axioms and one principle, the $N = 10^7$ ($M{=}20$) simulation
+produces:
 (i)~three generations bounded by sign trichotomy $g \leq 3$---a theorem;
-(ii)~mass hierarchy $4.56 < 6.54 < 7.73$ without calibration;
-(iii)~CPT to $2.4\%$;
-(iv)~$\Omega_{\mathrm{energy}} = 1/\mathcal{Q}_{\mathrm{topo}} - 1 = 4.25$ via self-energy decomposition
-(locked to $\alpha$ by $\alpha(1+\Omega) = 1/(8\pi)$, zero free parameters);
-(v)~$\alpha = \mathcal{Q}_{\mathrm{topo}}/(8\pi)$ with $\mathcal{Q}_{\mathrm{topo}} = \sum|\Phi|^2/\sum N^2 \approx 0.19$ giving $\alpha^{-1} \approx 133$ (emergent, zero free parameters);
-(vi)~$d_S = 2 \to 4$ consistent with CDT.
+(ii)~mass hierarchy $4.555 < 6.531 < 7.732$ without calibration
+(ratios $N$-independent, $R^2 < 0.1$);
+(iii)~CPT to $2.3\%$;
+(iv)~$\alpha(1+\Omega) = 1/(8\pi)$ exactly, with FSS extrapolating
+$\alpha^{-1}_0 = 165 \pm 1$ and $\Omega \to 5.57$
+($R^2 = 0.9996$);
+(v)~$d_S = 2 \to 5$ consistent with CDT.
 $D \leq 15$ makes every operation $O(N)$: the code proves locality.
-Open: Yang--Mills from $S_n$; physical mass units.
+The entire FSS suite (5 lattice sizes) runs in 8\,hours on a
+ThinkPad~T480.
 All code and data:
-\url{https://github.com/ertwro/fractal_entropic_geometrodynamic}.
+\url{https://github.com/ertwro/fractal_entropic_geometrodynamic}
+(DOI: \href{https://doi.org/10.5281/zenodo.18690574}{10.5281/zenodo.18690574}).
 
 \begin{acknowledgments}
 I dedicate this work to my wife and daughter.
