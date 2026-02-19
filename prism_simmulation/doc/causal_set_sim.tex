@@ -793,13 +793,19 @@ Out-of-core variant for streaming mode.  Single-pass analysis via
 \code{mass\_sq\_total}      & $\sum N^2$ --- total gravitational self-energy (denominator of~$\mathcal{Q}_{\mathrm{topo}}$). \\
 \code{alpha\_em}            & $\alpha = \mathcal{Q}_{\mathrm{topo}} / (8\pi)$ --- emergent fine structure constant, where $\mathcal{Q}_{\mathrm{topo}} = \sum|\Phi|^2/\sum N^2$. \\
 \code{omega\_energy}        & $\Omega_{\mathrm{energy}} = 1/\mathcal{Q}_{\mathrm{topo}} - 1$ --- self-energy dark matter ratio. Satisfies the exact identity $\alpha(1 + \Omega_{\mathrm{energy}}) = 1/(8\pi)$. \\
+\code{phase\_pos\_count}    & Count of intermediate nodes with $\varphi = +1$ (source-like, out-degree $>$ in-degree). \\
+\code{phase\_zero\_count}   & Count of intermediate nodes with $\varphi = 0$ (balanced in/out degree). \\
+\code{phase\_neg\_count}    & Count of intermediate nodes with $\varphi = -1$ (sink-like, in-degree $>$ out-degree). \\
+\code{prisms\_gen1..3}      & Number of \emph{prisms} (not nodes) per generation. \\
 \bottomrule
 \end{tabular}
 \caption{\code{TopologySummary} fields.  The Phase-Coherence Mass Decomposition
 ($M_\text{vis} = |\Phi|$, $M_\text{dark} = N - |\Phi|$) replaces the former
 Conjecture~C6 threshold ($N > 5$) with a parameter-free identity.  The
 self-energy ratio $\Omega_{\mathrm{energy}}$ and the fine structure constant
-$\alpha$ are algebraically locked by $\alpha(1+\Omega) = 1/(8\pi)$.}
+$\alpha$ are algebraically locked by $\alpha(1+\Omega) = 1/(8\pi)$.
+The phase census fields support the occupancy model analysis
+(see~\S\,\ref{sec:occupancy}).}
 \end{table}
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -1278,6 +1284,52 @@ $\Omega_{\mathrm{energy}}$    & $4.24$  & $5.57$ (Planck 2018: $5.36$)        & 
 $\alpha(1+\Omega)$            & $1/(8\pi)$ & $1/(8\pi)$                       & Exact at every $N$ \\
 \bottomrule
 \end{tabular}
+\end{table}
+
+\section{Occupancy Model (Analytical Mass Hierarchy)}
+\label{sec:occupancy}
+
+The mass hierarchy $m_1 < m_2 < m_3$ is explained analytically as a
+\textbf{coupon-collector selection effect} on the belly size distribution
+$f(N)$.  Each intermediate node~$w$ carries a causal phase
+$\varphi(w) = \mathrm{sign}(\text{out\_degree} - \text{in\_degree}) \in
+\{-1, 0, +1\}$.  The generation $g(P)$ counts how many distinct phase
+signs appear among the $N$ intermediates of prism~$P$.
+
+Since $P(g{=}1 \mid N) \sim p_{\max}^N$ decays exponentially, Gen\,1
+prisms are biased toward small bellies (low mass), while Gen\,3 prisms
+require all three signs (large bellies, high mass).  The expected mass
+per generation is
+\[
+  E[N \mid g{=}k] = \frac{\sum_N N \cdot P(g{=}k \mid N) \cdot f(N)}%
+                         {\sum_N P(g{=}k \mid N) \cdot f(N)},
+\]
+where the generation probabilities follow from inclusion-exclusion:
+\begin{align*}
+  P(g{=}1 \mid N) &= p_+^N + p_0^N + p_-^N, \\
+  P(g{=}3 \mid N) &= 1 - (1{-}p_+)^N - (1{-}p_0)^N - (1{-}p_-)^N
+                      + p_+^N + p_0^N + p_-^N.
+\end{align*}
+
+The simulation reports the \textbf{intermediate phase census}:
+$(p_+, p_0, p_-) = (0.318,\; 0.018,\; 0.664)$.  Plugging these
+measured fractions into the occupancy formula reproduces the mass ratios
+with \textbf{zero free parameters}:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{} l c c c @{}}
+\toprule
+\textbf{Ratio} & \textbf{Predicted} & \textbf{Observed} & \textbf{Error} \\
+\midrule
+$m_2/m_1$ & 1.409 & 1.434 & 1.8\% \\
+$m_3/m_1$ & 1.674 & 1.698 & 1.4\% \\
+\bottomrule
+\end{tabular}
+\caption{Occupancy model predictions versus simulation.  Both inputs---the
+belly distribution $f(N)$ and the phase fractions---are determined
+entirely by the Poisson sprinkling geometry.  Analysis script:
+\code{data/scripts/occupancy\_model.py}.}
 \end{table}
 
 \section{Causal Flux}

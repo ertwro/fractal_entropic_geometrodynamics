@@ -522,6 +522,12 @@ fn aggregate_topology(topos: &[skyrmion::TopologySummary]) -> skyrmion::Topology
         mass_sq_total: msq_total,
         alpha_em: alpha,
         omega_energy,
+        phase_pos_count: topos.iter().map(|t| t.phase_pos_count).sum(),
+        phase_zero_count: topos.iter().map(|t| t.phase_zero_count).sum(),
+        phase_neg_count: topos.iter().map(|t| t.phase_neg_count).sum(),
+        prisms_gen1: topos.iter().map(|t| t.prisms_gen1).sum::<usize>() / m,
+        prisms_gen2: topos.iter().map(|t| t.prisms_gen2).sum::<usize>() / m,
+        prisms_gen3: topos.iter().map(|t| t.prisms_gen3).sum::<usize>() / m,
     }
 }
 
