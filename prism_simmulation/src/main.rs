@@ -12,6 +12,7 @@
 //!   zero disk I/O.  ~1.5 GB per realization at N=100M.  Realizations run
 //!   concurrently via Rayon thread pool.
 
+use causal_set_sim::checkpoint;
 use causal_set_sim::diamond;
 use causal_set_sim::memory::{self, ExecMode};
 use causal_set_sim::output;
@@ -35,9 +36,19 @@ fn default_seed() -> u64 {
 /// Default eigendecomp cutoff: N <= 3000 uses exact eigendecomp,
 /// above uses Monte Carlo walkers.  Overridable via `--eigen-cutoff`.
 const DEFAULT_EIGEN_CUTOFF: usize = 3_000;
-/// Default number of independent realisations for ensemble averaging.
-/// 10 realisations provide ~3% statistical error on P(t) at moderate N.
-const DEFAULT_ENSEMBLE: usize = 10;
+/// Default safety cap for ensemble realisations in adaptive mode.
+const DEFAULT_MAX_ENSEMBLE: usize = 50;
+/// Default relative standard error target for mass_gen1 convergence.
+const DEFAULT_TARGET_ERROR: f64 = 0.01;
+/// Maximum concurrent realizations per sequential batch.
+/// Limits peak memory to ~BATCH_SIZE × 3 GB of CSR graphs at N=10M.
+/// Override via `--batch-size`.
+const DEFAULT_BATCH_SIZE: usize = 4;
+/// Minimum realizations before convergence checking.
+/// With fewer samples, the Welford variance estimator is unstable
+/// (t-distribution with < 7 d.f. — SE underestimates true variance).
+/// Override via `--min-ensemble`.
+const DEFAULT_MIN_ENSEMBLE: usize = 8;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Single realisation
@@ -70,18 +81,28 @@ fn run_realization(
 
     // Phase 2 — Kuratowski contraction + particle classification
     println!("  [In-Memory] Phase 1 CSR: {} edges", vac_data.len());
-    let (mut defect, topology) = skyrmion::apply_defect(n_points, vac_head, vac_data, momentum);
+    let (mut defect, topology, _prisms) = skyrmion::apply_defect(n_points, vac_head, vac_data, momentum);
 
     // Phase 3a — vacuum + defect spectral dimensions
+    //
+    // The vacuum CSR from Phase 1 is a DIRECTED Hasse diagram (DAG).
+    // Spectral walkers need the UNDIRECTED (symmetric) graph so they can
+    // step both past→future and future→past, probing the full 4D manifold.
+    // Without symmetrization, walkers hit the future boundary immediately
+    // and d_S collapses to ~1.6 (fractal/1D) instead of ~4 (Minkowski).
+    let (sym_vac_head, sym_vac_data) =
+        diamond::make_symmetric(n_points, &defect.vac_head, &defect.vac_data);
+
     let (vac, mut def) = if n_points <= eigen_cutoff {
         // Reconstruct Vac Edges for Eigen (only small N)
+        // Symmetric CSR already built above — extract unique edges for eigendecomp.
         let mut vac_rows = Vec::new();
         let mut vac_cols = Vec::new();
         for u in 0..n_points {
-            let start = defect.vac_head[u] as usize;
-            let end = defect.vac_head[u+1] as usize;
-            for &v in &defect.vac_data[start..end] {
-                if (u as u32) < v {
+            let start = sym_vac_head[u] as usize;
+            let end = sym_vac_head[u + 1] as usize;
+            for &v in &sym_vac_data[start..end] {
+                if (u as u32) < v {   // symmetric CSR: dedup by u < v
                     vac_rows.push(u as u32);
                     vac_cols.push(v);
                 }
@@ -89,6 +110,7 @@ fn run_realization(
         }
 
         // Reconstruct Defect Edges for Eigen (only small N)
+        // Defect CSR is already undirected (skyrmion.rs pushes both directions).
         let mut def_rows = Vec::new();
         let mut def_cols = Vec::new();
         for u in 0..defect.def_head.len() - 1 {
@@ -106,19 +128,16 @@ fn run_realization(
         let def = spectral::compute_eigen(defect.def_head.len() - 1, &def_rows, &def_cols, steps, &defect.defect_core);
         (vac, def)
     } else {
-        // Monte Carlo (Zero-Copy CSR)
+        // Monte Carlo — use the symmetric vacuum CSR directly
         let mut rng_mc = StdRng::seed_from_u64(seed + 2);
-        
-        // Vacuum (using Phase 1 CSR? No, Phase 1 gave us rows/cols. Skyrmion built CSR.)
-        // Skyrmion returns vac_head/vac_data.
         let vac = spectral::compute_monte_carlo_csr(
             n_points,
-            &defect.vac_head,
-            &defect.vac_data,
+            &sym_vac_head,
+            &sym_vac_data,
             steps,
             &defect.vacuum_core,
             walkers,
-            &mut rng_mc
+            &mut rng_mc,
         );
 
         // Defect — Use exact eigendecomp for small graphs (eliminates MC noise)
@@ -154,6 +173,10 @@ fn run_realization(
         };
         (vac, def)
     };
+
+    // Free symmetric vacuum CSR — no longer needed after spectral computation.
+    drop(sym_vac_head);
+    drop(sym_vac_data);
 
     // Phase 3b — generation walkers + causal flux (always MC)
     // We already have Defect CSR in `defect.def_head`/`def_data`.
@@ -232,13 +255,13 @@ fn run_realization(
         steps, seed.wrapping_add(500), Some(&defect.merge_into),
     );
 
-    // ── Normalized flux (per-node coupling strength, Conjecture C3) ──
+    // ── Normalized flux (per-charge coupling — Definition, Vol II) ──
     let n_attr = flux_attr_targets.len().max(1) as f64;
     let n_repu = flux_repu_targets.len().max(1) as f64;
     let flux_attr_norm: Vec<f64> = flux_attr.iter().map(|&f| f / n_attr).collect();
     let flux_repu_norm: Vec<f64> = flux_repu.iter().map(|&f| f / n_repu).collect();
 
-    // ── Sterile walkers (Conjecture C6: N > 5 prisms) ────────────────
+    // ── Sterile walkers (Φ = 0: fully phase-cancelled prisms) ────────────────
     let (p_st, ds_st) = if !defect.sterile_nodes.is_empty() {
         let resolved: Vec<usize> = defect.sterile_nodes.iter()
             .map(|&n| defect.merge_into[n]).collect();
@@ -466,6 +489,17 @@ fn aggregate_topology(topos: &[skyrmion::TopologySummary]) -> skyrmion::Topology
     let mut hist: Vec<(usize, usize)> = hist_map.into_iter().collect();
     hist.sort_unstable_by_key(|&(n, _)| n);
 
+    // Phase-coherence: SUM across realizations, then recompute ratios
+    let vis_total: usize = topos.iter().map(|t| t.visible_mass_total).sum();
+    let dark_total: usize = topos.iter().map(|t| t.dark_mass_total).sum();
+    let grav_total: usize = topos.iter().map(|t| t.grav_mass_total).sum();
+    let psq_total: usize = topos.iter().map(|t| t.phase_sq_total).sum();
+    let msq_total: usize = topos.iter().map(|t| t.mass_sq_total).sum();
+    let omega = if vis_total > 0 { dark_total as f64 / vis_total as f64 } else { f64::INFINITY };
+    let q_topo = if msq_total > 0 { psq_total as f64 / msq_total as f64 } else { 0.0 };
+    let alpha = q_topo / (8.0 * std::f64::consts::PI);
+    let omega_energy = if q_topo > 0.0 { 1.0 / q_topo - 1.0 } else { f64::INFINITY };
+
     skyrmion::TopologySummary {
         total_nodes: topos[0].total_nodes,
         total_prisms,
@@ -480,6 +514,14 @@ fn aggregate_topology(topos: &[skyrmion::TopologySummary]) -> skyrmion::Topology
         avg_mass_gen3: topos.iter().map(|t| t.avg_mass_gen3).sum::<f64>() / m as f64,
         avg_mass_sterile: topos.iter().map(|t| t.avg_mass_sterile).sum::<f64>() / m as f64,
         prism_histogram: hist,
+        visible_mass_total: vis_total,
+        dark_mass_total: dark_total,
+        grav_mass_total: grav_total,
+        omega_ratio: omega,
+        phase_sq_total: psq_total,
+        mass_sq_total: msq_total,
+        alpha_em: alpha,
+        omega_energy,
     }
 }
 
@@ -505,7 +547,7 @@ fn print_usage() {
     eprintln!("Usage: causal_set_sim [N] [M] [output_dir] [--stream | --inmemory]");
     eprintln!();
     eprintln!("  N           Number of spacetime events (default: 5000)");
-    eprintln!("  M           Ensemble realisations     (default: 10)");
+    eprintln!("  M           Max ensemble realisations (default: 50, or use --max-ensemble)");
     eprintln!("  output_dir  Directory for results     (default: current dir)");
     eprintln!();
     eprintln!("Flags:");
@@ -516,7 +558,16 @@ fn print_usage() {
     eprintln!("  --seed <u64>         Base seed (default: system clock for real entropy)");
     eprintln!("  --threads <usize>    Max parallel realisations (default: auto by RAM/cores)");
     eprintln!("  --eigen-cutoff <N>   Eigendecomp threshold (default: 3000)");
+    eprintln!("  --batch-size <N>     Max concurrent realizations per batch (default: 4)");
+    eprintln!("  --max-ensemble <N>   Safety cap on realisations (default: 50)");
+    eprintln!("  --min-ensemble <N>   Min realisations before convergence check (default: 8)");
+    eprintln!("  --target-error <F>   Relative SE target for convergence (default: 0.01)");
+    eprintln!("  --resume             Resume from last checkpoint (skips completed batches)");
+    eprintln!("  --export-slice <PATH>  Export topology slice (single realization, no ensemble)");
     eprintln!("  --help               Show this help message");
+    eprintln!();
+    eprintln!("Convergence: runs batches until rel. standard error on mass_gen1 drops");
+    eprintln!("below --target-error, or M reaches the safety cap (whichever comes first).");
     eprintln!();
     eprintln!("Config: Place a causal_set.toml in the output directory to set RAM limits.");
     eprintln!("  max_ram_gb = 6.0       # hard ceiling in GB (0 = auto-detect)");
@@ -538,6 +589,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Parse flags (position-independent)
     let force_stream = args.iter().any(|a| a == "--stream");
     let force_inmemory = args.iter().any(|a| a == "--inmemory");
+    let resume = args.iter().any(|a| a == "--resume");
 
     // Parse value flags via windows(2)
     let mut epsilon: f64 = 0.01;
@@ -545,6 +597,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut parsed_seed: Option<u64> = None;
     let mut parsed_threads: Option<usize> = None;
     let mut parsed_eigen_cutoff: Option<usize> = None;
+    let mut parsed_batch_size: Option<usize> = None;
+    let mut parsed_max_ensemble: Option<usize> = None;
+    let mut parsed_min_ensemble: Option<usize> = None;
+    let mut parsed_target_error: Option<f64> = None;
+    let mut export_slice_path: Option<String> = None;
     for pair in args.windows(2) {
         if pair[0] == "--epsilon" {
             if let Ok(v) = pair[1].parse::<f64>() { epsilon = v; }
@@ -561,11 +618,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if pair[0] == "--eigen-cutoff" {
             if let Ok(v) = pair[1].parse::<usize>() { parsed_eigen_cutoff = Some(v); }
         }
+        if pair[0] == "--batch-size" {
+            if let Ok(v) = pair[1].parse::<usize>() { parsed_batch_size = Some(v); }
+        }
+        if pair[0] == "--max-ensemble" {
+            if let Ok(v) = pair[1].parse::<usize>() { parsed_max_ensemble = Some(v); }
+        }
+        if pair[0] == "--min-ensemble" {
+            if let Ok(v) = pair[1].parse::<usize>() { parsed_min_ensemble = Some(v); }
+        }
+        if pair[0] == "--target-error" {
+            if let Ok(v) = pair[1].parse::<f64>() { parsed_target_error = Some(v); }
+        }
+        if pair[0] == "--export-slice" {
+            export_slice_path = Some(pair[1].clone());
+        }
     }
 
     // Flags that consume the next argument
     let value_flags: std::collections::HashSet<&str> =
-        ["--epsilon", "--tmax", "--seed", "--threads", "--eigen-cutoff"]
+        ["--epsilon", "--tmax", "--seed", "--threads", "--eigen-cutoff", "--batch-size",
+         "--max-ensemble", "--min-ensemble", "--target-error", "--export-slice"]
         .iter().copied().collect();
 
     // Parse positional args (skip flags and their values)
@@ -584,10 +657,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .first()
         .and_then(|s| s.parse().ok())
         .unwrap_or(5000);
-    let m_ensemble: usize = positional
+    let positional_m: usize = positional
         .get(1)
         .and_then(|s| s.parse().ok())
-        .unwrap_or(DEFAULT_ENSEMBLE);
+        .unwrap_or(DEFAULT_MAX_ENSEMBLE);
+    let max_ensemble: usize = parsed_max_ensemble.unwrap_or(positional_m);
+    let min_ensemble: usize = parsed_min_ensemble.unwrap_or(DEFAULT_MIN_ENSEMBLE);
+    let target_error: f64 = parsed_target_error.unwrap_or(DEFAULT_TARGET_ERROR);
     let cli_output_dir: Option<String> = positional.get(2).map(|s| s.to_string());
 
     // ── Seed + Eigen cutoff ──────────────────────────────────────────
@@ -629,8 +705,63 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "mc-walkers"
     };
     println!(
-        "Causal Set Spectral Dimension  (N={n_points}, M={m_ensemble}, tier={tier}, mode={exec_mode:?})\n"
+        "Causal Set Spectral Dimension  (N={n_points}, M\u{2265}{min_ensemble}\u{2264}{max_ensemble} (adaptive, target \u{03b5}={target_error}), tier={tier}, mode={exec_mode:?})\n"
     );
+
+    // ── Export-slice early exit (Phases 1-2 only, no spectral walkers) ──
+    if let Some(ref slice_path) = export_slice_path {
+        use causal_set_sim::anim_export;
+
+        println!("[export-slice] Running single realization (seed={seed_base})...");
+
+        let mut rng = StdRng::seed_from_u64(seed_base);
+        let (pts_raw, _big_t) = diamond::sprinkle(n_points, &mut rng);
+        let (pts, vac_head, vac_data, momentum) = if n_points <= eigen_cutoff {
+            diamond::build_hasse_sparse(&pts_raw)
+        } else {
+            diamond::build_hasse_direct(&pts_raw)
+        };
+        drop(pts_raw);
+
+        let (defect, _topo, causal_prisms) =
+            skyrmion::apply_defect(n_points, vac_head, vac_data, momentum);
+
+        // Extract directed Hasse edges from vacuum CSR (past→future by time ordering)
+        let mut hasse_edges = Vec::new();
+        for u in 0..n_points {
+            let start = defect.vac_head[u] as usize;
+            let end = defect.vac_head[u + 1] as usize;
+            for &v in &defect.vac_data[start..end] {
+                if pts[u][0] < pts[v as usize][0] {
+                    hasse_edges.push((u as u32, v));
+                }
+            }
+        }
+
+        // Convert CausalPrism → PrismDef (usize → u32)
+        let prism_defs: Vec<anim_export::PrismDef> = causal_prisms.iter().map(|p| {
+            anim_export::PrismDef {
+                origin: p.origin as u32,
+                destination: p.destination as u32,
+                intermediates: p.intermediates.iter().map(|&i| i as u32).collect(),
+            }
+        }).collect();
+
+        let slice = anim_export::TopologySlice {
+            n_total: n_points,
+            coordinates: pts,
+            hasse_edges,
+            prisms: prism_defs,
+        };
+
+        anim_export::write_slice(slice_path, &slice)?;
+
+        let file_size = std::fs::metadata(slice_path).map(|m| m.len()).unwrap_or(0);
+        println!("[export-slice] Wrote {} ({} bytes)", slice_path, file_size);
+        println!("  {} coordinates, {} edges, {} prisms",
+            slice.n_total, slice.hasse_edges.len(), slice.prisms.len());
+        return Ok(());
+    }
 
     // ── Causal Resolution Theorem: W = ⌈t_max² / ε²⌉ ──────────────
     let walkers: usize = ((tmax as f64 / epsilon).powi(2)).ceil() as usize;
@@ -658,18 +789,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     //   In-memory:  bounded by RAM (full CSR is huge)
     //   Streaming:  bounded by CPU cores (core CSR is ~1-2 GB)
     let max_concurrent_runs = if let Some(t) = parsed_threads {
-        t.min(m_ensemble).max(1)
+        t.min(max_ensemble).max(1)
     } else if exec_mode == ExecMode::Streaming {
         let cpus = std::thread::available_parallelism()
             .map(|p| p.get())
             .unwrap_or(4);
-        cpus.min(m_ensemble).min(8)
+        cpus.min(max_ensemble).min(8)
     } else {
         memory::max_concurrent_runs(n_points)
     };
 
+    // Cap concurrency at batch_size to bound peak memory
+    let batch_size = parsed_batch_size.unwrap_or(DEFAULT_BATCH_SIZE).max(1);
+    let max_concurrent_runs = max_concurrent_runs.min(batch_size);
+
     let mode_label = if exec_mode == ExecMode::Streaming { "hybrid-parallel" } else { "in-memory" };
-    println!("  (parallel ensemble — {mode_label}, concurrency: {max_concurrent_runs})\n");
+    println!("  (parallel ensemble — {mode_label}, concurrency: {max_concurrent_runs}, \
+              per-realization checkpoint, adaptive convergence)\n");
 
     let done = AtomicUsize::new(0);
     let pool = rayon::ThreadPoolBuilder::new()
@@ -691,19 +827,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let completed = done.fetch_add(1, Ordering::Relaxed) + 1;
         let elapsed = t0.elapsed().as_secs_f64();
-        let remaining = m_ensemble - completed;
+        let remaining = max_ensemble.saturating_sub(completed);
 
         let msg = if completed == 1 && remaining > 0 {
             let eta = elapsed * remaining as f64;
-            format!("  [done {completed}/{m_ensemble}]  first realization took {} — ETA remaining: ~{}",
+            format!("  [done {completed}/{max_ensemble}]  first realization took {} — ETA remaining: ~{}",
                     fmt_duration(elapsed), fmt_duration(eta))
         } else if remaining > 0 {
             let rate = elapsed / completed as f64 / max_concurrent_runs as f64;
             let eta = rate * remaining as f64;
-             format!("  [done {completed}/{m_ensemble}]  elapsed {} — ETA remaining: ~{}",
+             format!("  [done {completed}/{max_ensemble}]  elapsed {} — ETA remaining: ~{}",
                     fmt_duration(elapsed), fmt_duration(eta))
         } else {
-             format!("  [done {completed}/{m_ensemble}]  elapsed {}", fmt_duration(elapsed))
+             format!("  [done {completed}/{max_ensemble}]  elapsed {}", fmt_duration(elapsed))
         };
 
         println!("{msg}");
@@ -715,19 +851,188 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         result
     };
 
-    let results: Vec<(SpectralResult, SpectralResult, skyrmion::TopologySummary)> = pool.install(|| {
-        (0..m_ensemble)
-            .into_par_iter()
-            .with_max_len(1)
-            .map(run_one)
-            .collect()
-    });
+    // ── Checkpoint: build parameter fingerprint + try resume ────────────
+    let mode_str_ckpt = if exec_mode == ExecMode::Streaming { "streaming" } else { "inmemory" };
+    let run_params = checkpoint::make_params(
+        n_points, seed_base, epsilon, tmax, eigen_cutoff, mode_str_ckpt,
+    );
 
-    // ── Split spectral + topology, then average ───────────────────────────
-    let (spectral_pairs, topo_vec): (Vec<_>, Vec<_>) = results.into_iter()
-        .map(|(v, d, t)| ((v, d), t))
-        .unzip();
+    let mut spectral_pairs: Vec<(SpectralResult, SpectralResult)> =
+        Vec::with_capacity(max_ensemble);
+    let mut topo_vec: Vec<skyrmion::TopologySummary> =
+        Vec::with_capacity(max_ensemble);
+    let mut welford_mean: f64 = 0.0;
+    let mut welford_m2: f64 = 0.0;
+
+    let start_from = if resume {
+        match checkpoint::load(&output_dir, &run_params) {
+            Ok(ckpt) => {
+                println!("  Resuming: {}/{} realizations completed", ckpt.completed, max_ensemble);
+                spectral_pairs = ckpt.spectral_pairs;
+                topo_vec = ckpt.topo_vec;
+                welford_mean = ckpt.welford_mean;
+                welford_m2 = ckpt.welford_m2;
+                done.store(ckpt.completed, Ordering::Relaxed);
+                ckpt.completed
+            }
+            Err(msg) => {
+                eprintln!("  --resume: {msg}");
+                0
+            }
+        }
+    } else {
+        0
+    };
+
+    // ── Adaptive Batching with Per-Realization Checkpointing ───────────────
+    //
+    // Process realizations in batches of `max_concurrent_runs`.  Each batch
+    // runs in parallel via Rayon; between batches the heavy CSR graphs
+    // (~3 GB each at N=10M) are freed, keeping only the lightweight
+    // SpectralResult accumulator (~10 KB per realization).
+    //
+    // After each batch, results are drained one at a time.  Each individual
+    // result triggers a Welford update AND a checkpoint write.  This means
+    // a crash mid-batch loses the in-flight realizations, but every fully
+    // completed realization is persisted immediately.
+    //
+    // Peak memory: max_concurrent_runs × ~3 GB  (not M × 3 GB).
+
+    let mut current = start_from;
+    let mut converged = false;
+
+    while current < max_ensemble && !converged {
+        let batch_end = (current + max_concurrent_runs).min(max_ensemble);
+        let chunk: Vec<usize> = (current..batch_end).collect();
+
+        println!("  \u{2500}\u{2500} Batch (realizations {}-{}/{}) \u{2500}\u{2500}",
+            current + 1, batch_end, max_ensemble);
+
+        let batch_results: Vec<(SpectralResult, SpectralResult, skyrmion::TopologySummary)> =
+            pool.install(|| {
+                chunk.par_iter()
+                    .with_max_len(1)
+                    .map(|&i| run_one(i))
+                    .collect()
+            });
+
+        // ── Backup checkpoint before combining new batch ──────────────
+        if current > start_from {
+            let ckpt_path = std::path::Path::new(&output_dir).join(".checkpoint.bin");
+            if ckpt_path.exists() {
+                let backup = std::path::Path::new(&output_dir)
+                    .join(format!(".checkpoint.bin.bak.{current}"));
+                if let Err(e) = std::fs::copy(&ckpt_path, &backup) {
+                    eprintln!("  [backup] warning: {e}");
+                } else {
+                    println!("  [backup] .checkpoint.bin → {}", backup.display());
+                }
+            }
+        }
+
+        // Drain batch: Welford update + checkpoint after EACH realization
+        for (vac, def, topo) in batch_results {
+            let x = def.mass_gen1;
+            spectral_pairs.push((vac, def));
+            topo_vec.push(topo);
+
+            // Welford online update
+            let count = spectral_pairs.len();
+            let delta = x - welford_mean;
+            welford_mean += delta / count as f64;
+            let delta2 = x - welford_mean;
+            welford_m2 += delta * delta2;
+
+            // Checkpoint after EACH realization (atomic write — crash-safe)
+            if let Err(e) = checkpoint::save(
+                &output_dir, &run_params, &spectral_pairs, &topo_vec,
+                welford_mean, welford_m2,
+            ) {
+                eprintln!("  [checkpoint] warning: {e}");
+            }
+        }
+
+        // Convergence check (after full batch drained)
+        // Require min_ensemble samples before checking — with fewer samples,
+        // the Welford variance estimator is unstable (t-distribution with
+        // < 7 d.f. underestimates the true SE, causing false convergence).
+        let count = spectral_pairs.len();
+        if count >= min_ensemble && welford_mean.abs() > 1e-12 {
+            let variance = welford_m2 / (count - 1) as f64;  // Bessel correction
+            let std_error = (variance / count as f64).sqrt();
+            let rel_error = std_error / welford_mean.abs();
+
+            println!("  [convergence] M={count}, mass_gen1={welford_mean:.4}, \
+                      SE={std_error:.4}, rel_err={rel_error:.6}");
+
+            if rel_error <= target_error {
+                println!("  \u{2713} Statistical convergence reached \
+                          (rel_err={rel_error:.6} \u{2264} {target_error})");
+                converged = true;
+            }
+        } else {
+            println!("  [checkpoint: {count}/{max_ensemble}]");
+        }
+
+        // ── Accumulation metadata log ─────────────────────────────────
+        {
+            use std::io::Write;
+            let log_path = format!("{output_dir}/accumulation.log");
+            if let Ok(mut f) = std::fs::OpenOptions::new()
+                .create(true).append(true).open(&log_path)
+            {
+                let count = spectral_pairs.len();
+                let variance = if count > 1 { welford_m2 / (count - 1) as f64 } else { 0.0 };
+                let std_error = if count > 1 { (variance / count as f64).sqrt() } else { 0.0 };
+                let elapsed = t0.elapsed().as_secs();
+                let _ = writeln!(f,
+                    "batch {}-{}/{} | realizations={} | mass_gen1_mean={:.4} | SE={:.6} | rel_err={:.6} | converged={} | elapsed={}s",
+                    current + 1, batch_end, max_ensemble,
+                    count, welford_mean, std_error,
+                    if welford_mean.abs() > 1e-12 { std_error / welford_mean.abs() } else { f64::NAN },
+                    converged, elapsed,
+                );
+            }
+        }
+
+        // ── Intermediate CSV snapshot (generational, non-destructive) ────
+        {
+            let count = spectral_pairs.len();
+            let (snap_vac, snap_def) = average_ensemble(&spectral_pairs, &steps);
+            let snap_topo = aggregate_topology(&topo_vec);
+            let elapsed = t0.elapsed().as_secs();
+            let mode_str = if exec_mode == ExecMode::Streaming { "streaming" } else { "in-memory" };
+            let snap_meta = format!(
+                "N: {n_points}  M: {count} (intermediate snapshot)  mode: {mode_str}\n\
+                 epsilon: {epsilon}  tmax: {tmax}  walkers: {walkers}\n\
+                 seed: {seed_base}  elapsed: {elapsed}s"
+            );
+            output::write_csv(
+                &format!("{output_dir}/results_M{count:02}.csv"),
+                &steps, &snap_vac, &snap_def, &snap_meta,
+            );
+            output::export_topology_summary(
+                &format!("{output_dir}/topology_summary_M{count:02}.csv"),
+                &snap_topo, &snap_meta,
+            );
+            output::export_mass_spectrum(
+                &format!("{output_dir}/mass_spectrum_M{count:02}.csv"),
+                &snap_topo.prism_histogram, &snap_meta,
+            );
+            println!("  [snapshot] wrote *_M{count:02}.csv ({count} realizations, {elapsed}s)");
+        }
+
+        current = batch_end;
+    }
+
+    if !converged && current >= max_ensemble {
+        println!("  [warning] Safety cap M={max_ensemble} reached before convergence");
+    }
+
+    // ── Ensemble average from accumulated results ─────────────────────────
+    let actual_m = spectral_pairs.len();
     let (vac_avg, def_avg) = average_ensemble(&spectral_pairs, &steps);
+    drop(spectral_pairs); // free accumulator before Phase 4 output
     let topo_agg = aggregate_topology(&topo_vec);
 
     // ── Phase 4 ─────────────────────────────────────────────────────────
@@ -773,9 +1078,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let metadata = format!(
         "commit: {commit_str}\n\
-         N: {n_points}  M: {m_ensemble}  mode: {mode_str}\n\
+         N: {n_points}  M: {actual_m} (converged={converged}, min={min_ensemble}, max={max_ensemble})  mode: {mode_str}\n\
          epsilon: {epsilon}  tmax: {tmax}  walkers: {walkers}\n\
-         algorithm: forward-forward belly (children(u) ∩ parents(v))\n\
+         algorithm: forward-forward belly (children(u) \u{2229} parents(v))\n\
          timestamp: {timestamp}\n\
          seed: {seed_base}"
     );
@@ -788,11 +1093,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         &format!("{output_dir}/mass_spectrum.csv"), &topo_agg.prism_histogram, &metadata,
     );
 
+    // Keep checkpoint for --resume accumulation across runs.
+    // CSV and checkpoint coexist; checkpoint is never deleted.
+
     // ── Summary ─────────────────────────────────────────────────────────
     let mid = steps.len() / 2;
     let last = steps.len() - 1;
     let elapsed = t0.elapsed().as_secs_f64();
-    println!("\n── Summary ({m_ensemble} realisations) ────────────────────────");
+    println!("\n── Summary ({actual_m} realisations, converged={converged}) ────────────────────────");
     println!(
         "  d_S vacuum global  (t={}): {:.2}",
         steps[mid], vac_avg.ds_global[mid]

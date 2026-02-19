@@ -63,16 +63,24 @@
 //!   - Signature encoding:   bit-packed quartile bulk-momentum over all prism components
 
 use rayon::prelude::*;
+use serde::{Serialize, Deserialize};
 
 /// Fraction of nodes selected as topological core (numerator / denominator).
 const CORE_NUM: usize = 1;
 const CORE_DEN: usize = 10;
 
 /// Minimum shared intermediates to qualify as a Causal Prism (K_{2,N}, N ≥ 3).
+///
+/// Derived: Uniqueness of Bifurcation-Convergence (Vol II, Thm 4.2) requires
+/// ≥ 3 independent length-2 paths in a K₃-free graph.  K_{2,2} gives S₂ → U(1)
+/// only; SU(3) gauge structure requires S₃, i.e. N ≥ 3 (Vol II, Sole Principle of Interaction).
 const MIN_PRISM_SHARED: usize = 3;
 
-/// A node connected to both poles AND ≥ PRISM_THREAT intermediates threatens
-/// to collapse the bipartite topology and must be contracted.
+/// K₅ threat threshold: external node connected to both poles AND ≥ 2
+/// intermediates → 5 mutually reachable vertices → K₅ minor.
+///
+/// Derived: Kuratowski's Theorem (Kuratowski Calculus, Axiom §1.4).
+/// Absorption into nearest pole is the minimal planarity-preserving operation.
 const PRISM_THREAT: usize = 2;
 
 // ─── Data Structures ─────────────────────────────────────────────────────────
@@ -82,11 +90,11 @@ const PRISM_THREAT: usize = 2;
 /// Origin and Destination are the two poles (at graph-distance ≥ 2 in the
 /// undirected Hasse).  Intermediates are their N ≥ 3 shared neighbours —
 /// mutually disconnected by the triangle-free property.
-#[derive(Debug, Clone)]
-struct CausalPrism {
-    origin: usize,
-    destination: usize,
-    intermediates: Vec<usize>,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CausalPrism {
+    pub origin: usize,
+    pub destination: usize,
+    pub intermediates: Vec<usize>,
 }
 
 /// Result of the Causal Prism contraction with particle classification.
@@ -111,7 +119,7 @@ pub struct DefectResult {
     pub gen3_nodes: Vec<usize>,
     /// Anti-Generation 1 prism node indices — CPT conjugate (positron-like).
     pub anti1_nodes: Vec<usize>,
-    /// Sterile prism node indices — prisms with N > 5 intermediates (dark matter candidates, Conjecture C6).
+    /// Sterile prism node indices — prisms with Φ = 0 (fully phase-cancelled, dark matter).
     pub sterile_nodes: Vec<usize>,
     /// Merge map: `merge_into[i]` = canonical node.  Identity for non-merged nodes.
     pub merge_into: Vec<usize>,
@@ -130,7 +138,7 @@ pub struct DefectResult {
 /// Exported alongside spectral results so that `output.rs` can write
 /// `topology_summary.csv` and `mass_spectrum.csv` without reaching back
 /// into the defect graph.
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct TopologySummary {
     pub total_nodes: usize,
     pub total_prisms: usize,
@@ -139,7 +147,7 @@ pub struct TopologySummary {
     pub count_gen2: usize,
     pub count_gen3: usize,
     pub count_antigen1: usize,
-    /// Number of sterile prism nodes (N > 5 intermediates, dark matter candidates).
+    /// Number of sterile prism nodes (Φ = 0, fully phase-cancelled).
     pub count_sterile: usize,
     pub avg_mass_gen1: f64,
     pub avg_mass_gen2: f64,
@@ -148,6 +156,24 @@ pub struct TopologySummary {
     pub avg_mass_sterile: f64,
     /// Histogram of committed prisms by belly size: (N_intermediates, frequency).
     pub prism_histogram: Vec<(usize, usize)>,
+    /// Phase-coherence mass decomposition (Theorem: zero free parameters).
+    /// Σ|Φ(P)| — total visible (EM) mass across all prisms.
+    pub visible_mass_total: usize,
+    /// Σ(N - |Φ(P)|) — total dark mass across all prisms.
+    pub dark_mass_total: usize,
+    /// ΣN — total gravitational mass across all prisms.
+    pub grav_mass_total: usize,
+    /// Ω_dark / Ω_vis = Σ(N - |Φ|) / Σ|Φ| — linear mass ratio.
+    pub omega_ratio: f64,
+    /// Σ|Φ(P)|² — total EM self-energy (numerator of α).
+    pub phase_sq_total: usize,
+    /// ΣN² — total gravitational self-energy (denominator of α).
+    pub mass_sq_total: usize,
+    /// α = Q_topo / (8π) — emergent fine structure constant.
+    pub alpha_em: f64,
+    /// Ω_energy = 1/Q_topo − 1 = (ΣN² − Σ|Φ|²) / Σ|Φ|² — self-energy dark matter ratio.
+    /// Satisfies the exact identity α(1 + Ω_energy) = 1/(8π).
+    pub omega_energy: f64,
 }
 
 /// Build a frequency histogram of committed prism belly sizes.
@@ -221,7 +247,7 @@ pub fn apply_defect(
     adj_head_vac: Vec<u32>,
     adj_data_vac: Vec<u32>,
     bulk_momentum: Vec<i32>,
-) -> (DefectResult, TopologySummary) {
+) -> (DefectResult, TopologySummary, Vec<CausalPrism>) {
 
     // ════════════════════════════════════════════════════════════════
     //  1. CSR helpers (Zero-Copy, sorted adjacency guaranteed by Phase 1)
@@ -480,17 +506,47 @@ pub fn apply_defect(
     }
 
     // ════════════════════════════════════════════════════════════════
-    //  4. Topological signature → generation map
+    //  4. Topological signature (diagnostic) + Vol I phase classification
+    //
+    //  φ(w) = sign(bulk_momentum[w]) ∈ {-1, 0, +1}  — causal phase
+    //  g(P) = |{φ(w_i) : w_i ∈ intermediates}|       — generation (1,2,3)
+    //  Φ(P) = Σ φ(w_i)                               — net phase
+    //  Matter: Φ > 0, Antimatter: Φ < 0
     // ════════════════════════════════════════════════════════════════
+
+    // Diagnostic: keep quartile signature for logging
     let mut sig_map: std::collections::HashMap<u32, Vec<usize>> =
         std::collections::HashMap::new();
-
     for prism in &prisms {
         let sig = prism_signature(prism, &bulk_momentum);
         let mut nodes = vec![prism.origin, prism.destination];
         nodes.extend_from_slice(&prism.intermediates);
         sig_map.entry(sig).or_default().extend(nodes);
     }
+
+    // Vol I phase classification
+    struct PrismClass {
+        generation: usize,   // g(P) = 1, 2, or 3
+        net_phase: i32,      // Φ(P) = Σ φ(w_i)
+        nodes: Vec<usize>,   // all component nodes
+        n_inter: usize,      // mass = number of intermediates
+    }
+
+    let classify_prism = |prism: &CausalPrism| -> PrismClass {
+        let mut phase_set = std::collections::HashSet::new();
+        let mut net_phase: i32 = 0;
+        for &w in &prism.intermediates {
+            let phi = bulk_momentum[w].signum();
+            phase_set.insert(phi);
+            net_phase += phi;
+        }
+        let generation = phase_set.len(); // 1, 2, or 3
+        let mut nodes = vec![prism.origin, prism.destination];
+        nodes.extend_from_slice(&prism.intermediates);
+        PrismClass { generation, net_phase, nodes, n_inter: prism.intermediates.len() }
+    };
+
+    let classifications: Vec<PrismClass> = prisms.iter().map(|p| classify_prism(p)).collect();
 
     // ════════════════════════════════════════════════════════════════
     //  5. Threat detection & contraction
@@ -502,25 +558,42 @@ pub fn apply_defect(
     let mut is_merged  = vec![false; n];
     let mut merge_count = 0usize;
 
+    // Undirected adjacency check: t↔v exists if t→v OR v→t in the directed Hasse.
+    // The K₅ threat criterion is topological (undirected), not causal (directed).
+    let connected_undirected = |u: usize, v: usize| -> bool {
+        connected(u, v as u32) || connected(v, u as u32)
+    };
+
     for prism in &prisms {
         let deg_o = (adj_head_vac[prism.origin + 1] - adj_head_vac[prism.origin]) as usize;
         let deg_d = (adj_head_vac[prism.destination + 1] - adj_head_vac[prism.destination]) as usize;
         let absorber = if deg_o >= deg_d { prism.origin } else { prism.destination };
 
-        // Gather all external neighbours of the prism components.
+        // Gather all external neighbours of the prism components (BOTH directions).
+        // Forward (children) + reverse (parents) — CPT-symmetric threat scan.
         let mut threats: std::collections::HashSet<usize> = std::collections::HashSet::new();
         for &v in get_nb(prism.origin)       { threats.insert(v as usize); }
         for &v in get_nb(prism.destination)  { threats.insert(v as usize); }
         for &w in &prism.intermediates {
             for &v in get_nb(w) { threats.insert(v as usize); }
         }
+        for &v in get_nb_rev(prism.origin)       { threats.insert(v as usize); }
+        for &v in get_nb_rev(prism.destination)  { threats.insert(v as usize); }
+        for &w in &prism.intermediates {
+            for &v in get_nb_rev(w) { threats.insert(v as usize); }
+        }
+
+        // Remove prism members from threat candidates
+        threats.remove(&prism.origin);
+        threats.remove(&prism.destination);
+        for &w in &prism.intermediates { threats.remove(&w); }
 
         for t in threats {
             if is_placed[t] || is_merged[t] { continue; }
-            let to_origin = connected(t, prism.origin as u32);
-            let to_dest   = connected(t, prism.destination as u32);
+            let to_origin = connected_undirected(t, prism.origin);
+            let to_dest   = connected_undirected(t, prism.destination);
             let to_inter: usize = prism.intermediates.iter()
-                .filter(|&&w| connected(t, w as u32))
+                .filter(|&&w| connected_undirected(t, w))
                 .count();
             if (to_origin && to_dest) && to_inter >= PRISM_THREAT {
                 merge_into[t] = absorber;
@@ -558,18 +631,20 @@ pub fn apply_defect(
     // ════════════════════════════════════════════════════════════════
     let mut def_edges: Vec<(u32, u32)> = Vec::new();
 
+    // The vacuum CSR is DIRECTED (forward-only: u→v where u ≺ v causally).
+    // Each edge appears exactly once.  Do NOT filter by index ordering
+    // (u < v) — in the cell-sorted build_hasse_direct path, index order
+    // does not match time order within the same quantised time layer.
     for u in 0..n {
         let start = adj_head_vac[u] as usize;
         let end   = adj_head_vac[u + 1] as usize;
         for &v_u32 in &adj_data_vac[start..end] {
             let v = v_u32 as usize;
-            if u < v {
-                let ri = merge_into[u] as u32;
-                let ci = merge_into[v] as u32;
-                if ri != ci {
-                    def_edges.push((ri, ci));
-                    def_edges.push((ci, ri));
-                }
+            let ri = merge_into[u] as u32;
+            let ci = merge_into[v] as u32;
+            if ri != ci {
+                def_edges.push((ri, ci));
+                def_edges.push((ci, ri));
             }
         }
     }
@@ -606,57 +681,67 @@ pub fn apply_defect(
     let defect_core: Vec<usize> = core_nodes.iter().filter(|&&i| !is_merged[i]).cloned().collect();
 
     // ════════════════════════════════════════════════════════════════
-    //  9. Generation classification
+    //  9. Generation classification (Vol I: phase class counting)
+    //
+    //  Gen g = prisms with g(P) = g distinct phase classes.
+    //  Gen1 matter: g=1, Φ>0.  Anti1: g=1, Φ<0.
     // ════════════════════════════════════════════════════════════════
+    let mut gen1_nodes: Vec<usize> = Vec::new();
+    let mut gen2_nodes: Vec<usize> = Vec::new();
+    let mut gen3_nodes: Vec<usize> = Vec::new();
+    let mut anti1_nodes: Vec<usize> = Vec::new();
+
+    for c in &classifications {
+        match c.generation {
+            1 => {
+                if c.net_phase > 0 {
+                    gen1_nodes.extend_from_slice(&c.nodes);
+                } else if c.net_phase < 0 {
+                    anti1_nodes.extend_from_slice(&c.nodes);
+                } else {
+                    // Φ = 0 within g=1 means all intermediates have bm = 0.
+                    // Assign to gen1 (matter-neutral, still generation 1).
+                    gen1_nodes.extend_from_slice(&c.nodes);
+                }
+            }
+            2 => gen2_nodes.extend_from_slice(&c.nodes),
+            3 => gen3_nodes.extend_from_slice(&c.nodes),
+            _ => {} // g > 3 impossible with φ ∈ {-1, 0, +1}
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  10. Mass Spectrum (Topological Inertia)
+    //
+    //  Mass = N (number of intermediates), averaged per generation.
+    // ════════════════════════════════════════════════════════════════
+    let avg_mass = |gen: usize, matter: Option<bool>| -> f64 {
+        let matching: Vec<&PrismClass> = classifications.iter()
+            .filter(|c| c.generation == gen && match matter {
+                Some(true) => c.net_phase > 0 || (c.net_phase == 0 && gen == 1),
+                Some(false) => c.net_phase < 0,
+                None => true,
+            })
+            .collect();
+        if matching.is_empty() { return 0.0; }
+        let total: usize = matching.iter().map(|c| c.n_inter).sum();
+        total as f64 / matching.len() as f64
+    };
+
+    let mass_gen1  = avg_mass(1, Some(true));
+    let mass_gen2  = avg_mass(2, None);
+    let mass_gen3  = avg_mass(3, None);
+    let mass_anti1 = avg_mass(1, Some(false));
+
+    // Diagnostic: quartile signature summary (for backwards compatibility in logs)
     let mut sig_counts: Vec<(u32, usize)> = sig_map.iter()
         .map(|(&s, v)| (s, v.len())).collect();
     sig_counts.sort_unstable_by(|a, b| b.1.cmp(&a.1));
 
-    let top_sig   = sig_counts.first().map(|&(s, _)| s);
-    let a_sig     = top_sig.map(anti_signature);
-
-    let get_gen = |idx: usize| -> Vec<usize> {
-        sig_counts.get(idx)
-            .and_then(|&(s, _)| sig_map.get(&s))
-            .cloned()
-            .unwrap_or_default()
-    };
-
-    let gen1_nodes  = get_gen(0);
-    let gen2_nodes  = get_gen(1);
-    let gen3_nodes  = get_gen(2);
-    let anti1_nodes = a_sig.and_then(|s| sig_map.get(&s)).cloned().unwrap_or_default();
-
-    // ════════════════════════════════════════════════════════════════
-    //  10. Mass Spectrum (Topological Inertia)
-    // ════════════════════════════════════════════════════════════════
-    // Mass = N (number of intermediates). Map signature → prisms.
-    let mut sig_to_prisms: std::collections::HashMap<u32, Vec<&CausalPrism>> =
-        std::collections::HashMap::new();
-    for prism in &prisms {
-        let sig = prism_signature(prism, &bulk_momentum);
-        sig_to_prisms.entry(sig).or_default().push(prism);
-    }
-
-    let calc_mass = |sig_opt: Option<u32>| -> f64 {
-        sig_opt
-            .and_then(|sig| sig_to_prisms.get(&sig))
-            .map(|ps| {
-                let total: usize = ps.iter().map(|p| p.intermediates.len()).sum();
-                total as f64 / ps.len() as f64
-            })
-            .unwrap_or(0.0)
-    };
-
-    let mass_gen1  = calc_mass(top_sig);
-    let mass_gen2  = calc_mass(sig_counts.get(1).map(|&(s, _)| s));
-    let mass_gen3  = calc_mass(sig_counts.get(2).map(|&(s, _)| s));
-    let mass_anti1 = calc_mass(a_sig);
-
     // ── Diagnostics ─────────────────────────────────────────────────
     {
-        let vac_e = adj_data_vac.len() / 2;
-        let def_e = adj_data_def.len() / 2;
+        let vac_e = adj_data_vac.len();       // directed: each edge stored once
+        let def_e = adj_data_def.len() / 2;   // undirected: each edge stored twice
         let mut msg = format!(
             "  Edges: Vac={vac_e} / Def={def_e} (Zero-Copy CSR)\n  \
              Active core: {} / {}", defect_core.len(), vacuum_core.len()
@@ -673,6 +758,14 @@ pub fn apply_defect(
                 msg.push_str(&format!("\n    Rank {}: {s:?}  (nodes={cnt})", i + 1));
             }
         }
+        // Vol I phase classification summary
+        let gen_dist: Vec<usize> = (1..=3).map(|g| {
+            classifications.iter().filter(|c| c.generation == g).count()
+        }).collect();
+        msg.push_str(&format!(
+            "\n  Phase classification (Vol I): g=1:{} g=2:{} g=3:{} prisms",
+            gen_dist[0], gen_dist[1], gen_dist[2]
+        ));
         msg.push_str(&format!(
             "\n  Classified: Gen1={}, Gen2={}, Gen3={}, AntiGen1={}",
             gen1_nodes.len(), gen2_nodes.len(), gen3_nodes.len(), anti1_nodes.len()
@@ -688,28 +781,63 @@ pub fn apply_defect(
     let max_intermediates = prisms.iter()
         .map(|p| p.intermediates.len()).max().unwrap_or(0);
 
-    // ── Sterile prism nodes (N > 5 intermediates, Conjecture C6) ────
-    let gen1_set: std::collections::HashSet<usize> = gen1_nodes.iter().cloned().collect();
-    let gen2_set: std::collections::HashSet<usize> = gen2_nodes.iter().cloned().collect();
-    let gen3_set: std::collections::HashSet<usize> = gen3_nodes.iter().cloned().collect();
-    let anti1_set: std::collections::HashSet<usize> = anti1_nodes.iter().cloned().collect();
+    // ── Phase-coherence mass decomposition (Theorem: zero free parameters) ──
+    //
+    //  M_grav(P) = N,  M_vis(P) = |Φ(P)|,  M_dark(P) = N - |Φ(P)|
+    //  Ω_dark/Ω_vis = Σ(N - |Φ|) / Σ|Φ|
+    //  Q_topo = Σ|Φ|² / ΣN²   (topological charge ratio, intrinsic)
+    //  α_EM  = Q_topo / (8π)   (observed coupling, geometric synthesis)
+    let mut visible_mass_total: usize = 0;
+    let mut dark_mass_total: usize = 0;
+    let mut grav_mass_total: usize = 0;
+    let mut phase_sq_total: usize = 0;
+    let mut mass_sq_total: usize = 0;
+    for c in &classifications {
+        let phi_abs = c.net_phase.unsigned_abs() as usize;
+        visible_mass_total += phi_abs;
+        dark_mass_total += c.n_inter - phi_abs;
+        grav_mass_total += c.n_inter;
+        phase_sq_total += phi_abs * phi_abs;
+        mass_sq_total += c.n_inter * c.n_inter;
+    }
+    let omega_ratio = if visible_mass_total > 0 {
+        dark_mass_total as f64 / visible_mass_total as f64
+    } else { f64::INFINITY };
+    let q_topo = if mass_sq_total > 0 {
+        phase_sq_total as f64 / mass_sq_total as f64
+    } else { 0.0 };
+    let alpha_em = q_topo / (8.0 * std::f64::consts::PI);
+    let omega_energy = if q_topo > 0.0 { 1.0 / q_topo - 1.0 } else { f64::INFINITY };
 
-    let sterile_nodes: Vec<usize> = prisms.iter()
-        .filter(|p| p.intermediates.len() > 5)
-        .flat_map(|p| {
-            std::iter::once(p.origin)
-                .chain(std::iter::once(p.destination))
-                .chain(p.intermediates.iter().cloned())
-        })
-        .filter(|n| !gen1_set.contains(n) && !gen2_set.contains(n)
-                     && !gen3_set.contains(n) && !anti1_set.contains(n))
+    {
+        let msg = format!(
+            "  Phase-coherence: Σ|Φ|={visible_mass_total}  Σ(N-|Φ|)={dark_mass_total}  ΣN={grav_mass_total}\n  \
+             Q_topo = Σ|Φ|²/ΣN² = {q_topo:.6}  |  α = Q/(8π) = {alpha_em:.6}  (1/α = {:.1})\n  \
+             Ω_linear = {omega_ratio:.4}  |  Ω_energy = 1/Q-1 = {omega_energy:.4}  [α(1+Ω)={:.6}  vs 1/(8π)={:.6}]",
+            1.0 / alpha_em,
+            alpha_em * (1.0 + omega_energy),
+            1.0 / (8.0 * std::f64::consts::PI)
+        );
+        println!("{}", msg);
+        use std::fs::OpenOptions; use std::io::Write;
+        if let Ok(mut f) = OpenOptions::new().create(true).append(true).open("simulation.log") {
+            writeln!(f, "{}", msg).ok();
+        }
+    }
+
+    // ── Sterile prism nodes (Φ = 0: fully phase-cancelled → truly dark) ──
+    let sterile_nodes: Vec<usize> = classifications.iter()
+        .filter(|c| c.net_phase == 0)
+        .flat_map(|c| c.nodes.iter().cloned())
         .collect();
 
-    let sterile_prisms: Vec<&CausalPrism> = prisms.iter()
-        .filter(|p| p.intermediates.len() > 5).collect();
-    let avg_mass_sterile = if sterile_prisms.is_empty() { 0.0 } else {
-        let total: usize = sterile_prisms.iter().map(|p| p.intermediates.len()).sum();
-        total as f64 / sterile_prisms.len() as f64
+    let sterile_prisms_count = classifications.iter()
+        .filter(|c| c.net_phase == 0).count();
+    let avg_mass_sterile = if sterile_prisms_count == 0 { 0.0 } else {
+        let total: usize = classifications.iter()
+            .filter(|c| c.net_phase == 0)
+            .map(|c| c.n_inter).sum();
+        total as f64 / sterile_prisms_count as f64
     };
 
     let topology = TopologySummary {
@@ -726,6 +854,14 @@ pub fn apply_defect(
         avg_mass_gen3: mass_gen3,
         avg_mass_sterile,
         prism_histogram,
+        visible_mass_total,
+        dark_mass_total,
+        grav_mass_total,
+        omega_ratio,
+        phase_sq_total,
+        mass_sq_total,
+        alpha_em,
+        omega_energy,
     };
 
     (DefectResult {
@@ -745,7 +881,7 @@ pub fn apply_defect(
         mass_gen2,
         mass_gen3,
         mass_anti1,
-    }, topology)
+    }, topology, prisms)
 }
 
 // ─── Streaming Implementation ─────────────────────────────────────────────────
@@ -981,24 +1117,88 @@ pub fn process_streaming(
         }
     }
 
-    // ── Signature classification ────────────────────────────────────
-    let mut sig_map: std::collections::HashMap<u32, Vec<usize>> =
-        std::collections::HashMap::new();
+    // ── Vol I phase classification (streaming) ──────────────────────
+    //
+    //  φ(w) = sign(bulk_momentum[w]) ∈ {-1, 0, +1}
+    //  g(P) = |{φ(w_i)}|  — generation (1, 2, or 3)
+    //  Φ(P) = Σ φ(w_i)    — matter (Φ>0) vs antimatter (Φ<0)
+    //
+    //  Note: prism indices are LOCAL (core subgraph). Remap to global
+    //  for bulk_momentum lookup.
+
+    let mut starts_gen1:  Vec<usize> = Vec::new();
+    let mut starts_gen2:  Vec<usize> = Vec::new();
+    let mut starts_gen3:  Vec<usize> = Vec::new();
+    let mut starts_anti1: Vec<usize> = Vec::new();
+
+    // For mass computation: (generation, is_matter, n_intermediates)
+    struct StreamPrismClass { generation: usize, net_phase: i32, n_inter: usize }
+    let mut stream_classes: Vec<StreamPrismClass> = Vec::with_capacity(prisms.len());
 
     for prism in &prisms {
-        // Remap local indices to global for bulk_momentum lookup
+        let mut phase_set = std::collections::HashSet::new();
+        let mut net_phase: i32 = 0;
+        for &w_local in &prism.intermediates {
+            let w_global = core_global[w_local];
+            let phi = bulk_momentum[w_global].signum();
+            phase_set.insert(phi);
+            net_phase += phi;
+        }
+        let generation = phase_set.len();
+        let mut nodes = vec![prism.origin, prism.destination];
+        nodes.extend_from_slice(&prism.intermediates);
+
+        stream_classes.push(StreamPrismClass {
+            generation, net_phase, n_inter: prism.intermediates.len(),
+        });
+
+        match generation {
+            1 => {
+                if net_phase > 0 || (net_phase == 0) {
+                    starts_gen1.extend_from_slice(&nodes);
+                }
+                if net_phase < 0 {
+                    starts_anti1.extend_from_slice(&nodes);
+                }
+            }
+            2 => starts_gen2.extend_from_slice(&nodes),
+            3 => starts_gen3.extend_from_slice(&nodes),
+            _ => {}
+        }
+    }
+
+    // Mass spectrum (Vol I)
+    let avg_mass_stream = |gen: usize, matter: Option<bool>| -> f64 {
+        let matching: Vec<&StreamPrismClass> = stream_classes.iter()
+            .filter(|c| c.generation == gen && match matter {
+                Some(true) => c.net_phase > 0 || (c.net_phase == 0 && gen == 1),
+                Some(false) => c.net_phase < 0,
+                None => true,
+            })
+            .collect();
+        if matching.is_empty() { return 0.0; }
+        let total: usize = matching.iter().map(|c| c.n_inter).sum();
+        total as f64 / matching.len() as f64
+    };
+
+    let mass_gen1  = avg_mass_stream(1, Some(true));
+    let mass_gen2  = avg_mass_stream(2, None);
+    let mass_gen3  = avg_mass_stream(3, None);
+    let mass_anti1 = avg_mass_stream(1, Some(false));
+
+    // Diagnostic: quartile signature summary (backwards-compatible logging)
+    let mut sig_map_diag: std::collections::HashMap<u32, usize> =
+        std::collections::HashMap::new();
+    for prism in &prisms {
         let local_prism = CausalPrism {
             origin:        core_global[prism.origin],
             destination:   core_global[prism.destination],
             intermediates: prism.intermediates.iter().map(|&w| core_global[w]).collect(),
         };
         let sig = prism_signature(&local_prism, &bulk_momentum);
-        let mut nodes = vec![prism.origin, prism.destination];
-        nodes.extend_from_slice(&prism.intermediates);
-        sig_map.entry(sig).or_default().extend(nodes);
+        *sig_map_diag.entry(sig).or_insert(0) += 1;
     }
-
-    let mut sig_counts: Vec<(u32, usize)> = sig_map.iter().map(|(&s, v)| (s, v.len())).collect();
+    let mut sig_counts: Vec<(u32, usize)> = sig_map_diag.into_iter().collect();
     sig_counts.sort_unstable_by(|a, b| b.1.cmp(&a.1));
 
     println!("  Top topological signatures:");
@@ -1007,52 +1207,14 @@ pub fn process_streaming(
             (sig & 0x1F) as i32 - 16, ((sig >> 5)  & 0x1F) as i32 - 16,
             ((sig >> 10) & 0x1F) as i32 - 16, ((sig >> 15) & 0x1F) as i32 - 16,
         ];
-        println!("    Rank {}: {s:?}  (nodes={cnt})", i + 1);
+        println!("    Rank {}: {s:?}  (prisms={cnt})", i + 1);
     }
 
-    let top_sig = sig_counts.first().map(|&(s, _)| s);
-    let a_sig   = top_sig.map(anti_signature);
-
-    let get_gen = |idx: usize| -> Vec<usize> {
-        sig_counts.get(idx)
-            .and_then(|&(s, _)| sig_map.get(&s))
-            .cloned()
-            .unwrap_or_default()
-    };
-    let starts_gen1  = get_gen(0);
-    let starts_gen2  = get_gen(1);
-    let starts_gen3  = get_gen(2);
-    let starts_anti1 = a_sig.and_then(|s| sig_map.get(&s)).cloned().unwrap_or_default();
-
-    // ── Mass Spectrum (Topological Inertia) ────────────────────────
-    let mut sig_to_prisms_stream: std::collections::HashMap<u32, Vec<&CausalPrism>> =
-        std::collections::HashMap::new();
-    for prism in &prisms {
-        // Remap local indices to global for bulk_momentum lookup
-        let local_prism = CausalPrism {
-            origin:        core_global[prism.origin],
-            destination:   core_global[prism.destination],
-            intermediates: prism.intermediates.iter().map(|&w| core_global[w]).collect(),
-        };
-        let sig = prism_signature(&local_prism, &bulk_momentum);
-        sig_to_prisms_stream.entry(sig).or_default().push(prism);
-    }
-
-    let calc_mass_stream = |sig_opt: Option<u32>| -> f64 {
-        sig_opt
-            .and_then(|sig| sig_to_prisms_stream.get(&sig))
-            .map(|ps| {
-                let total: usize = ps.iter().map(|p| p.intermediates.len()).sum();
-                total as f64 / ps.len() as f64
-            })
-            .unwrap_or(0.0)
-    };
-
-    let mass_gen1  = calc_mass_stream(top_sig);
-    let mass_gen2  = calc_mass_stream(sig_counts.get(1).map(|&(s, _)| s));
-    let mass_gen3  = calc_mass_stream(sig_counts.get(2).map(|&(s, _)| s));
-    let mass_anti1 = calc_mass_stream(a_sig);
-
+    let gen_dist: Vec<usize> = (1..=3).map(|g| {
+        stream_classes.iter().filter(|c| c.generation == g).count()
+    }).collect();
+    println!("  Phase classification (Vol I): g=1:{} g=2:{} g=3:{} prisms",
+        gen_dist[0], gen_dist[1], gen_dist[2]);
     println!(
         "  Classified: Gen1={}, Gen2={}, Gen3={}, AntiGen1={}",
         starts_gen1.len(), starts_gen2.len(), starts_gen3.len(), starts_anti1.len()
@@ -1132,29 +1294,53 @@ pub fn process_streaming(
     let max_intermediates = prisms.iter()
         .map(|p| p.intermediates.len()).max().unwrap_or(0);
 
-    // ── Sterile prism nodes (N > 5 intermediates, Conjecture C6) ──────
-    let gen1_set: std::collections::HashSet<usize> = starts_gen1.iter().cloned().collect();
-    let gen2_set: std::collections::HashSet<usize> = starts_gen2.iter().cloned().collect();
-    let gen3_set: std::collections::HashSet<usize> = starts_gen3.iter().cloned().collect();
-    let anti1_set: std::collections::HashSet<usize> = starts_anti1.iter().cloned().collect();
+    // ── Phase-coherence mass decomposition (Theorem: zero free parameters) ──
+    let mut visible_mass_total: usize = 0;
+    let mut dark_mass_total: usize = 0;
+    let mut grav_mass_total: usize = 0;
+    let mut phase_sq_total: usize = 0;
+    let mut mass_sq_total: usize = 0;
+    for c in &stream_classes {
+        let phi_abs = c.net_phase.unsigned_abs() as usize;
+        visible_mass_total += phi_abs;
+        dark_mass_total += c.n_inter - phi_abs;
+        grav_mass_total += c.n_inter;
+        phase_sq_total += phi_abs * phi_abs;
+        mass_sq_total += c.n_inter * c.n_inter;
+    }
+    let omega_ratio = if visible_mass_total > 0 {
+        dark_mass_total as f64 / visible_mass_total as f64
+    } else { f64::INFINITY };
+    let q_topo = if mass_sq_total > 0 {
+        phase_sq_total as f64 / mass_sq_total as f64
+    } else { 0.0 };
+    let alpha_em = q_topo / (8.0 * std::f64::consts::PI);
+    let omega_energy = if q_topo > 0.0 { 1.0 / q_topo - 1.0 } else { f64::INFINITY };
 
-    let sterile_nodes: Vec<usize> = prisms.iter()
-        .filter(|p| p.intermediates.len() > 5)
-        .flat_map(|p| {
+    println!("  Phase-coherence: Σ|Φ|={visible_mass_total}  Σ(N-|Φ|)={dark_mass_total}  ΣN={grav_mass_total}");
+    println!("  Q_topo = Σ|Φ|²/ΣN² = {q_topo:.6}  |  α = Q/(8π) = {alpha_em:.6}  (1/α = {:.1})", 1.0 / alpha_em);
+    println!("  Ω_linear = {omega_ratio:.4}  |  Ω_energy = 1/Q-1 = {omega_energy:.4}  [α(1+Ω)={:.6}  vs 1/(8π)={:.6}]",
+        alpha_em * (1.0 + omega_energy), 1.0 / (8.0 * std::f64::consts::PI));
+
+    // ── Sterile prism nodes (Φ = 0: fully phase-cancelled → truly dark) ──
+    let sterile_nodes: Vec<usize> = stream_classes.iter()
+        .enumerate()
+        .filter(|(_, c)| c.net_phase == 0)
+        .flat_map(|(idx, _)| {
+            let p = &prisms[idx];
             std::iter::once(p.origin)
                 .chain(std::iter::once(p.destination))
                 .chain(p.intermediates.iter().cloned())
         })
-        .filter(|n| !gen1_set.contains(n) && !gen2_set.contains(n)
-                     && !gen3_set.contains(n) && !anti1_set.contains(n))
         .collect();
 
-    // Sterile mass: average N for prisms with N > 5
-    let sterile_prisms: Vec<&CausalPrism> = prisms.iter()
-        .filter(|p| p.intermediates.len() > 5).collect();
-    let avg_mass_sterile = if sterile_prisms.is_empty() { 0.0 } else {
-        let total: usize = sterile_prisms.iter().map(|p| p.intermediates.len()).sum();
-        total as f64 / sterile_prisms.len() as f64
+    let sterile_prisms_count = stream_classes.iter()
+        .filter(|c| c.net_phase == 0).count();
+    let avg_mass_sterile = if sterile_prisms_count == 0 { 0.0 } else {
+        let total: usize = stream_classes.iter()
+            .filter(|c| c.net_phase == 0)
+            .map(|c| c.n_inter).sum();
+        total as f64 / sterile_prisms_count as f64
     };
 
     // ── Sterile walkers ──────────────────────────────────────────────
@@ -1187,6 +1373,14 @@ pub fn process_streaming(
         avg_mass_gen3: mass_gen3,
         avg_mass_sterile,
         prism_histogram,
+        visible_mass_total,
+        dark_mass_total,
+        grav_mass_total,
+        omega_ratio,
+        phase_sq_total,
+        mass_sq_total,
+        alpha_em,
+        omega_energy,
     };
 
     // Split into (vacuum, defect) tuple matching in-memory format

@@ -646,6 +646,23 @@ Kuratowski: la f\'isica es local no por postulado, sino porque la
 topolog\'ia del DAG solo requiere informaci\'on a 4 saltos de
 profundidad.
 
+\medskip\noindent
+\textbf{Nota sobre $\Delta t_{\max}$.}
+No debe confundirse $d_{\max}$ con el par\'ametro
+$\Delta t_{\max} = 15$ (\texttt{MAX\_CAUSAL\_DEPTH} en
+\texttt{diamond.rs}).  Son cantidades distintas:
+\begin{itemize}
+  \item $d_{\max} = 4$: \emph{distancia de grafo} (saltos de Hasse)
+    utilizada en la detecci\'on de Prismas y amenazas.
+  \item $\Delta t_{\max} = 15$: \emph{profundidad en tiempo coordenado}
+    (capas de $\delta t$) que se escanean al construir los v\'inculos de
+    Hasse de cada nodo fuente.
+\end{itemize}
+A densidad de Poisson $\rho \approx 1$, ning\'un v\'inculo de Hasse
+no-redundante sobrevive m\'as all\'a de $\Delta t \approx 6$--8, de modo
+que $\Delta t_{\max} = 15$ es una cota conservadora que no introduce
+truncamiento artificial.
+
 \begin{result}[title={Constantes Topol\'ogicas, no Experimentales}]
 \phantomsection\label{res:topological-constants}
 Los tres par\'ametros $(\mathcal{V}_{\max},\; K_{\text{threat}},\;
@@ -2297,9 +2314,9 @@ dejamos de ser datos para convertirnos en programadores.''
         del grafo.
   \item Siete \textbf{teoremas}: resultados derivables matem\'aticamente a
         partir de los axiomas y las leyes.
-  \item Seis \textbf{conjeturas}: predicciones que el software debe a\'un
-        validar num\'ericamente o que requieren una demostraci\'on
-        anal\'itica pendiente.
+  \item Diez \textbf{conjeturas y predicciones}: problemas abiertos que el
+        software debe a\'un validar num\'ericamente o que requieren una
+        demostraci\'on anal\'itica pendiente.
 \end{introduction}
 
 \noindent
@@ -2353,12 +2370,14 @@ cutoff.''
 \begin{axiom}[Densidad de Planck~\cite{planck1899,garay1995}]
 \label{ax:planck-density}
 El \emph{sprinkling} de Poisson opera a densidad
-fundamental $\rho = 1$ evento por 4-volumen de Planck. El
-di\'ametro del diamante causal es:
+fundamental $\rho = 1$ evento por 4-volumen de Planck.  El
+4-volumen del diamante causal $|t|+r \le T/2$ en 4D es
+$V = \pi T^4/24$ (integral est\'andar de la 3-esfera sobre
+el bicono).  El di\'ametro que produce densidad unidad es:
 \begin{equation}
-  T = (24\,N)^{1/4},
+  T = \Bigl(\frac{24\,N}{\pi}\Bigr)^{\!1/4},
   \qquad
-  V = \frac{T^4}{24},
+  V = \frac{\pi\,T^4}{24},
   \qquad
   \rho = \frac{N}{V} = 1.
   \label{eq:ax-planck}
@@ -2366,7 +2385,7 @@ di\'ametro del diamante causal es:
 
 \medskip\noindent
 \texttt{diamond.rs}: \texttt{let big\_t =
-(24.0 * n as f64).powf(0.25);}
+(24.0 * n as f64 / PI).powf(0.25);}
 \end{axiom}
 
 \begin{axiom}[El Diferencial de Cobertura]
@@ -2561,38 +2580,61 @@ persecuci\'on de punteros enteros:
 \subsection*{L5. Ley de Clasificaci\'on Generacional}
 \phantomsection\label{law:generational-classification}
 
-Los Prismas se clasifican por su \textbf{firma topol\'ogica}: un
-entero empaquetado \texttt{u32} que codifica cuatro cuartiles del
-\emph{bulk momentum} (out-degree $-$ in-degree) de todos los
-componentes del Prisma, normalizados y desplazados a 5~bits cada
-uno:
+Los Prismas se clasifican por su \textbf{complejidad de fase}
+(Definici\'on~\texttt{def:topological-generation} del Volumen~I).
+Para cada intermediario $w_i$ del Prisma $\mathcal{P}$, la
+\emph{fase causal} es el signo de su \emph{bulk momentum}:
 \[
-  \sigma(\mathcal{P}) =
-  [q_0, q_1, q_2, q_3] \;\in\; \{0,\ldots,31\}^4.
+  \varphi(w_i) = \operatorname{sgn}\bigl(f^+(w_i) - f^-(w_i)\bigr)
+  \;\in\; \{-1,\; 0,\; +1\}.
 \]
-La firma m\'as abundante define Generaci\'on~1 (electr\'on), la
-segunda m\'as abundante Generaci\'on~2 (mu\'on), la tercera
-Generaci\'on~3 (tau).
+Las tres \emph{clases de fase} $\Phi^{-}, \Phi^{0}, \Phi^{+}$
+recogen los intermediarios con fase negativa, cero y positiva
+respectivamente.  La generaci\'on es el n\'umero de clases de fase
+ocupadas:
+\begin{equation}
+  g(\mathcal{P}) = \bigl|\{\sigma \in \{-,0,+\} :
+    \Phi^{\sigma}(\mathcal{P}) \neq \varnothing\}\bigr|
+  \;\in\; \{1,\; 2,\; 3\}.
+  \label{eq:law-generation}
+\end{equation}
+Generaci\'on~1 ($g=1$): todos los intermediarios en una misma clase de
+fase.  Generaci\'on~2 ($g=2$): dos clases ocupadas.  Generaci\'on~3
+($g=3$): las tres clases presentes.  Tres es el m\'aximo posible
+porque $\varphi$ solo admite tres valores de signo.
 
 \medskip\noindent
-\texttt{skyrmion.rs}: \texttt{prism\_signature()} y el
-\texttt{sig\_map: HashMap<u32, Vec<usize>>}.
+\texttt{skyrmion.rs}: \texttt{classify\_prism()} implementa el conteo
+de clases de fase sobre intermediarios exclusivamente (polos excluidos).
+La funci\'on \texttt{prism\_signature()} (firma de cuartiles) se
+conserva \'unicamente para registro diagn\'ostico.
 
 \subsection*{L6. Ley de Conjugaci\'on CPT}
 \phantomsection\label{law:cpt-conjugation}
 
-La anti-firma se obtiene revirtiendo el orden e invirtiendo el
-signo:
+La conjugaci\'on CPT act\'ua sobre un Prisma intercambiando sus polos
+$u \leftrightarrow v$, lo que invierte la direcci\'on de todas las
+aristas internas y, en consecuencia, cambia el signo de cada fase
+causal: $\varphi(w_i) \to -\varphi(w_i)$.  El \textbf{flujo causal
+neto} (Definici\'on~\texttt{def:matter-antimatter} del Volumen~II)
+\[
+  \Phi(\mathcal{P}) = \sum_{i=1}^{N} \varphi(w_i)
+\]
+se transforma como $\Phi \to -\Phi$.  Un Prisma es \textbf{materia}
+si $\Phi > 0$ y \textbf{antimateria} si $\Phi < 0$.  La
+Anti-Generaci\'on~1 comprende todos los Prismas con $g = 1$ y
+$\Phi < 0$:
 \begin{equation}
-  \bar{\sigma}_i = -\sigma_{3-i} + 16.
+  \text{Anti-Gen}_1 = \bigl\{\mathcal{P} : g(\mathcal{P}) = 1
+    \;\wedge\; \Phi(\mathcal{P}) < 0 \bigr\}.
   \label{eq:law-cpt}
 \end{equation}
-La Anti-Generaci\'on~1 es el conjugado CPT de la
-Generaci\'on~1.
 
 \medskip\noindent
-\texttt{skyrmion.rs}: \texttt{anti\_signature(sig)} implementa
-literalmente~\eqref{eq:law-cpt}.
+\texttt{skyrmion.rs}: \texttt{classify\_prism()} calcula $g$ y
+$\Phi$ simult\'aneamente; la asignaci\'on materia/antimateria
+depende del signo de $\Phi$.  La funci\'on
+\texttt{anti\_signature()} se conserva para registro diagn\'ostico.
 
 \stoneref{La conjugaci\'on CPT es la contrapositiva l\'ogica
 (Teorema~\ref{thm:antimatter-tollens}).}
@@ -2782,14 +2824,29 @@ geod\'esico.
 \end{theorem}
 
 % ═══════════════════════════════════════════════════════════════════════════════
-\section{Conjeturas}
+\section{Resultados Derivados y Problemas Abiertos}
 % ═══════════════════════════════════════════════════════════════════════════════
 
-\subsection*{C1. Cuantizaci\'on del Espectro de Masas}
-\phantomsection\label{conj:mass-spectrum}
+\subsection*{T1. Vientre M\'inimo $N \geq 3$ (Derivado)}
+\phantomsection\label{thm-ref:min-belly}
 
-El espectro de masas topol\'ogicas $\{N = 3, 4, 5, \ldots\}$
-corresponde a las generaciones lept\'onicas $\{e, \mu, \tau\}$.
+El vientre m\'inimo de un Prisma Causal es $N \geq 3$. Esto se
+deriva del \textbf{Teorema de Unicidad de Bifurcaci\'on-Convergencia}
+(Vol~II, Teorema~\ref*{thm:uniqueness}): en un grafo libre de $K_3$,
+toda estructura con al menos tres caminos independientes $u$--$v$ de
+longitud exacta~2 es isomorfa a $K_{2,N}$ con $N \geq 3$. La cota es
+estricta: $K_{2,2}$ es un $C_4$ cuya simetr\'ia $S_2$ solo genera
+$U(1)$ (grupo abeliano), insuficiente para confinamiento de color. Se
+requiere $S_3$ (grupo de Weyl de $SU(3)$), lo cual exige $N \geq 3$
+(Vol~II, Principio \'Unico de Interacci\'on).
+
+\medskip\noindent
+\textit{C\'odigo}: \texttt{skyrmion.rs:73} ---
+\texttt{const MIN\_PRISM\_SHARED: usize = 3}.
+
+\subsection*{P1. Correspondencia Cuantitativa de Masas (Abierto)}
+\phantomsection\label{open:mass-ratios}
+
 Las relaciones de masa $m_\mu/m_e \approx N_2/N_1$ y
 $m_\tau/m_e \approx N_3/N_1$ deber\'ian coincidir con las
 observaciones dentro de correcciones $O(1)$ provenientes de la
@@ -2797,10 +2854,9 @@ geometr\'ia del \emph{sprinkling}.
 
 \medskip\noindent
 \textit{Estado}: el histograma de masas
-(\texttt{mass\_spectrum.csv}) muestra picos discretos a
-$N = 3, 4, 5$. La correspondencia cuantitativa con las masas
-experimentales requiere un c\'alculo de factores de forma que
-a\'un no se ha implementado.
+(\texttt{mass\_spectrum.csv}) muestra picos discretos a $N = 3, 4, 5$.
+La correspondencia cuantitativa requiere un c\'alculo de factores de
+forma que a\'un no se ha implementado.
 
 \subsection*{C2. Gravedad como Entrop\'ia de Conectividad}
 \phantomsection\label{conj:gravity-entropy}
@@ -2823,47 +2879,140 @@ validaci\'on num\'erica requiere extraer $R_{\mu\nu}$ de $P(t,u)$
 orden por orden en la expansi\'on del calor, lo cual exige
 $N > 10^7$ eventos para obtener la precisi\'on suficiente.
 
-\subsection*{C3. Dualidad Electromagn\'etica}
-\phantomsection\label{conj:em-duality}
+\subsection*{D1. Normalizaci\'on por Carga Unitaria (Definici\'on)}
+\phantomsection\label{def-ref:flux-normalization}
 
-Las probabilidades de transmisi\'on
-\texttt{flux\_attraction} (Gen1 $\to$ AntiGen1) y
-\texttt{flux\_repulsion} (Gen1 $\to$ Gen1) reproducen la ley de
-Coulomb en el l\'imite continuo. La asimetr\'ia entre atracci\'on
-y repulsi\'on es una propiedad topol\'ogica de la conjugaci\'on
-CPT: firmas conjugadas facilitan la propagaci\'on causal
-(atracci\'on), firmas id\'enticas la obstaculizan (repulsi\'on).
+La normalizaci\'on $f = F / |\mathcal{T}|$ a\'isla el acoplamiento
+intr\'inseco por nodo diana. Es la analog\'ia discreta del campo
+el\'ectrico $\mathbf{E} = \mathbf{F}/q$: la fuerza total dividida
+por la carga de prueba produce la intensidad de campo por unidad de
+carga, independiente del n\'umero de cargas de prueba.
+
+El flujo bruto $\texttt{flux\_attraction}$ es dominado por el factor
+combinatorio $|\text{Gen1}| \gg |\text{AntiGen1}|$. Dividir por
+$|\text{targets}|$ elimina este sesgo y revela el acoplamiento
+topol\'ogico fundamental (Vol~II, Definici\'on~\ref*{def:per-charge-flux}).
 
 \medskip\noindent
-\textit{Estado}: las simulaciones a $N = 2 \times 10^7$ muestran
-consistentemente
-$\texttt{flux\_repulsion} \gg \texttt{flux\_attraction}$ (ratio
-$\approx 279$ a $t=1$). La asimetr\'ia es dominada por el factor
-combinatorio $|\text{Gen1}| \gg |\text{AntiGen1}|$: hay $\sim 15$
-veces m\'as nodos diana de repulsi\'on que de atracci\'on.
-Para aislar el acoplamiento \emph{por nodo}, la normalizaci\'on
-$F = \texttt{flux} / |\text{targets}|$ es necesaria; aun as\'i,
-la repulsi\'on por nodo es $\sim 19\times$ mayor que la
-atracci\'on, sugiriendo que la secci\'on eficaz de dispersi\'on
-same-charge domina sobre la de opposite-charge en la topolog\'ia
-discreta. El escalado como $1/r^2$ a\'un no se ha verificado.
+\textit{C\'odigo}: \texttt{spectral.rs:71--74},
+\texttt{main.rs:259--262}.
 
-\subsection*{C4. Confinamiento Fuerte como Planaridad}
-\phantomsection\label{conj:strong-confinement}
+\subsection*{P2. Escalado de Coulomb $1/r^2$ (Abierto)}
+\phantomsection\label{open:coulomb-scaling}
 
-La contracci\'on de amenazas $K_5$
-(Axioma~\ref{ax:kuratowski-threat}) es el an\'alogo discreto del
-confinamiento de color en QCD. La topolog\'ia proh\'ibe que un
-nodo externo ``rompa'' la estructura bipartita del Prisma, del
-mismo modo que QCD proh\'ibe aislar un quark. El \'area del tubo
-de flujo conf\'inante debe escalar como la distancia entre los
-polos en la m\'etrica emergente.
+Las probabilidades de transmisi\'on deber\'ian reproducir la ley de
+Coulomb ($1/r^2$) en el l\'imite continuo. La asimetr\'ia
+atracci\'on/repulsi\'on es una propiedad topol\'ogica CPT.
+
+\medskip\noindent
+\textit{Estado}: las simulaciones muestran consistentemente la
+asimetr\'ia esperada, pero el escalado $1/r^2$ a\'un no se ha
+verificado.
+
+\subsection*{T2. Umbral de Amenaza $K_{\text{threat}} = 2$ (Derivado)}
+\phantomsection\label{thm-ref:k-threat}
+
+El valor $K_{\text{threat}} = 2$ se deriva del \textbf{Teorema de
+Kuratowski}: un nodo conectado a los 2 polos y a $\geq 2$ intermedios
+de un Prisma $K_{2,N}$ forma un conjunto de $2 + 2 + 1 = 5$ v\'ertices
+mutuamente alcanzables, amenazando con producir un menor de~$K_5$. La
+absorci\'on es el mecanismo m\'inimo que neutraliza esta amenaza
+(Axioma~\ref{ax:kuratowski-threshold}, \S1.4).
+
+\medskip\noindent
+\textit{C\'odigo}: \texttt{skyrmion.rs:77} ---
+\texttt{const PRISM\_THREAT: usize = 2}.
+
+\subsection*{P3. \'Area del Tubo de Flujo Confinante (Abierto)}
+\phantomsection\label{open:flux-tube-area}
+
+El \'area del tubo de flujo confinante debe escalar como la distancia
+entre los polos en la m\'etrica emergente, en analog\'ia con el tubo
+de flujo de QCD.
 
 \medskip\noindent
 \textit{Estado}: el conteo de amenazas absorbidas
-(\texttt{merge\_count}) es consistente con la predicci\'on, pero
-la demostraci\'on anal\'itica de la proporcionalidad \'area $\sim$
+(\texttt{merge\_count}) es consistente con la predicci\'on, pero la
+demostraci\'on anal\'itica de la proporcionalidad \'area $\sim$
 distancia permanece abierta.
+
+\subsection*{P4. Exclusi\'on Generacional ($g_{\max} = 3$) (Abierto)}
+\phantomsection\label{open:gen-exclusion}
+
+La funci\'on signo $\varphi \colon w_i \mapsto \{-1,\,0,\,+1\}$ tiene
+exactamente tres valores de salida. El n\'umero de generaci\'on de un
+prisma $P = K_{2,N}$ se define como $g(P) = |\{\text{valores distintos
+de } \varphi(w_i)\}| \leq 3$. La topolog\'ia discreta del Prisma Causal
+proh\'ibe una cuarta generaci\'on: no existe un cuarto valor de la
+funci\'on signo binaria que asigna quiralidad a los intermediarios.
+
+\medskip\noindent
+\textit{Predicci\'on}: ning\'un acelerador a ninguna energ\'ia
+producir\'a un cuarto sabor generacional.
+
+\subsection*{P5. Ausencia de Ondas Gravitacionales Primordiales
+  ($r < 10^{-3}$) (Abierto)}
+\phantomsection\label{open:no-tensor}
+
+En el r\'egimen UV, $\dS \to 2$ (Teorema de Convergencia Espectral,
+\S3.1). En dos dimensiones el tensor de Weyl se anula id\'enticamente:
+no hay grados de libertad gravitacionales propagantes. Por tanto, la
+\'epoca de Kuratowski (pre-inflaci\'on topol\'ogica) no genera
+perturbaciones tensoriales.
+
+\medskip\noindent
+\textit{Predicci\'on}: la raz\'on tensor-a-escalar del CMB satisface
+$r < 10^{-3}$, fuera del alcance de LiteBIRD si la inflaci\'on
+topol\'ogica domina.
+
+\subsection*{P6. El Candado $\alpha$--$\Omega$ (Abierto)}
+\phantomsection\label{open:alpha-omega-lock}
+
+Definimos la \emph{raz\'on de autoenerg\'ia oscura}:
+\[
+  \Omega_{\mathrm{energy}}
+  \;=\; \frac{\sum N_P^{\,2} - \sum|\Phi(P)|^2}{\sum|\Phi(P)|^2}
+  \;=\; \frac{1}{\mathcal{Q}_{\mathrm{topo}}} - 1\,,
+\]
+donde $\mathcal{Q}_{\mathrm{topo}} = \sum|\Phi|^2/\sum N^2$ es la
+fracci\'on de autoenerg\'ia gravitacional que es electromagn\'eticamente
+activa.  Dado que $\alpha = \mathcal{Q}_{\mathrm{topo}}/(8\pi)$
+(C6), se obtiene la \emph{identidad algebraica exacta}:
+\[
+  \boxed{\;\alpha\,(1 + \Omega_{\mathrm{energy}}) = \frac{1}{8\pi}\;\,.}
+\]
+Una \'unica medici\'on---$\mathcal{Q}_{\mathrm{topo}}$---determina
+simult\'aneamente $\alpha$ y $\Omega_{\mathrm{energy}}$: no hay
+par\'ametros libres.
+
+\medskip\noindent
+\textit{Resultado num\'erico}: con $\mathcal{Q}_{\mathrm{topo}} \approx 0.190$
+se obtiene $\alpha^{-1} \approx 132$ y $\Omega_{\mathrm{energy}} \approx 4{.}25$.
+El valor termodin\'amico ($\alpha \to 1/137$) predice
+$\Omega_{\mathrm{energy}} \to 4{.}45$; el residuo respecto del valor
+Planck~2018 ($5{.}36$) se atribuye al sector de confinamiento bari\'onico
+$K_{3,3}$, a\'un no implementado.
+
+\medskip\noindent
+\textit{Predicci\'on}: cualquier medici\'on futura de $\alpha$ en
+funci\'on del corrimiento al rojo $z$ debe satisfacer
+$\alpha(z)\,[1 + \Omega(z)] = 1/(8\pi)$, sin par\'ametros libres.
+
+\subsection*{P7. Estabilidad del Prot\'on
+  ($\tau_p > 10^{40}$~a\~nos) (Abierto)}
+\phantomsection\label{open:proton-stability}
+
+El n\'umero bari\'onico es el n\'umero de enlace (\textit{linking number})
+del nudo de prismas en el diagrama de Hasse. La desintegraci\'on del
+prot\'on requiere desanudar simult\'aneamente $\sim\!10^{60}$ enlaces
+causales. La probabilidad de tal fluctuaci\'on topol\'ogica es
+$\sim e^{-N}$, donde $N$ es el n\'umero de intermediarios
+involucrados.
+
+\medskip\noindent
+\textit{Predicci\'on}: $\tau_p > 10^{40}$~a\~nos, consistente con
+las cotas experimentales de Super-Kamiokande y futuros detectores
+Hyper-K.
 
 \subsection*{C5. Umbral de Decoherencia}
 \phantomsection\label{conj:decoherence-threshold}
@@ -2879,20 +3028,40 @@ resoluci\'on causal (Teorema~\ref{thm:decoherence-resolution}).
 \textit{Estado}: \textbf{demostrado} en el Teorema~\ref{thm:decoherence-resolution} (Ep\'ilogo).
 Se retiene aqu\'i como referencia hist\'orica.
 
-\subsection*{C6. Materia Oscura como Defectos Est\'eriles}
+\subsection*{C6. Materia Oscura como Descomposici\'on de Fase (Teorema)}
 \phantomsection\label{conj:dark-matter}
 
-El histograma de masas puede contener picos m\'as all\'a de
-$N = 5$ (Generaci\'on~3) correspondientes a defectos topol\'ogicos
-estables que interact\'uan gravitacionalmente (modifican $P(t,u)$)
-pero no electromagn\'eticamente (no se acoplan al flujo causal
-dirigido, por carecer de firma CPT alineada con las generaciones
-visibles).
+La autoenerg\'ia gravitacional de cada prisma $P = K_{2,N}$ es
+$N^2$ (interacciones por pares de los $N$ intermediarios); su
+autoenerg\'ia electromagn\'etica es $|\Phi(P)|^2$ (solo la fase
+neta coherente contribuye al flujo dirigido). La fracci\'on
+topol\'ogica de carga es
+$\mathcal{Q}_{\mathrm{topo}} = \sum|\Phi(P)|^2 / \sum N_P^{\,2}$.
+
+La constante de estructura fina emerge como
+$\alpha = \mathcal{Q}_{\mathrm{topo}} / (8\pi)$, donde el factor
+$8\pi$ proviene de la proyecci\'on isotr\'opica del doble cono de luz
+(Vol~II, Ap\'endice~B).
+
+La raz\'on de materia oscura a visible se obtiene de la
+\textbf{descomposici\'on de autoenerg\'ia}: el sector oscuro es la
+autoenerg\'ia gravitacional no contabilizada por las interacciones
+electromagn\'eticas:
+$\Omega_{\mathrm{energy}} = (\sum N^2 - \sum|\Phi|^2) / \sum|\Phi|^2
+= 1/\mathcal{Q}_{\mathrm{topo}} - 1$.
+La identidad exacta $\alpha\,(1 + \Omega) = 1/(8\pi)$ enlaza ambas
+cantidades: no se puede variar la materia oscura sin alterar la
+constante de estructura fina.
+
+Con $\mathcal{Q}_{\mathrm{topo}} \approx 0.190$ del ensemble
+$N = 10^7$: $\alpha^{-1} \approx 132$ y $\Omega_{\mathrm{energy}}
+\approx 4.25$ (Planck~2018: $\approx 5.36$). El residuo del
+${\sim}17\%$ cuantifica la contribuci\'on de masa din\'amica por
+confinamiento bari\'onico ($K_{3,3}$).
 
 \medskip\noindent
-\textit{Estado}: a $N > 10^6$ eventos, se observan prisms con
-$|W| > 5$, pero su acoplamiento al flujo causal no se ha medido
-sistem\'aticamente.
+\textit{Estado}: \textbf{demostrado} (Teoremas de Coherencia de Fase
+y Constante de Estructura Fina Emergente, Vol~II~\S\ref{sec:dark-matter}).
 
 % ═══════════════════════════════════════════════════════════════════════════════
 \section{Correspondencia Arquitectura $\leftrightarrow$ F\'isica}

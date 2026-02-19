@@ -1,0 +1,30 @@
+# commit: cff5bb5 (dirty)
+# N: 100000  M: 10 (converged=false, min=8, max=10)  mode: in-memory
+# epsilon: 0.01  tmax: 15  walkers: 2250000
+# algorithm: forward-forward belly (children(u) ∩ parents(v))
+# timestamp: 2026-02-19T01:45:31Z
+# seed: 42
+intermediates_N,frequency
+3,4919
+4,5325
+5,5257
+6,4570
+7,3696
+8,2720
+9,1912
+10,1260
+11,899
+12,544
+13,380
+14,253
+15,150
+16,92
+17,66
+18,26
+19,22
+20,9
+21,9
+22,7
+23,1
+24,2
+25,1

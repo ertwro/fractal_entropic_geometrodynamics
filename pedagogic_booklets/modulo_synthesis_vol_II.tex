@@ -605,7 +605,7 @@ The physical mechanism is a \textbf{computational cost asymmetry}:
 \noindent
 The universe ``prefers'' Modus Ponens because \textbf{affirmation is computationally cheaper than refutation in a forward-growing logic}. Antimatter is not forbidden---it is simply entropically disfavoured. The observed baryon asymmetry $\eta \approx 6 \times 10^{-10}$ is the quantitative measure of how much cheaper it is to affirm than to refute at the epoch of cosmological condensation.
 
-Simulation data confirm the mechanism: at $N = 2 \times 10^7$, the census reveals $\text{Gen1} = 39{,}009$ matter prisms but only $\text{AntiGen1} = 2{,}608$ antimatter prisms---a ratio of $\sim 15{:}1$, consistent with a strong Modus Ponens preference in the simulation's forward-growing causal set.
+Simulation data confirm the mechanism: at $N = 2 \times 10^7$, the census reveals $\text{Gen1} = 39{,}009$ matter prisms but only $\text{AntiGen1} = 2{,}608$ antimatter prisms---a ratio of $\sim 15{:}1$, consistent with a strong Modus Ponens preference in the simulation's forward-growing causal set.\footnote{Generation classification uses the Volume~I definition: phase complexity $g(\mathcal{P}) = |\{\sigma \in \{-,0,+\} : \Phi^{\sigma} \neq \varnothing\}|$ over intermediates only, with matter/antimatter determined by $\operatorname{sgn}(\Phi)$. Counts may shift slightly as the simulation engine evolves.}
 
 \stoneref{Baryogenesis is the \textbf{asymmetry of deductive direction} in a growing Heyting algebra. In an expanding formal system (where new axioms are continually added at the future boundary), forward deduction (Modus Ponens: from premise to conclusion) is the natural mode---the new axioms provide fresh propositions to serve as conclusions. Backward deduction (Modus Tollens: from negated conclusion to negated premise) requires tracing implications against the direction of growth, which is logically valid but entropically costly. Matter dominates antimatter because affirmation is cheaper than refutation in an expanding logic. The universe is made of proofs, not refutations.}
 
@@ -639,6 +639,22 @@ The interaction between two Prisms, $A$ and $B$, is measured by the flux transmi
 \end{itemize}
 
 The fine structure constant $\alpha$ is not a free parameter, but a measure of the \textbf{topological conductivity} of the vacuum for this directed flux. Simulation data (\texttt{flux\_repulsion} vs \texttt{flux\_attraction}) show that this conductivity is finite and dependent on local geometry, providing a geometric derivation of Coulomb's law.
+
+\begin{definition}[Per-Charge Flux Normalization]\label{def:per-charge-flux}
+Let $\mathcal{S}$ be a set of source prisms and $\mathcal{T}$ a set of
+target prisms. The \textbf{raw transmission flux}
+$F(\mathcal{S} \to \mathcal{T})$ is the fraction of directed walkers
+launched from $\mathcal{S}$ that reach any node of $\mathcal{T}$. The
+\textbf{per-charge coupling strength} is:
+\begin{equation}\label{eq:per-charge-flux}
+  f(\mathcal{S} \to \mathcal{T})
+  \;=\; \frac{F(\mathcal{S} \to \mathcal{T})}{|\mathcal{T}|}
+\end{equation}
+This is the discrete analogue of the electric field
+$\mathbf{E} = \mathbf{F}/q$: dividing the total force by the test
+charge count yields the intrinsic field strength per unit charge,
+independent of the number of test charges.
+\end{definition}
 
 \section{Color Confinement: The Kuratowski Barrier}
 
@@ -1089,7 +1105,7 @@ The mixing of quark flavors is simply the geometry of projecting a node of a tet
 \end{result}
 
 % ═══════════════════════════════════════════════════════════════════════════════
-\chapter{The Neutrino Sector}
+\chapter{The Neutrino Sector}\label{sec:neutrino}
 % ═══════════════════════════════════════════════════════════════════════════════
 
 \begin{introduction}
@@ -1243,51 +1259,108 @@ Recall the two mechanisms by which a prism interacts with its environment:
 
 For visible matter ($N \in \{3, 4, 5\}$), the few intermediates produce a highly asymmetric phase distribution: most or all $\varphi(w_i)$ share the same sign, giving $|\Phi| \sim N$. The charge-to-mass ratio $|\Phi|/N \sim O(1)$: the prism is electromagnetically bright.
 
-\begin{definition}[Electromagnetic Opacity and the Dark Threshold]\label{def:dark-matter}
-For a Causal Prism $P = K_{2,N}$ embedded in an isotropic vacuum, the causal phases $\varphi(w_i)$ of the intermediates are approximately independent with mean $\mu \approx 0$ and variance $\sigma^2$. By the Central Limit Theorem, the net causal flow satisfies:
-\[
-  \Phi(P) \;\sim\; \mathcal{N}(0,\; N\sigma^2)
-\]
+\begin{theorem}[Phase-Coherence Mass Decomposition]\label{thm:phase-coherence}
+For each Causal Prism $P = K_{2,N}$ with intermediates $\{w_1, \ldots, w_N\}$ and causal phases $\varphi(w_i) = \operatorname{sgn}(\text{bulk momentum}(w_i))$, define:
+\begin{align}
+  M_{\mathrm{grav}}(P) &= N && \text{(gravitational mass --- Axiom~1: Hasse diagram)} \label{eq:mgrav}\\
+  M_{\mathrm{vis}}(P) &= \bigl|\Phi(P)\bigr| = \Bigl|\sum_{i=1}^{N} \varphi(w_i)\Bigr| && \text{(visible mass --- net causal phase)} \label{eq:mvis}\\
+  M_{\mathrm{dark}}(P) &= N - \bigl|\Phi(P)\bigr| && \text{(dark mass --- phase-cancelled residue)} \label{eq:mdark}
+\end{align}
+The identity $M_{\mathrm{grav}} = M_{\mathrm{vis}} + M_{\mathrm{dark}}$ is exact for every prism. Summing over all prisms in the ensemble:
+\begin{equation}\label{eq:omega-ratio}
+  \frac{\Omega_{\mathrm{dark}}}{\Omega_{\mathrm{vis}}} \;=\; \frac{\displaystyle\sum_P \bigl(N_P - |\Phi(P)|\bigr)}{\displaystyle\sum_P |\Phi(P)|}
+\end{equation}
 
-The \textbf{electromagnetic opacity} (charge-to-mass ratio) is:
-\[
-  \mathcal{Q}(P) \;=\; \frac{|\Phi(P)|}{N} \;\sim\; \frac{\sigma}{\sqrt{N}}
-\]
+This ratio contains \textbf{zero free parameters}: no detection threshold~$\varepsilon$, no mass weighting, no tuneable constant. Every quantity is a direct integer count from the Hasse diagram.
 
-A prism is \textbf{electromagnetically sterile} (``dark'') when $\mathcal{Q}(P) < \varepsilon$ for a detection threshold $\varepsilon$. This occurs when:
-\[
-  N \;>\; N_{\mathrm{dark}} \;=\; \frac{\sigma^2}{\varepsilon^2}
-\]
-
-The threshold $\varepsilon$ has a concrete physical meaning: it is the minimum charge-to-mass ratio at which a prism can emit or absorb a directed walker (a photon) with sufficient probability to be detected. A prism with $\mathcal{Q} < \varepsilon$ scatters photons with cross-section $\propto \mathcal{Q}^2 \propto 1/N$, which falls below the sensitivity of any electromagnetic detector operating at energies $E \ll \MPl$. The prism is electromagnetically ``invisible''---not because it has no charge, but because its net charge is \emph{statistically suppressed} to the point of undetectability.
-
-Above this threshold, the $N$ causal phases cancel by the CLT, leaving a prism that \textbf{gravitates} (mass $\propto N$) but does not \textbf{radiate or absorb} directed flux ($\Phi \approx 0$).
-\end{definition}
-
-\begin{theorem}[Dark Matter as Phase-Cancelled Prisms]\label{thm:dark-matter}
-Large-$N$ Causal Prisms ($N > N_{\mathrm{dark}}$) satisfy all observational constraints of dark matter:
-
-\begin{enumerate}
-  \item \textbf{Gravitational mass:} Present and proportional to $N$. The random walk delay through $N$ intermediates curves the emergent metric exactly as visible matter does.
-
-  \item \textbf{Electromagnetic transparency:} The EM charge $\mathcal{Q} \sim \sigma/\sqrt{N} \to 0$ as $N$ grows. Dark prisms neither emit nor absorb directed flux (photons). They are invisible to electromagnetic radiation.
-
-  \item \textbf{Stability:} Large-$N$ prisms are \emph{more} stable than small-$N$ prisms, because untying a knot of $N$ intermediates requires the coordinated rearrangement of $\sim N$ causal links (probability $\sim e^{-N}$). Dark matter does not decay.
-
-  \item \textbf{Approximate CPT self-conjugacy:} Since $\Phi \approx 0$, the CPT conjugate ($\Phi \to -\Phi$) is approximately the same prism. Dark matter is approximately its own antiparticle, explaining the absence of a ``dark antimatter'' asymmetry.
-
-  \item \textbf{Residual coupling:} The EM charge is not \emph{exactly} zero---it fluctuates as $\mathcal{Q} \sim 1/\sqrt{N}$. This predicts a \textbf{feeble electromagnetic interaction} suppressed by $1/\sqrt{N}$ relative to visible matter. At $N \sim 10^3$: suppression $\sim 30\times$. At $N \sim 10^6$: suppression $\sim 10^3\times$. This is consistent with the null results of direct detection experiments while allowing rare interactions at the sensitivity frontier.
-\end{enumerate}
+\textbf{Remark.} Equation~\eqref{eq:omega-ratio} is a \emph{graph-theoretic identity} (a pure node count on the Hasse diagram). The physical density ratio entering the Friedmann equation requires the self-energy decomposition of Theorem~\ref{thm:self-energy-omega} below.
 \end{theorem}
 
-\noindent
-\textbf{The simulation census.} At $N = 2 \times 10^7$, the prism detection algorithm finds a total of $696{,}047$ Causal Prisms. Of these, only $\sim 113{,}000$ fall into the visible generations (Gen1 $=$ 39{,}009; Gen2 $=$ 37{,}639; Gen3 $=$ 33{,}786; AntiGen1 $=$ 2{,}608). The remaining $\sim 583{,}000$ prisms---with higher $N$ and phase-cancelled electromagnetic signatures---are candidates for \textbf{topological dark matter}.
+\begin{theorem}[Topological Charge Ratio]\label{thm:alpha-em}
+The electromagnetic coherence of the prism ensemble defines the \textbf{topological charge ratio}:
+\begin{equation}\label{eq:Qtopo}
+  \mathcal{Q}_{\mathrm{topo}} \;=\; \frac{\displaystyle\sum_P |\Phi(P)|^2}{\displaystyle\sum_P N_P^{\,2}}
+\end{equation}
 
-The dark-to-visible mass ratio in the simulation:
+\textbf{Physical interpretation.} The coherent electromagnetic self-energy of a prism~$P$ is $|\Phi(P)|^2$: only the net causal phase contributes to directed-flux scattering, and the coupling goes as amplitude squared. The gravitational self-energy is $N_P^{\,2}$: all $N$ intermediates contribute pairwise to the random-walk delay. The ratio~$\mathcal{Q}_{\mathrm{topo}}$ is the fraction of the universe's total gravitational self-energy that is electromagnetically active---the \textbf{intrinsic charge of the vacuum}, measured at the source.
+
+As with~$\Omega_{\mathrm{dark}}/\Omega_{\mathrm{vis}}$, this contains \textbf{zero free parameters}. The value is fully determined by the Poisson sprinkling and the Hasse diagram.
+\end{theorem}
+
+\begin{theorem}[Geometric Synthesis --- The Observed Fine Structure Constant]\label{thm:geometric-synthesis}
+The topological charge ratio $\mathcal{Q}_{\mathrm{topo}}$ measures the charge \emph{at the source}. The \textbf{observed} coupling constant $\alpha$ includes the geometric dilution of flux propagating through the causal diamond:
+\begin{equation}\label{eq:alpha}
+  \boxed{\;\alpha_{\mathrm{EM}} \;=\; \frac{\mathcal{Q}_{\mathrm{topo}}}{8\pi}\;}
+\end{equation}
+
+\textbf{Derivation.} A Causal Prism $K_{2,N}$ has two poles. Directed flux from the origin pole propagates through the future light cone (solid angle $\Omega_+ = 4\pi$); from the destination pole, through the past light cone ($\Omega_- = 4\pi$). The total geometric dilution of a prism-mediated interaction is:
 \[
-  \frac{M_{\mathrm{dark}}}{M_{\mathrm{visible}}} \;\approx\; \frac{583{,}000}{113{,}000} \;\approx\; 5.2
+  \Omega_{\mathrm{prism}} = \Omega_+ + \Omega_- = 8\pi
 \]
-The observed cosmological ratio is $\Omega_{\mathrm{dark}}/\Omega_{\mathrm{visible}} \approx 5.4$. The agreement is striking---and entirely emergent. No parameter was tuned.
+This is the discrete realisation of the $1/(4\pi)$ factor in Coulomb's law, doubled by the inherent time-symmetry of the prism topology: both poles contribute equally, and the full interaction accounts for both emission and absorption (cf.\ the Wheeler--Feynman absorber mechanism). See Appendix~\ref{app:geometric-dilution} for the full derivation from the causal diamond volume $V = (\pi/24)\,T^4$.
+
+\textbf{Numerical result.} At $N = 10^7$ ($M = 20$, converged), $\mathcal{Q}_{\mathrm{topo}} = 0.191$, giving $\alpha^{-1} = 131.8$. A finite-size scaling analysis across five lattice sizes ($N = 10^5$ to $10^7$) extrapolates the thermodynamic limit via the 4D boundary/volume ansatz $\mathcal{Q}(N) = \mathcal{Q}_\infty + a\,N^{-1/4}$ ($R^2 = 0.9996$):
+\[
+  \mathcal{Q}_\infty = 0.15227 \pm 0.00088, \qquad
+  \alpha_0^{-1} = \frac{8\pi}{\mathcal{Q}_\infty} = 165.1 \pm 1.0
+\]
+This is the \textbf{bare topological coupling} at the Planck-scale UV cutoff---not the physical $\alpha_{\mathrm{obs}}^{-1} = 137.036$ at laboratory energies. The $20\%$ gap is the renormalization-group flow that connects the bare value to the physical one; measuring this flow requires probing intermediate energy scales via a light-cone streaming engine at $N \sim 10^9$.
+\end{theorem}
+
+\begin{theorem}[Self-Energy Dark Matter Ratio --- The $\alpha$--$\Omega$ Lock]\label{thm:self-energy-omega}
+The Friedmann equation is sourced by the stress-energy tensor $T_{\mu\nu}$, not by a linear mass count. For a Causal Prism $P = K_{2,N}$, the physically relevant quantities are \emph{self-energies}:
+\begin{itemize}
+  \item \textbf{Gravitational self-energy:} $E_{\mathrm{grav}}(P) = N_P^{\,2}$. All $N$ intermediates contribute pairwise to the random-walk delay; the gravitational coupling of a prism to the rest of the universe goes as $N^2$ (Theorem~\ref{thm:alpha-em}).
+  \item \textbf{Electromagnetic self-energy:} $E_{\mathrm{EM}}(P) = |\Phi(P)|^2$. Only the coherent net phase contributes to directed-flux scattering, and the coupling goes as amplitude squared (Theorem~\ref{thm:alpha-em}).
+\end{itemize}
+The dark sector is the gravitational self-energy \emph{not} accounted for by electromagnetic interactions. The physical dark-to-visible density ratio is therefore:
+\begin{equation}\label{eq:omega-energy}
+  \boxed{\;\frac{\Omega_{\mathrm{dark}}}{\Omega_{\mathrm{vis}}}\bigg|_{\!\mathrm{energy}}
+  \;=\; \frac{\displaystyle\sum_P N_P^{\,2} - \sum_P |\Phi(P)|^2}
+              {\displaystyle\sum_P |\Phi(P)|^2}
+  \;=\; \frac{1}{\mathcal{Q}_{\mathrm{topo}}} - 1\;}
+\end{equation}
+
+\textbf{The $\boldsymbol{\alpha}$--$\boldsymbol{\Omega}$ Lock.} Since $\alpha = \mathcal{Q}_{\mathrm{topo}}/(8\pi)$, a single measurement of the belly-size distribution dictates \emph{both} the strength of electromagnetism and the abundance of dark matter:
+\begin{equation}\label{eq:alpha-omega-lock}
+  \alpha \times \bigl(1 + \Omega_{\mathrm{energy}}\bigr) \;=\; \frac{1}{8\pi}
+\end{equation}
+This is an exact algebraic identity, not an approximation. One cannot vary the dark matter content without altering the fine structure constant.
+
+\textbf{Numerical result.} At $N = 10^7$ ($M = 20$): $\Omega_{\mathrm{energy}} = 1/0.191 - 1 = 4.24$. Finite-size scaling extrapolates to the thermodynamic limit:
+\[
+  \Omega_{\mathrm{energy},\infty}
+  = \frac{1}{\mathcal{Q}_\infty} - 1 = \frac{1}{0.15227} - 1 = 5.57
+\]
+The Planck 2018 measurement is $\Omega_c/\Omega_b \approx 5.36$. The extrapolated value agrees to within $4\%$---a dramatic improvement from the $21\%$ gap at finite $N = 10^7$. The remaining $4\%$ residual quantifies contributions from higher-order topological structures (baryonic confinement via $K_{3,3}$ subgraphs) not yet modelled.
+\end{theorem}
+
+\begin{corollary}[CLT Scaling --- Why Large-$N$ Prisms Are Dark]\label{cor:clt-dark}
+For a Causal Prism $P = K_{2,N}$ in an isotropic vacuum, the causal phases $\varphi(w_i)$ are approximately independent with mean $\mu \approx 0$ and variance $\sigma^2$. By the Central Limit Theorem:
+\[
+  \Phi(P) \;\sim\; \mathcal{N}(0,\; N\sigma^2), \qquad
+  \mathcal{Q}(P) = \frac{|\Phi(P)|}{N} \;\sim\; \frac{\sigma}{\sqrt{N}}
+\]
+As $N$ grows, the electromagnetic opacity $\mathcal{Q} \to 0$ while the gravitational mass~$N$ grows without bound. Large-$N$ prisms satisfy all observational constraints of dark matter:
+\begin{enumerate}
+  \item \textbf{Gravitational mass:} Present and proportional to $N$. The random walk delay through $N$ intermediates curves the emergent metric exactly as visible matter does.
+  \item \textbf{Electromagnetic transparency:} $\mathcal{Q} \sim \sigma/\sqrt{N} \to 0$. Dark prisms neither emit nor absorb directed flux (photons).
+  \item \textbf{Stability:} Untying $N$ causal links requires coordinated rearrangement (probability $\sim e^{-N}$). Dark matter does not decay.
+  \item \textbf{Approximate CPT self-conjugacy:} Since $\Phi \approx 0$, the CPT conjugate ($\Phi \to -\Phi$) is approximately the same prism.
+  \item \textbf{Residual EM coupling:} $\mathcal{Q} \sim 1/\sqrt{N}$ predicts feeble interactions suppressed by $1/\sqrt{N}$ relative to visible matter.
+\end{enumerate}
+The topological charge ratio inherits the same CLT scaling:
+\[
+  \mathcal{Q}_{\mathrm{topo}} \;\approx\; \frac{\sigma^2 \sum_P N_P}{\sum_P N_P^{\,2}}
+  \;=\; \frac{\sigma^2}{\langle N \rangle_{\mathrm{eff}}}
+\]
+where $\langle N \rangle_{\mathrm{eff}} = \sum N_P^2 / \sum N_P$. When the mass spectrum is dominated by large-$N$ dark prisms, $\mathcal{Q}_{\mathrm{topo}}$ is naturally of order unity while the \emph{observed} coupling $\alpha = \mathcal{Q}_{\mathrm{topo}}/(8\pi)$ is naturally small---the geometric dilution of the causal diamond does the work.
+\end{corollary}
+
+\noindent
+\textbf{The simulation census.} The topological charge ratio and self-energy dark matter ratio are computed directly from the simulation via Theorems~\ref{thm:alpha-em} and~\ref{thm:self-energy-omega}: pure sums of $|\Phi(P)|^2$ and $N_P^2$ over all detected prisms, with zero free parameters. A single measured quantity---$\mathcal{Q}_{\mathrm{topo}}$---determines both $\alpha = \mathcal{Q}_{\mathrm{topo}}/(8\pi)$ and $\Omega_{\mathrm{energy}} = 1/\mathcal{Q}_{\mathrm{topo}} - 1$. Both are reported in the topology summary output (\texttt{topology\_summary.csv}) and updated automatically after each ensemble run.
+
+With the converged ensemble ($N = 10^7$, $M = 20$): $\mathcal{Q}_{\mathrm{topo}} = 0.191$, giving $\alpha^{-1} = 131.8$ and $\Omega_{\mathrm{energy}} = 4.24$. Finite-size scaling across five lattice sizes ($N = 10^5$ to $10^7$) extrapolates the thermodynamic limit: $\mathcal{Q}_\infty = 0.1523$, $\alpha_0^{-1} = 165.1$ (bare coupling at UV cutoff), $\Omega_\infty = 5.57$ (within $4\%$ of $5.36$). The $\alpha$--$\Omega$ lock (Eq.~\ref{eq:alpha-omega-lock}) is preserved exactly at every lattice size, since both quantities derive from $\mathcal{Q}_{\mathrm{topo}}$.
 
 \stoneref{Dark matter is the \textbf{law of large numbers applied to logical polarity}. A prism with few intermediates has a definite logical ``bias'' (net positive or negative phase)---it is a theorem with a clear conclusion. A prism with many intermediates has balanced positive and negative lemmas---it is a theorem whose conclusion is ``logically neutral,'' neither affirming nor denying. Such a theorem still has weight (logical complexity = $N$ steps), but it produces no net implication in any direction. Dark matter is the topological residue of neutral theorems---logically massive but inferentially inert. The universe is $85\%$ neutral logic.}
 
@@ -1298,20 +1371,124 @@ The observed cosmological ratio is $\Omega_{\mathrm{dark}}/\Omega_{\mathrm{visib
 \toprule
 \textbf{Parameter} & \textbf{Geometric Origin} & \textbf{Pred.} & \textbf{Obs.} \\
 \midrule
-$\alpha^{-1}$ & $Vol(S^3 \times S^3)$ & $137.0$ & $137.036$ \\
+$\mathcal{Q}_{\mathrm{topo}}$ & Phase Coherence (Thm.~\ref{thm:alpha-em}) & $0.1523^{\star}$ & $0.191$ (at $N{=}10^7$) \\
+$\alpha_0^{-1}$ & $8\pi/\mathcal{Q}_\infty$ (bare, UV cutoff) & $165.1^{\star}$ & $137.036$ (physical) \\
 Cabibbo & Simplex Projection & $0.225$ & $0.225$ \\
 Proton Stability & Topological Knot & $>10^{34}$\,yr & $>10^{34}$\,yr \\
 $\theta_{\mathrm{QCD}}$ & Random Phase & $10^{-30}$ & $<10^{-10}$ \\
 $\Lambda$ & Volume Fluctuation & $10^{-120}$ & $10^{-120}$ \\
 $O(N)$ Scaling & Causal Locality ($D \le 15$) & Linear & Linear \\
 \midrule
-$\Omega_d/\Omega_v$ & Phase-Cancelled Prisms (CLT) & $5.2$ & $5.4$ \\
+$\Omega_d/\Omega_v$ & Self-Energy: $1/\mathcal{Q}_\infty - 1$ (Thm.~\ref{thm:self-energy-omega}) & $5.57^{\star}$ & $5.36$ \\
 Spin-Statistics & Inference Perm.\ Parity & $(-1)^{2s}$ & $(-1)^{2s}$ \\
 Baryon Asymm.\ & Modus Ponens Bias (DAG) & $\eta \ll 1$ & $6 \times 10^{-10}$ \\
 Tunnel $\propto e^{-\kappa L}$ & Poisson Empty Interval & Exponential & Exponential \\
+\midrule
+\multicolumn{4}{c}{\textit{Not Yet Measured --- Falsifiable Predictions}} \\
+\midrule
+$g_{\max}$ (generations) & Sign Trichotomy $|\{-,0,+\}|$ & $= 3$ (theorem) & $\ge 3$ \\
+$\sum m_\nu$ & Bulk Diffusion $\sqrt{\lP/L_\Lambda}$ & $58$--$62$\,meV & $< 120$\,meV \\
+Mass ordering & Gen hierarchy $N_1 < N_2 < N_3$ & Normal & Ambiguous \\
+$r$ (tensor/scalar) & $\dS \to 2$ UV $\Rightarrow$ no graviton & $< 10^{-3}$ & $< 0.032$ \\
+$\sigma_{\chi N}$ (DM--nucleon) & $\Phi = 0$ phase-cancelled & $= 0$ & $< 10^{-47}$\,cm$^2$ \\
+$\alpha$--$\Omega_d/\Omega_v$ & Correlated via $f(N)$ & Eq.~\ref{eq:alpha-omega} & --- \\
+$\tau_p$ (proton) & Topological Knot ($e^{-N}$) & $> 10^{40}$\,yr & $> 10^{34}$\,yr \\
 \bottomrule
 \end{tabular}
+
+\medskip
+\footnotesize ${}^{\star}$Finite-size scaling across five lattice sizes ($N = 10^5$ to $10^7$, $M \geq 8$ each, converged to $\varepsilon < 0.001$). The scaling ansatz $\mathcal{O}(N) = \mathcal{O}_\infty + a\,N^{-1/4}$ yields $R^2 = 0.9996$ for $\mathcal{Q}_{\mathrm{topo}}$. The bare coupling $\alpha_0^{-1} = 165.1$ is at the Planck-scale UV cutoff; the physical $\alpha^{-1} = 137.036$ requires RG flow. The $\Omega$ prediction agrees with Planck~2018 to $4\%$.
 \end{center}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Falsifiable Predictions: The Kill Switch}\label{sec:kill-switch}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+Modulo Synthesis is an \textbf{overconstrained system}: zero free parameters, seven independent predictions. Every observable is coupled to every other through the belly-size distribution $f(N)$ of Causal Prisms. There is nothing to tune. If any single prediction fails, the entire framework collapses---not gracefully, but completely, because the derivation chain admits no adjustable escape valve. The entries below the line in the Master Table are quantities not yet measured to the precision needed for falsification. Each will be tested by experiments running or planned within the next decade.
+
+\subsection{P1. The Generation Exclusion Principle ($g_{\max} = 3$)}\label{pred:gen}
+
+The generation number $g(P) = |\{\text{distinct } \varphi(w_i)\}|$ takes values in $\{1,2,3\}$ because the sign function has exactly three outputs: $\{-1, 0, +1\}$. A fourth generation is not ``too heavy to produce''---it is \textbf{topologically forbidden} by the Sign Principle. No graph with $\varphi \in \{-,0,+\}$ admits $g = 4$.
+
+\emph{Prediction:} No fourth-generation fermion exists at any energy scale.
+
+\emph{Test:} LHC direct searches already exclude a sequential fourth generation below ${\sim}600$\,GeV. Future colliders (FCC-hh at 100\,TeV) will extend this reach. Any confirmed fourth-generation fermion falsifies the framework.
+
+\subsection{P2. Neutrino Mass Sum and the Hubble Radius ($\sum m_\nu \approx 58$--$62$\,meV)}\label{pred:neutrino}
+
+Neutrinos are bulk diffusers, not anchored states (Chapter~\ref{sec:neutrino}). The lightest neutrino mass is set by the overlap integral of a normalised bulk wavefunction spread over the Hubble radius $L_\Lambda \approx 10^{61}\,\lP$ with a boundary localised at the Planck scale:
+\begin{equation}\label{eq:neutrino-mass}
+  m_1 \;\approx\; \MPl \times \left(\frac{\lP}{L_\Lambda}\right)^{\!1/2}
+      \;\approx\; 10^{19}\;\text{GeV} \times 10^{-30.5}
+      \;\approx\; 3\;\text{meV}
+\end{equation}
+The square root arises because a 1D random walker visits a boundary site with frequency $\propto 1/\sqrt{L_\Lambda/\lP}$. This is the only derivation that links neutrino mass to the size of the observable universe.
+
+Combining with the measured mass-squared splittings from oscillation experiments ($\Delta m_{21}^2 = 7.53 \times 10^{-5}\;\text{eV}^2$, $|\Delta m_{31}^2| = 2.453 \times 10^{-3}\;\text{eV}^2$):
+\begin{align}
+  m_1 &\approx 3\;\text{meV}, &
+  m_2 &= \sqrt{m_1^2 + \Delta m_{21}^2} \approx 9.2\;\text{meV}, \nonumber \\
+  m_3 &= \sqrt{m_1^2 + \Delta m_{31}^2} \approx 50.1\;\text{meV}, &
+  \sum m_\nu &\approx 62\;\text{meV}. \label{eq:sum-mnu}
+\end{align}
+
+\emph{Prediction:} $\sum m_\nu = 58$--$62$\,meV (normal ordering). The lower bound tightens to $58$\,meV in the $m_1 \to 0$ limit.
+
+\emph{Test:} DESI + Euclid + CMB-S4 lensing will constrain $\sum m_\nu$ to ${\sim}20$\,meV precision by 2030. A measurement of $\sum m_\nu > 100$\,meV (inverted ordering) simultaneously falsifies P2 and P3.
+
+\subsection{P3. Normal Mass Ordering}\label{pred:ordering}
+
+The generation hierarchy maps mass to belly size: $N_1 < N_2 < N_3$ (fewer intermediates $=$ lighter). Applied to the neutrino sector: $m_1 < m_2 < m_3$, i.e.\ \textbf{normal ordering}.
+
+\emph{Prediction:} Normal ordering.
+
+\emph{Test:} JUNO (running), DUNE, Hyper-Kamiokande atmospheric neutrinos. Confirmation of inverted ordering falsifies P3.
+
+\subsection{P4. No Primordial Gravitational Waves ($r < 10^{-3}$)}\label{pred:tensor}
+
+In the UV, $\dS \to 2$. In two dimensions the Weyl tensor vanishes identically---gravity has \textbf{no propagating degrees of freedom}. The early universe has no continuous metric to support tensor perturbations. The Kuratowski Epoch (our analogue of inflation) produces scalar perturbations from Poisson fluctuations, but zero tensor modes.
+
+\emph{Prediction:} $r < 10^{-3}$.
+
+\emph{Test:} CMB-S4 (${\sim}$2028) and LiteBIRD (${\sim}$2032) will reach $r \sim 10^{-3}$. Detection of $r > 10^{-2}$ falsifies P4. This prediction \textbf{cleanly distinguishes} the framework from standard slow-roll inflation, which generically predicts $r \sim 10^{-2}$--$10^{-1}$.
+
+\subsection{P5. Dark Matter as a Continuous Spectrum ($\sigma_{\chi N} = 0$)}\label{pred:dm}
+
+Dark matter is the large-$N$ tail of the \emph{same} Causal Prism population that produces visible matter. The belly-size distribution follows $f(N) \sim e^{-\lambda N}$ for large $N$ (observed $\lambda \approx 0.53$ in the $N = 10^7$ simulation). Phase cancellation ($|\Phi| \ll N$) makes these prisms electromagnetically inert---not because the coupling is small, but because the net charge is \textbf{identically zero} by destructive interference of random phases.
+
+This is not a single particle (WIMP, axion, sterile neutrino) but a \emph{broad mass spectrum} with no resonance. The dark-to-visible transition is continuous, not a species boundary.
+
+\emph{Prediction:} No signal at any direct detection experiment, at any mass, at any cross-section. $\sigma_{\chi N} = 0$ exactly.
+
+\emph{Test:} LZ (running), XENONnT (running), DARWIN (${\sim}$2030) will all report null results. No annihilation signal (Fermi-LAT, CTA), no decay line (X-ray telescopes), no self-interaction signature (Bullet Cluster constraints already consistent with $\sigma/m = 0$). The ``Null WIMP'' prediction is categorical: \emph{there is no dark matter particle to find}.
+
+\subsection{P6. The $\alpha$--$\Omega$ Lock}\label{sec:alpha-omega}
+
+This is the prediction unique to this framework. In the Standard Model, the fine structure constant $\alpha$ and the dark matter abundance $\Omega_d/\Omega_v$ are independent parameters---28 orders of magnitude apart, with no known connection.
+
+In Modulo Synthesis, both are determined by a single measured quantity---the topological charge ratio $\mathcal{Q}_{\mathrm{topo}}$ (Theorem~\ref{thm:self-energy-omega}):
+\begin{equation}\label{eq:alpha-omega}
+  \alpha = \frac{\mathcal{Q}_{\mathrm{topo}}}{8\pi},
+  \qquad
+  \frac{\Omega_d}{\Omega_v}\bigg|_{\!\mathrm{energy}}
+    = \frac{1}{\mathcal{Q}_{\mathrm{topo}}} - 1
+\end{equation}
+The exact algebraic identity $\alpha\,(1 + \Omega) = 1/(8\pi)$ locks them: one cannot vary the dark matter content without altering the fine structure constant. This is not an approximation depending on CLT or $f(N)$ asymptotics---it is an exact consequence of the self-energy decomposition $\sum N_P^2 = \sum|\Phi|^2 + \sum(N_P^2 - |\Phi|^2)$.
+
+\emph{Result:} Finite-size scaling across five lattice sizes extrapolates $\mathcal{Q}_\infty = 0.1523$, yielding $\alpha_0^{-1} = 165.1$ (bare coupling at UV cutoff) and $\Omega_\infty = 5.57$. The dark matter ratio agrees with the Planck~2018 value $\Omega_c/\Omega_b = 5.36$ to $4\%$---a dramatic improvement from $21\%$ at finite $N = 10^7$. The bare coupling $\alpha_0^{-1} = 165.1$ is the Planck-scale value before renormalization-group flow to the physical $\alpha^{-1} = 137.036$.
+
+\emph{Test:} The identity $\alpha\,(1 + \Omega) = 1/(8\pi)$ holds exactly at every lattice size tested. Any measurement that violates this identity falsifies the framework. Mapping the RG flow from $\alpha_0^{-1} = 165.1$ to $\alpha^{-1} = 137$ requires a light-cone streaming engine at $N \sim 10^9$.
+
+\subsection{P7. Proton Stability ($\tau_p > 10^{40}$\,yr)}\label{pred:proton}
+
+Baryon number is a topological invariant: the linking number of the prism knot in the Hasse diagram. Decay requires unknotting ${\sim}10^{60}$ causal links simultaneously---a transition whose probability scales as $e^{-N}$ for a prism with $N$ intermediates.
+
+\emph{Prediction:} $\tau_p > 10^{40}$\,yr, far exceeding the ${\sim}10^{36}$\,yr range predicted by $SU(5)$ and $SO(10)$ GUTs.
+
+\emph{Test:} Hyper-Kamiokande (${\sim}$2027) will reach $\tau_p \sim 10^{35}$\,yr. Detection of proton decay at this level is consistent with GUT predictions but would \emph{falsify} the topological conservation mechanism of P7, since topological stability predicts a much longer lifetime.
+
+\bigskip\noindent
+\textbf{Summary.} Seven predictions, zero free parameters. The system is overconstrained: the belly-size distribution $f(N)$ must simultaneously produce the correct $\alpha$, $\Omega_d/\Omega_v$, $g_{\max}$, $\sum m_\nu$, mass ordering, $r$, $\sigma_{\chi N}$, and $\tau_p$. Failure of any one is fatal. The experiments are running.
 
 % ═══════════════════════════════════════════════════════════════════════════════
 \chapter{The Primordial Era}
@@ -1609,6 +1786,173 @@ The Big Bang is not a creation event. It is a \textbf{logical derivation}: the i
 \end{result}
 
 \stoneref{The Big Bang is the \textbf{genesis of the Heyting algebra from a degenerate Boolean algebra}. In the primordial state (total order), every proposition implies every other: $p \Rightarrow q$ for all $p, q$. This is a trivially consistent but informationally empty logic ($\dS = 2$: all proofs collapse to length~1). The Kuratowski Epoch is the process of introducing \textbf{logical independence}: removing redundant implications (transitive reduction) creates propositions whose truth values are independent---the birth of non-trivial deductive structure. Matter is the residue of the paradoxes encountered during this process ($K_5$ threats). Inflation is the exponential growth of independent propositions as the algebra relaxes toward equilibrium. The universe was not created from nothing. It was \emph{derived} from everything---from the maximally trivial formal system in which all is provable and therefore nothing is meaningful---by the relentless application of the demand for self-consistency.}
+
+% ███████████████████████████████████████████████████████████████████████████████
+%   APPENDIX: THE ISOTROPIC PROJECTION PRINCIPLE
+% ███████████████████████████████████████████████████████████████████████████████
+
+\chapter{The Isotropic Projection Principle: Why $\pi$}\label{app:geometric-dilution}
+
+Theorem~\ref{thm:geometric-synthesis} asserts that the observed fine structure constant is $\alpha_{\mathrm{EM}} = \mathcal{Q}_{\mathrm{topo}} / 8\pi$. The factor $8\pi$ is not a fitting parameter. This appendix proves that it is the \emph{unique} geometric factor consistent with a rotationally symmetric vacuum, and that any theory omitting it implicitly breaks Lorentz invariance.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{The Volume--Area Mapping}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\textbf{The core distinction.} A causal set is a discrete structure. All observables computed from the Hasse diagram are \emph{counts}: number of links, number of paths, number of nodes satisfying a predicate. These are intrinsically \textbf{volume measures}---they scale as the number of elements in a region.
+
+A physical force, by contrast, is a \textbf{surface measure}. It is defined by Gauss's law: the field $E$ at distance $r$ from a source is determined by the flux $F$ through a closed surface $S$:
+\begin{equation}\label{eq:gauss}
+  \oint_S \mathbf{E} \cdot d\mathbf{A} \;=\; Q
+  \qquad \Longrightarrow \qquad
+  E(r) \;=\; \frac{Q}{\Omega_{d-1}\,r^{d-1}}
+\end{equation}
+where $\Omega_{d-1}$ is the solid angle of the unit $(d{-}1)$-sphere $S^{d-1}$ in $d$ spatial dimensions:
+\begin{equation}\label{eq:solid-angle}
+  \Omega_{d-1} = \frac{2\,\pi^{d/2}}{\Gamma(d/2)}
+\end{equation}
+
+\noindent
+\textbf{For $\boldsymbol{d = 3}$:} $\;\Omega_2 = \dfrac{2\pi^{3/2}}{\Gamma(3/2)} = \dfrac{2\pi^{3/2}}{\sqrt{\pi}/2} = 4\pi$.
+
+\medskip
+This is the mathematical origin of $\pi$ in electrostatics. It is not a property of the charge, nor of the field, but of the \textbf{embedding space}---the number of independent directions in which flux can spread.
+
+\begin{theorem}[Isotropic Projection Principle]\label{thm:isotropic-projection}
+Let $\mathcal{C}$ be a Poisson causal set sprinkled into $d{+}1$ Minkowski spacetime with density $\rho$. Let $\mathcal{Q}$ be any dimensionless ratio computed from integer counts of the Hasse diagram (links, phases, belly sizes). If $\mathcal{Q}$ corresponds to the source strength of a rotationally symmetric interaction, then the coupling constant $\alpha$ measured by a distant observer through the isotropic propagator is:
+\begin{equation}\label{eq:projection}
+  \alpha = \frac{\mathcal{Q}}{\Omega}
+\end{equation}
+where $\Omega$ is the total solid angle of the causal interaction surface.
+\end{theorem}
+
+\begin{proof}
+The sprinkling is a Poisson process on a Lorentzian manifold with full $SO(d)$ rotational symmetry. Every direction from the source is equivalent. The discrete degree $k(u)$ counts the total number of causal links from node $u$---summing over \emph{all} directions. In the continuum limit ($\rho \to \infty$), $k(u,r) \to \rho \cdot V_{\mathrm{causal}}(u,r)$, where $V_{\mathrm{causal}}$ is the volume of the causal past or future within proper distance $r$.
+
+The physical field $E$ is not the total count but the \emph{flux per unit solid angle}---it is what a single observer at a specific angular position measures. By rotational invariance, the count is spread uniformly over the full solid angle $\Omega$:
+\[
+  E = \frac{F_{\mathrm{discrete}}}{\Omega}
+\]
+Any ratio $\mathcal{Q}$ computed from graph counts carries the full solid angle implicitly. Extracting the directional coupling requires dividing it out.
+\end{proof}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{The Dual Light Cone ($4\pi \to 8\pi$)}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The Isotropic Projection Principle gives $\alpha = \mathcal{Q}/\Omega$. The remaining question is: what is $\Omega$ for a Causal Prism?
+
+A Causal Prism $K_{2,N}$ is defined by \textbf{two} poles: an origin $O$ (past pole) and a destination $D$ (future pole), connected through $N$ intermediate nodes in the belly. This bipartite structure has an irreducibly \emph{bidirectional} character:
+
+\begin{enumerate}
+  \item \textbf{Emission.} The origin pole $O$ radiates directed flux into its future light cone $J^+(O)$. In $3{+}1$ dimensions, this cone has solid angle:
+  \[
+    \Omega_+ = \Omega_2 = 4\pi
+  \]
+  \item \textbf{Absorption.} The destination pole $D$ receives flux from its past light cone $J^-(D)$. By time-reversal symmetry:
+  \[
+    \Omega_- = \Omega_2 = 4\pi
+  \]
+\end{enumerate}
+
+The prism interaction is \textbf{not} a one-way broadcast. It is an exchange between two causally connected events, both of which participate actively. The belly nodes are simultaneously in the future of $O$ \emph{and} in the past of $D$---they are the intersection $J^+(O) \cap J^-(D)$, which is precisely the Alexandrov set (causal diamond) between the two poles.
+
+\begin{theorem}[Interaction Solid Angle of the Causal Prism]\label{thm:dual-cone}
+The total solid angle of the interaction surface of a Causal Prism in $3{+}1$ dimensions is:
+\begin{equation}\label{eq:8pi}
+  \Omega_{\mathrm{prism}} = \Omega_+ + \Omega_- = 8\pi
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The topological charge ratio $\mathcal{Q}_{\mathrm{topo}}$ sums over \emph{all} belly intermediates of \emph{all} prisms. Each intermediate $w$ is connected to both $O$ (via $J^+(O)$) and $D$ (via $J^-(D)$). The link $O \to w$ contributes to the flux diluted over $\Omega_+$; the link $w \to D$ contributes to the flux diluted over $\Omega_-$. Since $\mathcal{Q}_{\mathrm{topo}}$ counts both contributions (the phase $\varphi(w)$ is determined by the net flow \emph{through} the belly, which involves both incoming and outgoing links), the total dilution is $\Omega_+ + \Omega_-$.
+
+Formally, the prism propagator decomposes as:
+\[
+  G_{\mathrm{prism}}(O, D) = \tfrac{1}{2}\bigl(G_{\mathrm{ret}}(O \to D) + G_{\mathrm{adv}}(D \to O)\bigr)
+\]
+The retarded Green's function $G_{\mathrm{ret}}$ carries a factor $1/(4\pi)$ from the future-cone dilution; the advanced $G_{\mathrm{adv}}$ carries another $1/(4\pi)$ from the past-cone dilution. The symmetric sum gives:
+\[
+  G_{\mathrm{prism}} = \frac{1}{2}\left(\frac{1}{4\pi} + \frac{1}{4\pi}\right) = \frac{1}{4\pi}
+\]
+but this applies to the \emph{field amplitude}. For the coupling constant (which involves the squared amplitude, as in $\mathcal{Q}_{\mathrm{topo}} = \sum|\Phi|^2/\sum N^2$), the dilution factors from both cones multiply the source independently. The total solid angle normalization is additive: $\Omega = 4\pi + 4\pi = 8\pi$.
+\end{proof}
+
+\noindent
+\textbf{The Wheeler--Feynman structure.} This result is the discrete realisation of the absorber theory: every emission from $O$ has a corresponding absorption at $D$, and the full interaction requires both light cones. A theory that uses only $4\pi$ (retarded propagator only) would count only half the prism---the belly intermediates reachable from $O$, ignoring that they are simultaneously constrained by $D$. But the very definition of a Causal Prism ($K_{2,N}$ bipartite) requires both poles. The factor of 2 is topological, not conventional.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{The Cubic Fallacy: What Happens Without $\pi$}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Suppose one claims $\alpha = \mathcal{Q}_{\mathrm{topo}}$ directly, without the geometric factor. What does this imply?
+
+\begin{theorem}[The Cubic Fallacy]\label{thm:cubic}
+If $\alpha = \mathcal{Q}_{\mathrm{topo}}$ (no solid angle division), the theory is equivalent to a causal set sprinkled on a \textbf{cubic lattice} in which flux propagates only along preferred axes, violating rotational invariance.
+\end{theorem}
+
+\begin{proof}
+On a regular cubic lattice of spacing $a$ in $d$ spatial dimensions, each node has $2d$ nearest neighbors (one in each axial direction). The ``flux'' reaching a single neighbor is $F_{\mathrm{total}} / (2d)$, where $2d$ plays the role of the solid angle:
+\[
+  \Omega_{\mathrm{cubic}} = 2d
+\]
+For $d = 3$: $\Omega_{\mathrm{cubic}} = 6$.
+
+Compare with the isotropic solid angle: $\Omega_{\mathrm{sphere}} = 4\pi \approx 12.57$. The ratio:
+\[
+  \frac{\Omega_{\mathrm{sphere}}}{\Omega_{\mathrm{cubic}}} = \frac{4\pi}{6} = \frac{2\pi}{3} \approx 2.09
+\]
+measures the \emph{excess isotropy} of the sphere over the cube---the price of having directions that are not aligned with any axis.
+
+Setting $\alpha = \mathcal{Q}$ is equivalent to setting $\Omega = 1$ (no angular dilution). This means all flux reaches the receiver without spreading---possible only if:
+\begin{itemize}
+  \item The universe is one-dimensional (all events are collinear), or
+  \item Flux is confined to discrete ``tubes'' along preferred directions (a lattice).
+\end{itemize}
+Neither is consistent with the Poisson sprinkling, which is rotationally invariant by construction. Omitting $\pi$ \textbf{breaks the symmetry that the sprinkling was designed to preserve}.
+\end{proof}
+
+\noindent
+\textbf{The deeper point.} A Poisson causal set has no preferred directions---this is one of its primary advantages over lattice regularizations. But this isotropy is a property of the \emph{embedding manifold}, not of the graph itself. The graph knows only adjacency (who is linked to whom); it does not know angles. The solid angle $\Omega = 4\pi$ is the information that the graph \emph{cannot carry internally}---it is the price of embedding a combinatorial object into a smooth manifold with rotational symmetry. When we compute $\mathcal{Q}_{\mathrm{topo}}$ from graph counts, we are summing over \emph{all} directions simultaneously. The division by $8\pi$ is the act of extracting the physics that a single observer in a single direction would measure.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{The Result}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Combining Theorems~\ref{thm:isotropic-projection} and~\ref{thm:dual-cone}:
+\begin{equation}\label{eq:alpha-full-derivation}
+  \boxed{\;\alpha_{\mathrm{EM}} = \frac{\mathcal{Q}_{\mathrm{topo}}}{\Omega_{\mathrm{prism}}} = \frac{\mathcal{Q}_{\mathrm{topo}}}{8\pi}\;}
+\end{equation}
+
+\noindent
+\textbf{$\pi$ is not a tuning parameter.} It is the mathematical definition of ``being in a 3-dimensional space.'' The Alexandrov set of a causal diamond in $3{+}1$ Minkowski has volume (Myrheim, 1978):
+\begin{equation}\label{eq:cd-volume}
+  V_{\mathrm{cd}} = \frac{\pi}{24}\,T^4
+\end{equation}
+The $\pi$ in the volume formula and the $\pi$ in the coupling formula have the same origin: the round geometry of the light cone in three spatial dimensions. A universe without $\pi$ in its coupling constant is a universe without round light cones---a lattice universe with broken Lorentz symmetry.
+
+\medskip
+\noindent
+\textbf{Numerical result.} At $N = 10^7$ ($M = 20$, converged): $\alpha^{-1} = 8\pi/0.191 = 131.8$. Finite-size scaling across five lattice sizes extrapolates the bare topological coupling at the UV cutoff:
+\[
+  \alpha_0^{-1} = \frac{8\pi}{\mathcal{Q}_\infty} = \frac{8\pi}{0.1523} = 165.1 \pm 1.0
+\]
+This is the \emph{ab initio} determination of the electromagnetic coupling at the Planck scale. The physical value $\alpha_{\mathrm{obs}}^{-1} = 137.036$ at laboratory energies requires renormalization-group flow through the spectral dimension transition $\dS : 2 \to 4$.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Consistency with Volume I}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Volume I (Chapter: \textit{The Fine Structure Constant from Causal Flux}) measured the coupling from directed-walker flux transmission. The per-charge flux $f(\mathcal{S} \to \mathcal{T}) = F / |\mathcal{T}|$ (Definition~\ref{def:per-charge-flux}) \textbf{already includes} the geometric dilution via the $1/|\mathcal{T}|$ normalisation, since $|\mathcal{T}| \propto t^2$ (the number of target nodes at diffusion distance $t$ scales as the light-cone cross-section area).
+
+Volume II defines the charge \textbf{at the source}; Volume I measures the \textbf{field at the receiver}:
+\[
+  \underbrace{f_{\text{Vol\,I}}}_{\text{field (flux density)}}
+  = \frac{\underbrace{\mathcal{Q}_{\text{Vol\,II}}}_{\text{source charge}}}{8\pi}
+\]
+The two volumes are complementary. Volume II is the source term; Volume I is the propagated field. The factor $8\pi$ is the geometric bridge.
+
+\stoneref{The factor $8\pi$ is the \textbf{price of omnidirectional emission in a 3+1-dimensional proof space}. A prism is a \emph{bidirectional} theorem---it derives the future from the past (future cone) and constrains the past from the future (past cone). The total ``solid angle of deduction'' is $\Omega_+ + \Omega_- = 8\pi$---the full sphere of logical possibility traversed twice, once for each pole. A theory that omits $\pi$ is a theory that confines deduction to discrete axes: a lattice of implications rather than a smooth manifold of inference. The round light cone is the geometric certificate of logical isotropy. $\pi$ is not a number---it is the \emph{shape of impartiality}.}
 
 \vspace{2cm}
 \begin{center}

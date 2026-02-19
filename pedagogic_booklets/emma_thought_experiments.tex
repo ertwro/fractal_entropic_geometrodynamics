@@ -25,7 +25,7 @@
 
 % ─── Packages ─────────────────────────────────────────────────────────────────
 \usepackage{amsmath,amssymb,amsthm}
-\usepackage{graphicx,enumitem}
+\usepackage{graphicx,enumitem,booktabs}
 \usepackage{fancyhdr,titlesec}
 \usepackage{tcolorbox}
 \tcbuselibrary{skins,breakable}
@@ -398,9 +398,9 @@ $d_S \approx 2$ a escalas UV, $d_S \approx 4$ a escalas IR.}
 \textbf{The Experiment:}
 1. Emma builds causal prisms with many intermediate nodes ($N$ large). These are complex structures in the causal graph.
 2. Each prism has a quantum amplitude---a ``note.'' When $N$ is large, the prisms have many possible internal configurations, and their amplitudes point in random directions.
-3. By the law of large numbers, random amplitudes cancel: $\sum e^{i\theta_k} \approx 0$. The prisms become \emph{phase-cancelled}---invisible to electromagnetic interactions.
-4. But phase cancellation does not erase \emph{mass}. Each prism still contributes to the causal density of the graph, and gravity responds to causal density, not to amplitude.
-5. The threshold $\varepsilon$ is like the sensitivity of your microphone. Below $\varepsilon$, the choir is ``dark''---present but silent. Above $\varepsilon$, you start to hear individual voices (visible matter).
+3. By the \textbf{Central Limit Theorem} (see Volume~II), random amplitudes cancel: the electromagnetic ``charge'' $\mathcal{Q} \sim \sigma / \sqrt{N}$ shrinks as $N$ grows. The transition from visible to dark is \emph{continuous}, not a sharp cutoff---larger $N$ means weaker electromagnetic coupling.
+4. But phase cancellation does not erase \emph{mass}. Each prism still contributes to the causal density of the graph, and gravity responds to causal density, not to amplitude. In fact, large-$N$ prisms are \emph{more} stable (untying $N$ ropes at once has probability $\sim e^{-N}$).
+5. The threshold $\varepsilon$ is like the sensitivity of your microphone. Below $\varepsilon$, the choir is ``dark''---present but silent. Above $\varepsilon$, you start to hear individual voices (visible matter). The ``6th rope that tears'' from the hammock section is a pedagogical metaphor for the point where the electromagnetic coupling drops below detection threshold---the hammock doesn't literally break, it just becomes invisible.
 
 \textbf{The Lesson:} Dark matter is not invisible stuff. It is ordinary causal structure whose quantum voices have cancelled out---a ghost choir that weighs as much as five visible universes, singing in perfect destructive silence.
 \end{thoughtexp}
@@ -418,6 +418,13 @@ $d_S \approx 2$ a escalas UV, $d_S \approx 4$ a escalas IR.}
 4. This wobble in the floor is $\Lambda$: the cosmological constant. The floor's curvature is $\Lambda \sim 1/\sqrt{N}$.
 5. With $N \sim 10^{240}$ atoms in the observable universe, the wobble is $10^{-120}$---exactly the observed value.
 6. When the universe was young ($N$ small), the wobble was large---fast inflation. Now ($N$ huge), the wobble is tiny---slow acceleration.
+
+\textbf{Two components of $\Lambda$:} Strictly, the cosmological ``constant'' has two contributions:
+\begin{enumerate}
+  \item \textbf{Geometric background} (Jacobson/Thermodynamic): the equilibrium curvature that emerges from $\delta Q = T\,\delta S$ applied to the causal horizon (Volume~I, Modulo~7). This is the deterministic part---it vanishes as $N \to \infty$ because the thermodynamic equation of state drives the geometry toward flatness.
+  \item \textbf{Discrete fluctuation} (Sorkin/Poisson): the irreducible $\delta V / V \sim 1/\sqrt{N}$ noise from counting discrete events. This is the stochastic part.
+\end{enumerate}
+Both vanish for $N \to \infty$, but at any finite $N$ the Sorkin noise dominates: $1/\sqrt{N} \gg$ the geometric correction. This is why the Poisson counting argument gives the right order of magnitude by itself.
 
 \textbf{The Lesson:} The ball bounces because the floor has a maximum strength. The floor wobbles because it's made of countable atoms. The bounce is the Big Bang. The wobble is dark energy. Both are consequences of discreteness.
 \end{thoughtexp}
@@ -476,11 +483,13 @@ $d_S \approx 2$ a escalas UV, $d_S \approx 4$ a escalas IR.}
 1. Emma hangs a hammock with \textbf{3 ropes} (minimal hammock). She pushes it---easy to swing. \textbf{Electron}: $N=3$, light.
 2. She adds a 4th rope. Now harder to push. \textbf{Muon}: $N=4$, medium mass.
 3. She adds a 5th rope. Very hard to push. \textbf{Tau}: $N=5$, heavy.
-4. She tries to add a 6th rope, but the trees bend---the structure becomes unstable (threatens non-planarity, forbidden by Kuratowski).
+4. She tries to add a 6th rope. The hammock still holds---in fact, more ropes make it \emph{harder} to tear apart (stability grows as $\sim e^{-N}$). But now the ropes vibrate in so many directions that their combined sound cancels out: the hammock becomes \emph{invisible} to light while still weighing something (see Dark Matter, below). This is the electromagnetic opacity threshold, not a structural collapse.
 
 \textbf{The Insight:} Mass is not a number you assign---it's the \emph{count of ropes} in the causal hammock. You can't have 3.7 ropes. Mass must be an integer: $m = N$.
 
-The three generations exist because Kuratowski's theorem allows only $N \in \{3, 4, 5\}$ before the topology collapses. More ropes → threaten $K_5$ formation → absorbed by the strong force.
+\textbf{Important caveat:} The rope count $N$ determines \emph{mass} (topological inertia), but it is not the rigorous definition of \emph{generation}. The precise definition (from Volume~I) is \textbf{phase complexity}: how many distinct causal phase classes ($\{-, 0, +\}$) are represented among the intermediate nodes. A hammock with all ropes vibrating the same way ($g = 1$) is Generation~1, regardless of whether it has 3, 4, or 5 ropes. The correlation between rope count and generation holds approximately---small $N$ tends to produce low phase complexity---but they are distinct concepts. Think of $N$ as how \emph{heavy} the hammock is, and $g$ as how \emph{diverse} its vibrations are.
+
+More ropes beyond $N = 5$ threaten $K_5$ formation $\to$ absorbed by the strong force (Kuratowski contraction).
 
 \textbf{Why ``Inertia''?} Think of the hammock as a road that a random walker must cross. The walker enters at one pole (tree) and exits at the other. With 3 ropes, the walker has 3 parallel paths and crosses quickly---low residence time. With 5 ropes, the walker has 5 parallel paths and the structure is deeper---higher residence time. Mass is literally \emph{how long the universe takes to process a particle}. A heavy particle is a deep hammock: more intermediate paths, more time spent inside. A light particle is a shallow hammock: few paths, quick crossing. The formula is $m \propto \tau_{\text{residence}}(K_{2,N})$---the mean first-passage time on the complete bipartite graph. This is not a metaphor. It is the definition.
 
@@ -684,7 +693,7 @@ The universe runs in $O(N)$---linear time---because \emph{physics is local}. Eve
 \textbf{The Experiment:}
 1. If the coins had a script (Hidden Variables), they would match 50\% of the time in a certain test.
 2. They actually match 70\% of the time.
-3. This extra correlation comes from the fact that the two events are part of the \textbf{same quantum process} in the Causal Set, linked by non-local threads.
+3. This extra correlation comes from the fact that the two events share a \textbf{common causal ancestor} in the graph whose influence is richer than any classical pre-arrangement.
 
 \textbf{Deeper:} Bell discovered that shared stories aren't enough---the correlations are \emph{stronger} than any pre-written script could produce. Imagine Emma and Sara each receive a book printed from the same master copy. If the books were just copies, their answers to any quiz would agree at most half the time. But quantum coins agree \emph{more} than half the time. It's as if the master copy itself was written \emph{at the moment of reading}---the shared causal ancestor doesn't just fix the answers in advance, it creates a bond that no classical pre-arrangement can imitate. The violation of Bell's inequality ($S > 2$) is the mathematical proof that the universe's story is written live, not pre-recorded.
 
@@ -692,15 +701,194 @@ The universe runs in $O(N)$---linear time---because \emph{physics is local}. Eve
 \end{thoughtexp}
 
 % ═══════════════════════════════════════════════════════════════════════════════
+\chapter{Happy Thought Predictions}
+\textit{Using: The Overconstrained Universe}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+Emma has learned how the universe works---its carpets and hammocks, its ghost choirs and bouncing balls. But a theory that only explains the past is just a story. A real theory must \emph{risk itself}. It must say: ``Look here. If you find this, I was wrong.''
+
+These are Emma's Happy Thought Predictions. Each one is a bet the universe has placed against itself. Zero adjustable knobs. Seven specific numbers. If any one is wrong, the whole framework falls---not gracefully, but completely.
+
+\section{The Forbidden Fourth Family}
+\begin{thoughtexp}[The Three-Color Rule]
+\textbf{The Scenario:} Emma is painting with crayons. She has Red ($-$), White ($0$), and Blue ($+$). Sara asks: ``Can you paint with a fourth color?''
+
+\textbf{The Insight:} No. There is no fourth color. The sign function $\varphi = \operatorname{sgn}(p)$ has exactly three outputs: negative, zero, positive. That is a mathematical fact, not a choice.
+
+\textbf{The Experiment:}
+\begin{enumerate}
+  \item Emma builds hammocks (Causal Prisms). Each rope vibrates with one of three colors: $\{-, 0, +\}$.
+  \item A Generation-1 hammock has all ropes the same color ($g = 1$).
+  \item A Generation-2 hammock has two distinct colors ($g = 2$).
+  \item A Generation-3 hammock has all three colors ($g = 3$).
+  \item A Generation-4 hammock would need a \emph{fourth} color. But there is no fourth output of the sign function. It is not that the fourth family is too heavy to see---it is that \emph{it cannot exist in any graph governed by the sign principle}.
+\end{enumerate}
+
+\textbf{The Prediction:} No fourth-generation fermion will ever be found, at any energy, at any collider, in any universe that obeys the sign function. This is a theorem, not a parameter.
+
+\textbf{The Kill Switch:} If a fourth generation is discovered, Emma's whole framework is wrong.
+
+\textbf{The Lesson:} The number of families is not a mystery. It is a counting exercise: how many distinct outputs does the sign function have? Three. Always three.
+\end{thoughtexp}
+
+\section{The Neutrino's Ruler}
+\begin{thoughtexp}[The Ghost That Measures the Universe]
+\textbf{The Scenario:} Emma holds a ruler. One end is the Planck length ($10^{-35}$\,m)---the smallest possible tick. The other end is the Hubble radius ($10^{26}$\,m)---the edge of the observable universe. The ruler spans 61 orders of magnitude. Somewhere on this ruler, hiding like a tiny scratch, is the neutrino mass.
+
+\textbf{The Insight:} Neutrinos are ghosts---bulk diffusers that wander freely through the entire causal diamond. Their mass comes from how rarely they bump into the boundary where the Higgs lives. A random walker in a room of size $L$ visits a specific wall with frequency $\sim 1/\sqrt{L}$. The room is the universe. The wall is the Planck scale.
+
+\textbf{The Experiment:}
+\begin{enumerate}
+  \item Emma releases a neutrino (Fluffy the ghost cat) into a room the size of the universe ($L_\Lambda = 10^{61}\,\lP$).
+  \item Fluffy wanders randomly. The probability of bumping into the Planck-scale wall on any given step is $\sqrt{\lP/L_\Lambda} = \sqrt{10^{-61}} = 10^{-30.5}$.
+  \item Each bump gives Fluffy a tiny kick of energy. The total mass is the bump rate times the Planck energy:
+  \[
+    m_\nu \approx 10^{19}\;\text{GeV} \times 10^{-30.5} \approx 3\;\text{milli-eV}
+  \]
+  \item Using the known mass splittings from neutrino oscillations: $m_1 \approx 3$\,meV, $m_2 \approx 9$\,meV, $m_3 \approx 50$\,meV. Total: $\sum m_\nu \approx 62$\,meV.
+\end{enumerate}
+
+\textbf{The Prediction:} The sum of neutrino masses is between 58 and 62 milli-eV. The lightest neutrino is the lightest---normal ordering ($m_1 < m_2 < m_3$), not inverted.
+
+\textbf{The Kill Switch:} The JUNO experiment (running now!) is measuring the mass ordering. DESI and Euclid will pin down $\sum m_\nu$ to $\sim 20$\,meV precision. If $\sum m_\nu > 100$\,meV, or if the ordering is inverted, Emma's framework is dead.
+
+\textbf{The Lesson:} The neutrino mass is not a random number from a particle physics model. It is a direct measurement of the size of the universe, encoded in the wandering frequency of a ghost.
+\end{thoughtexp}
+
+\section{The Silent Cosmos}
+\begin{thoughtexp}[The Stiff Baby Universe]
+\textbf{The Scenario:} Astronomers point their telescopes at the oldest light in the universe (the CMB). They are looking for a faint swirl pattern called ``B-modes''---the fingerprint of primordial gravitational waves. The big inflation theories say: ``You will find them. The signal is $r \approx 0.1$.''
+
+Emma says: ``You will find nothing.''
+
+\textbf{The Insight:} Gravitational waves need a medium that can ripple---like waves need water. In the early universe, the spectral dimension was $d_S \approx 2$. In two dimensions, gravity has \textbf{no propagating degrees of freedom}. The Weyl tensor vanishes. There is no water to ripple.
+
+\textbf{The Experiment:}
+\begin{enumerate}
+  \item Emma builds a 2D sheet of paper. She tries to make a wave propagate across it by wiggling one edge.
+  \item The sheet flutters but does not transmit a transverse wave---it is too stiff in its own plane.
+  \item Now she builds a 4D block of jelly. Waves propagate easily.
+  \item The early universe was like the sheet: effectively 2D. Gravitational waves could not form.
+  \item By the time the universe ``thawed'' to 4D (when $d_S \to 4$), the inflationary epoch was over.
+\end{enumerate}
+
+\textbf{The Prediction:} The tensor-to-scalar ratio $r < 10^{-3}$. Effectively zero.
+
+\textbf{The Kill Switch:} CMB-S4 ($\sim$2028) and LiteBIRD ($\sim$2032) will measure $r$ to $10^{-3}$ precision. If they detect $r > 0.01$, Emma is wrong. This prediction \emph{distinguishes} the framework from standard inflation.
+
+\textbf{The Lesson:} The early universe was silent---too stiff to ripple. If astronomers hear primordial gravitational waves, the universe was never 2-dimensional, and the whole spectral dimension story collapses.
+\end{thoughtexp}
+
+\section{The Invisible Weight}
+\begin{thoughtexp}[Why Nobody Will Ever Catch Dark Matter]
+\textbf{The Scenario:} Deep underground, scientists build detectors the size of swimming pools, filled with ultra-pure xenon. They wait years for a single dark matter particle to bounce off a xenon nucleus. They find nothing. They build bigger detectors. Still nothing. Why?
+
+\textbf{The Insight:} They are looking for a particle that does not exist. Dark matter is not a \emph{thing}---it is a \emph{property} of the same causal hammocks that make visible matter. Large hammocks ($N > 5$) have so many ropes vibrating in random directions that their electromagnetic ``voices'' cancel out. But they still weigh something. The mass spectrum is not a single peak (like a WIMP at 100\,GeV)---it is a broad exponential tail: $f(N) \sim e^{-0.53\,N}$.
+
+\textbf{The Experiment:}
+\begin{enumerate}
+  \item Emma imagines building a ``dark matter detector.'' She sets a trap for a ghost.
+  \item But the ghost is not a ghost---it is a choir of 20 singers whose voices cancel. There is no single ghost to catch.
+  \item The choir has no electromagnetic charge ($|\Phi| \approx 0$), so it cannot scatter off xenon nuclei. The cross-section is not ``very small''---it is \textbf{exactly zero}.
+  \item The choir still has mass ($M_{\text{grav}} = N$), so it bends spacetime (gravitational lensing, galaxy rotation curves).
+  \item There is no ``dark matter particle mass'' to discover---just a continuous distribution of large hammocks.
+\end{enumerate}
+
+\textbf{The Prediction:} Every direct detection experiment will report null results. No WIMP. No axion resonance. No dark photon. The dark matter signal is purely gravitational.
+
+\textbf{The Kill Switch:} Detection of a dark matter particle with a well-defined mass and non-zero electromagnetic or weak cross-section falsifies the framework.
+
+\textbf{The Lesson:} Dark matter is not invisible stuff. It is visible stuff whose voices have cancelled. You cannot catch silence in a bottle.
+\end{thoughtexp}
+
+\section{The Locked Ledger}
+\begin{thoughtexp}[The Prediction That Links Light to Darkness]
+\textbf{The Scenario:} Emma has a jar of marbles. Some are bright (visible matter), some are dark (dark matter). She also has a flashlight whose brightness depends on the marble sizes. Sara asks: ``Can you change how many dark marbles there are without changing the brightness of the flashlight?''
+
+Emma says: ``No. They are the same marbles.''
+
+\textbf{The Insight:} In standard physics, the fine structure constant $\alpha$ (the strength of light) and the dark matter ratio $\Omega_d/\Omega_v$ are completely independent numbers. In Emma's framework, both come from the \emph{same} single number---the topological charge ratio $\mathcal{Q}_{\mathrm{topo}}$:
+\begin{itemize}
+  \item $\alpha = \mathcal{Q}_{\mathrm{topo}} / (8\pi)$: how much electromagnetic self-energy each hammock carries, diluted by the solid angle of its double light-cone.
+  \item $\Omega_{\mathrm{energy}} = 1/\mathcal{Q}_{\mathrm{topo}} - 1$: how much gravitational self-energy is \emph{dark} (phase-cancelled) versus \emph{visible} (phase-coherent).
+\end{itemize}
+
+These two definitions are not independent---they satisfy an \emph{exact algebraic identity}:
+\[
+  \alpha\,(1 + \Omega_{\mathrm{energy}}) = \frac{1}{8\pi}\,.
+\]
+Measure one, and the other is fixed. They are locked.
+
+\textbf{The Experiment:}
+\begin{enumerate}
+  \item Emma measures one number from her jar of marbles: the topological charge ratio $\mathcal{Q}_{\mathrm{topo}} = \Sigma|\Phi|^2 / \Sigma N^2$.
+  \item From this single number, she computes both $\alpha^{-1}$ and $\Omega_{\mathrm{energy}}$.
+  \item At $N = 10^7$, the simulation gives $\mathcal{Q}_{\mathrm{topo}} \approx 0.191$, yielding $\alpha^{-1} \approx 132$ and $\Omega_{\mathrm{energy}} \approx 4.24$.
+  \item But $N = 10^7$ is still a finite jar! Finite-size scaling across five jar sizes ($N = 10^5$ to $10^7$) shows that boundary effects inflate $\mathcal{Q}$ by an amount $\propto N^{-1/4}$ (the 4D causal horizon). Extrapolating to an infinite jar: $\mathcal{Q}_\infty = 0.152$, $\alpha_0^{-1} = 165.1$ (the \emph{bare} coupling at the Planck scale), and $\Omega_\infty = 5.57$---within $4\%$ of Planck's $5.36$!
+  \item The bare $\alpha_0^{-1} = 165.1$ is not the final answer: it must ``run'' to $\alpha^{-1} = 137$ at human scales, like a prism splitting white light into colours at different energies.
+\end{enumerate}
+
+\textbf{The Prediction:} A single parameter-free measurement locks both constants. Finite-size scaling extrapolates $\Omega_\infty = 5.57$, within $4\%$ of the Planck~2018 value of $5.36$. The bare coupling $\alpha_0^{-1} = 165.1$ at the Planck scale sets the starting point for renormalization-group flow to the physical $\alpha^{-1} = 137$---no tuning possible.
+
+\textbf{The Kill Switch:} The identity $\alpha(1+\Omega) = 1/(8\pi)$ is exact. If the simulation gives the right $\alpha$ but the wrong $\Omega$ (or vice versa), the identity itself is violated---and the framework is dead.
+
+\textbf{The Lesson:} Light and darkness are not separate mysteries. They are two pages of the same ledger, written in the same ink, from the same jar of marbles.
+\end{thoughtexp}
+
+\section{The Immortal Proton}
+\begin{thoughtexp}[The Knot That Cannot Untie]
+\textbf{The Scenario:} Grand Unified Theories predict that protons decay in about $10^{36}$ years. Physicists build enormous water tanks underground, watching for the flash of a dying proton. They have watched for decades. Nothing.
+
+Emma says: ``Keep watching. You will never see it.''
+
+\textbf{The Insight:} A proton is a topological knot in the causal graph. Baryon number is not an ``accidental symmetry''---it is the linking number of the knot. To decay, the proton would have to unknot ${\sim}10^{60}$ causal links simultaneously. The probability scales as $e^{-N}$---exponentially impossible.
+
+\textbf{The Experiment:}
+\begin{enumerate}
+  \item Emma ties a knot in a rope with $N$ strands. She tries to untie it by cutting one strand at a time.
+  \item Each cut loosens the knot slightly, but does not untie it. She needs to cut \emph{all} strands at once.
+  \item For a proton ($N \sim 10^{60}$), the probability of simultaneous cutting is $e^{-10^{60}}$.
+  \item This gives $\tau_p > 10^{40}$ years---far beyond GUT predictions.
+\end{enumerate}
+
+\textbf{The Prediction:} No proton decay will be observed by Hyper-Kamiokande or any foreseeable experiment.
+
+\textbf{The Kill Switch:} Detection of proton decay at $\tau_p \sim 10^{36}$ years (the GUT range) would favor Grand Unified Theories over topological stability.
+
+\textbf{The Lesson:} The proton does not decay because its identity is a knot, not a label. Labels can be erased. Knots endure.
+\end{thoughtexp}
+
+\bigskip
+\begin{center}
+\begin{tcolorbox}[colback=structure!5,colframe=structure,width=0.85\textwidth,arc=2pt]
+\textbf{The Overconstrained Universe.} Seven predictions. Zero free parameters. Every observable is coupled to every other through the belly-size distribution $f(N)$. If any single prediction fails, the whole framework collapses. The experiments are running.
+
+\medskip
+\small
+\begin{tabular}{@{}lll@{}}
+\textbf{Prediction} & \textbf{Value} & \textbf{Experiment} \\
+\midrule
+$g_{\max}$ & $= 3$ (theorem) & Colliders (running) \\
+$\sum m_\nu$ & $58$--$62$\,meV & JUNO, DESI, Euclid \\
+Mass ordering & Normal & JUNO (running) \\
+$r$ & $< 10^{-3}$ & CMB-S4, LiteBIRD \\
+$\sigma_{\chi N}$ & $= 0$ & LZ, XENONnT, DARWIN \\
+$\alpha$--$\Omega$ Lock & 1D curve & Simulation ensemble \\
+$\tau_p$ & $> 10^{40}$\,yr & Hyper-K \\
+\end{tabular}
+\end{tcolorbox}
+\end{center}
+
+% ═══════════════════════════════════════════════════════════════════════════════
 \chapter*{Epílogo}
 \addcontentsline{toc}{chapter}{Epílogo}
 % ═══════════════════════════════════════════════════════════════════════════════
 
-Emma se sienta en la hierba y mira las estrellas. Ha recorrido un largo camino: desde la doble rendija hasta el rebote cósmico, desde la hamaca del electrón hasta el coro fantasma de la materia oscura.
+Emma se sienta en la hierba y mira las estrellas. Ha recorrido un largo camino: desde la doble rendija hasta el rebote cósmico, desde la hamaca del electrón hasta el coro fantasma de la materia oscura, y ahora hasta las predicciones que pondrán a prueba todo lo que ha aprendido.
 
 Sara le pregunta: ``¿Cuál es la respuesta?''
 
-Emma sonríe. ``No hay \emph{una} respuesta. Cada misterio es una ventana al mismo paisaje. La hamaca que da masa, la espuma que da espacio, el rebote que inició el tiempo---son la misma historia contada desde ángulos distintos.''
+Emma sonríe. ``No hay \emph{una} respuesta. Cada misterio es una ventana al mismo paisaje. La hamaca que da masa, la espuma que da espacio, el rebote que inició el tiempo---son la misma historia contada desde ángulos distintos. Pero ahora sabemos cómo \emph{comprobarla}.''
 
 Fluffy ronronea en su regazo, probablemente en superposición entre dormido y despierto.
 

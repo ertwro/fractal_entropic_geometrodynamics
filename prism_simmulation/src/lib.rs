@@ -36,6 +36,7 @@
 //! | 1 | [`diamond`] | Vacuum generation: Poisson sprinkling + Hasse diagram |
 //! | 2 | [`skyrmion`] | Kuratowski contraction: Causal Prism detection + K₅ absorption |
 //! | 3 | [`spectral`] | Spectral dimension: random walk return probability |
+//! | — | [`anim_export`] | Binary topology slice export for external renderers |
 //! | 4 | [`output`] | CSV serialisation of ensemble-averaged observables |
 //!
 //! ## Data Flow
@@ -47,11 +48,15 @@
 //!     ↓                [3 termination valves: degree cap, Alexandrov short-circuit, dry-shell]
 //! apply_defect() → Causal Prisms, K₅ threat absorption, generation classification
 //!     ↓                [minimum valence pruning: skip nodes with degree < 3]
+//!     +--[--export-slice]-→ write_slice() → .slice file (bincode, early exit)
+//!     ↓
 //! run_walkers() → P(t), d_S(t) for vacuum/defect/generations/flux
 //!     ↓                [u64 integer accumulation; f64 only at final division]
 //! write_csv() → results.csv
 //! ```
 
+pub mod anim_export;
+pub mod checkpoint;
 pub mod diamond;
 pub mod memory;
 pub mod output;

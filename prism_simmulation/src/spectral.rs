@@ -8,11 +8,13 @@ use nalgebra::{DMatrix, SymmetricEigen};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use rayon::prelude::*;
+use serde::{Serialize, Deserialize};
 
 /// Spectral dimension measurements for one graph (vacuum or defect).
 ///
 /// Contains return probabilities P(t) and their derived spectral dimensions
 /// d_S(t) for global, local (core), per-generation, and causal flux observables.
+#[derive(Clone, Serialize, Deserialize)]
 pub struct SpectralResult {
     /// P(t) measured from uniformly random starting positions.
     /// Probes the global geometry of the graph (vacuum or defect).
@@ -61,22 +63,22 @@ pub struct SpectralResult {
     /// Directed transmission probability: Gen1 → Gen1 (same charge repulsion).
     pub flux_repulsion: Vec<f64>,
 
-    // ── Normalized Flux (per-node coupling strength, Conjecture C3) ──
+    // ── Normalized Flux (per-charge coupling — Definition) ──
     //
-    // Raw flux is dominated by combinatorial factor |Gen1| >> |AntiGen1|.
-    // Per-node normalization isolates the intrinsic coupling strength.
+    // f = F/|targets| isolates intrinsic coupling per unit charge (E = F/q).
+    // Derived: Vol II, Definition "Per-Charge Flux Normalization".
 
     /// Normalized attraction flux: flux_attraction / |targets_attraction|.
     pub flux_attr_norm: Vec<f64>,
     /// Normalized repulsion flux: flux_repulsion / |targets_repulsion|.
     pub flux_repu_norm: Vec<f64>,
 
-    // ── Sterile Prism Spectral Data (Conjecture C6) ──
+    // ── Sterile Prism Spectral Data (Phase-Coherence Theorem) ──
     //
-    // Prisms with N > 5 intermediates are "sterile" — gravitationally active
-    // but electromagnetically silent (dark matter candidates).
+    // Prisms with Φ = 0 are "sterile" — gravitationally active
+    // but electromagnetically silent (dark matter).
 
-    /// P(t) for walkers starting on sterile prism nodes (N > 5).
+    /// P(t) for walkers starting on sterile prism nodes (Φ = 0).
     pub p_sterile: Vec<f64>,
     /// d_S(t) for sterile prism nodes.
     pub ds_sterile: Vec<f64>,

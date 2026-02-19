@@ -1,1 +1,39 @@
+# ── Paper (private, not for public release) ──
+paper/
+
+# ── Animations (development branch 1b only) ──
+animations/
+
+# ── Planning documents (development branch 1b only) ──
+prism_simmulation/LIGHTCONE_ARCHITECTURE.md
+
+# ── LaTeX build artifacts ──
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+*.compile.log
+*Notes.bib
+texput.log
+
+# ── Rust build artifacts ──
+target/
+
+# ── Python ──
 __pycache__/
+*.pyc
+*.pyo
+
+# ── Simulation artifacts ──
+*.checkpoint.bin
+*.checkpoint.bin.bak*
+.checkpoint.bin*
+prism_simmulation/simulation.log
+prism_simmulation/test_*.log
+prism_simmulation/-M/
+
+# ── OS ──
+.DS_Store
+Thumbs.db

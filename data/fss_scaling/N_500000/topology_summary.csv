@@ -1,0 +1,26 @@
+# commit: cff5bb5 (dirty)
+# N: 500000  M: 8 (converged=true, min=8, max=10)  mode: in-memory
+# epsilon: 0.01  tmax: 15  walkers: 2250000
+# algorithm: forward-forward belly (children(u) ∩ parents(v))
+# timestamp: 2026-02-19T01:53:19Z
+# seed: 42
+key,value
+total_nodes,500000
+total_prisms,142360
+max_intermediates,29
+count_gen1,2637
+count_gen2,108464
+count_gen3,17234
+count_antigen1,18622
+count_sterile,16217
+avg_mass_gen1,4.4533
+avg_mass_gen2,6.4753
+avg_mass_gen3,7.8728
+avg_mass_sterile,6.0931
+visible_mass_total,370060
+dark_mass_total,520894
+grav_mass_total,890954
+omega_ratio,1.407593
+phase_sq_total,1528472
+mass_sq_total,6578346
+alpha_em,0.23234898

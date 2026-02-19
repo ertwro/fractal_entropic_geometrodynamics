@@ -137,14 +137,14 @@ pub fn ensure_config(dir: &str) {
 
 /// Detect available system RAM in bytes.
 pub fn available_ram_bytes() -> u64 {
-    let mut sys = System::new_all();
+    let mut sys = System::new();
     sys.refresh_memory();
     sys.available_memory()
 }
 
 /// Detect total system RAM in bytes.
 pub fn total_ram_bytes() -> u64 {
-    let mut sys = System::new_all();
+    let mut sys = System::new();
     sys.refresh_memory();
     sys.total_memory()
 }

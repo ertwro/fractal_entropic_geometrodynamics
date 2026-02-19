@@ -17,6 +17,7 @@
 use rand::Rng;
 use rayon::prelude::*;
 use sprs::TriMat;
+use std::f64::consts::PI;
 use std::sync::atomic::Ordering;
 
 // Hollow Light Cone Shell Optimization (HPC)
@@ -54,9 +55,9 @@ const MAX_HASSE_DEGREE: usize = 15;
 
 /// Poisson-sprinkle `n` points into a 4D causal diamond |t| + r ≤ T/2.
 ///
-/// Volume V = T⁴/24;  T = (24N)^{1/4}  gives density ρ ≈ 1.
+/// Volume V = πT⁴/24;  T = (24N/π)^{1/4}  gives density ρ ≈ 1.
 pub fn sprinkle(n: usize, rng: &mut impl Rng) -> (Vec<[f64; 4]>, f64) {
-    let big_t = (24.0 * n as f64).powf(0.25);
+    let big_t = (24.0 * n as f64 / PI).powf(0.25);
     let half_t = big_t / 2.0;
 
     let mut pts = Vec::with_capacity(n);
@@ -484,7 +485,7 @@ pub fn build_hasse_direct(pts: &[[f64; 4]]) -> (Vec<[f64; 4]>, Vec<u32>, Vec<u32
                     // descendants ⇒ break.
                     if children_coords.len() == links_before {
                         consecutive_dry += 1;
-                        if consecutive_dry >= 1 && children_coords.len() >= 2 { break; }
+                        if consecutive_dry >= 2 && children_coords.len() >= 2 { break; }
                     } else {
                         consecutive_dry = 0;
                     }
@@ -542,7 +543,7 @@ pub fn stream_edges_to_file(n_total: usize, chunk_size: usize, path: &str, seed:
     use std::fs::File;
     use std::io::{BufWriter, Write};
 
-    let big_t = (24.0 * n_total as f64).powf(0.25);
+    let big_t = (24.0 * n_total as f64 / PI).powf(0.25);
     let half_t = big_t / 2.0;
 
     // Grid Parameters (Global)
@@ -677,7 +678,9 @@ pub fn stream_edges_to_file(n_total: usize, chunk_size: usize, path: &str, seed:
                 let mut children_coords: Vec<[f64; 4]> = Vec::with_capacity(32);
                 let mut candidates: Vec<usize> = Vec::with_capacity(128);
 
-                // Full light cone search (no fixed cutoff)
+                // Per-shell light cone search with termination valves
+                let mut consecutive_dry = 0u16;
+
                 for dt in 0..max_dt {
                     let target_t = qt + dt;
                     if target_t < 0 || target_t >= (t_dim as i16) { continue; }
@@ -686,15 +689,18 @@ pub fn stream_edges_to_file(n_total: usize, chunk_size: usize, path: &str, seed:
                     let r_max = dt + 1;
                     let r2_limit = (r_max + 1) * (r_max + 1);
                     let dt_f = dt as f64;
-                    
+
                     let r_min_f = (dt_f * dt_f - MAX_PROPER_TIME_SQ).max(0.0).sqrt();
                     let r_min = r_min_f.floor() as i16;
                     let r_min_sq = (r_min as i32) * (r_min as i32);
 
+                    let links_before = children_coords.len();
+                    candidates.clear();
+
                     for dx in -r_max..=r_max {
                         for dy in -r_max..=r_max {
                             let dxy2 = dx as i32 * dx as i32 + dy as i32 * dy as i32;
-                            
+
                             // Hollow Shell Logic
                             let dz_skip = if dxy2 < r_min_sq {
                                 ((r_min_sq - dxy2) as f64).sqrt().floor() as i16
@@ -712,7 +718,7 @@ pub fn stream_edges_to_file(n_total: usize, chunk_size: usize, path: &str, seed:
                                 for dz in range {
                                     let r2_i = dxy2 + dz as i32 * dz as i32;
                                     let proper_time_sq = dt_f * dt_f - r2_i as f64;
-                                    
+
                                     if proper_time_sq > MAX_PROPER_TIME_SQ { continue; }
                                     if r2_i >= r2_limit as i32 { continue; }
 
@@ -733,35 +739,46 @@ pub fn stream_edges_to_file(n_total: usize, chunk_size: usize, path: &str, seed:
                                     let count = grid_count[cell_idx] as usize;
                                     if start == usize::MAX || count == 0 { continue; }
 
-                                    let neighbors = &buffer[start..(start + count)];
-                                    candidates.extend(
-                                        (0..neighbors.len()).map(|k| start + k)
-                                    );
+                                    candidates.extend(start..(start + count));
                                 }
                             }
                         }
                     }
-                }
 
-                // Sort candidates by time for correct transitive reduction
-                candidates.sort_unstable_by(|&a, &b| {
-                    buffer[a].p[0].partial_cmp(&buffer[b].p[0]).unwrap_or(std::cmp::Ordering::Equal)
-                });
-                candidates.dedup();
+                    // Process candidates for this dt-shell
+                    candidates.sort_unstable_by(|&a, &b| {
+                        buffer[a].p[0].partial_cmp(&buffer[b].p[0]).unwrap_or(std::cmp::Ordering::Equal)
+                    });
+                    candidates.dedup();
 
-                // Filter: causal check + transitive reduction
-                for v_idx in candidates {
-                    let v_pt = &buffer[v_idx];
-                    if u_orig == v_pt.orig_idx { continue; }
+                    let mut causal_checked = 0u32;
+                    let mut blocked = 0u32;
 
-                    if !is_causal(&u_pt.p, &v_pt.p) { continue; }
+                    for &v_idx in &candidates {
+                        let v_pt = &buffer[v_idx];
+                        if u_orig == v_pt.orig_idx { continue; }
+                        if !is_causal(&u_pt.p, &v_pt.p) { continue; }
+                        causal_checked += 1;
 
-                    // Transitive reduction: reject if any child z ≺ v
-                    let redundant = children_coords.iter().any(|z| is_causal(z, &v_pt.p));
+                        let redundant = children_coords.iter().any(|z| is_causal(z, &v_pt.p));
+                        if redundant {
+                            blocked += 1;
+                        } else {
+                            children_coords.push(v_pt.p);
+                            local_edges.push((u_orig, v_pt.orig_idx));
+                        }
+                    }
 
-                    if !redundant {
-                        children_coords.push(v_pt.p);
-                        local_edges.push((u_orig, v_pt.orig_idx));
+                    // ── Valve 1: Degree cap (Causal Shadow) ──
+                    if children_coords.len() >= MAX_HASSE_DEGREE { break; }
+                    // ── Valve 2: Alexandrov volume short-circuit ──
+                    if causal_checked > 0 && blocked == causal_checked && children_coords.len() >= 1 { break; }
+                    // ── Valve 3: Adaptive early termination (two dry shells) ──
+                    if children_coords.len() == links_before {
+                        consecutive_dry += 1;
+                        if consecutive_dry >= 2 && children_coords.len() >= 2 { break; }
+                    } else {
+                        consecutive_dry = 0;
                     }
                 }
                 local_edges
@@ -807,9 +824,9 @@ fn scan_edges_sparse<F>(
 ) where
     F: FnMut(&[(u32, u32)]),
 {
-    use std::collections::HashMap;
+    use rustc_hash::FxHashMap as HashMap;
 
-    let big_t = (24.0 * n_total as f64).powf(0.25);
+    let big_t = (24.0 * n_total as f64 / PI).powf(0.25);
     let half_t = big_t / 2.0;
 
     let margin = 2.0;
@@ -897,7 +914,7 @@ fn scan_edges_sparse<F>(
         buffer.par_sort_unstable_by_key(|gp| gp.cell);
 
         // 3. Build sparse grid index (HashMap: cell → (start, count))
-        let mut grid: HashMap<usize, (u32, u32)> = HashMap::with_capacity(buffer.len().min(500_000));
+        let mut grid: HashMap<usize, (u32, u32)> = HashMap::with_capacity_and_hasher(buffer.len().min(500_000), Default::default());
         for (i, gp) in buffer.iter().enumerate() {
             if gp.cell >= grid_size { continue; }
             let entry = grid.entry(gp.cell).or_insert((i as u32, 0));
@@ -919,6 +936,7 @@ fn scan_edges_sparse<F>(
                 let mut local_edges = Vec::new();
                 let mut children_coords: Vec<[f64; 4]> = Vec::with_capacity(32);
                 let mut candidates: Vec<usize> = Vec::with_capacity(128);
+                let mut consecutive_dry = 0u16;
 
                 for dt in 0..max_dt {
                     let target_t = qt + dt;
@@ -930,6 +948,9 @@ fn scan_edges_sparse<F>(
                     let r_min_f = (dt_f * dt_f - MAX_PROPER_TIME_SQ).max(0.0).sqrt();
                     let r_min = r_min_f.floor() as i16;
                     let r_min_sq = (r_min as i32) * (r_min as i32);
+
+                    let links_before = children_coords.len();
+                    candidates.clear();
 
                     for dx in -r_max..=r_max {
                         for dy in -r_max..=r_max {
@@ -957,32 +978,47 @@ fn scan_edges_sparse<F>(
                                                  + (ty as usize) * grid_stride_y
                                                  + (tz as usize);
 
-                                    // Sparse lookup (HashMap instead of dense array)
                                     if let Some(&(start, count)) = grid.get(&cell_idx) {
                                         let s = start as usize;
-                                        let c = count as usize;
-                                        let neighbors = &buffer[s..(s + c)];
-                                        candidates.extend((0..neighbors.len()).map(|k| s + k));
+                                        candidates.extend(s..(s + count as usize));
                                     }
                                 }
                             }
                         }
                     }
-                }
 
-                candidates.sort_unstable_by(|&a, &b| {
-                    buffer[a].p[0].partial_cmp(&buffer[b].p[0]).unwrap_or(std::cmp::Ordering::Equal)
-                });
-                candidates.dedup();
+                    candidates.sort_unstable_by(|&a, &b| {
+                        buffer[a].p[0].partial_cmp(&buffer[b].p[0]).unwrap_or(std::cmp::Ordering::Equal)
+                    });
+                    candidates.dedup();
 
-                for v_idx in candidates {
-                    let v_pt = &buffer[v_idx];
-                    if u_orig == v_pt.orig_idx { continue; }
-                    if !is_causal(&u_pt.p, &v_pt.p) { continue; }
-                    let redundant = children_coords.iter().any(|z| is_causal(z, &v_pt.p));
-                    if !redundant {
-                        children_coords.push(v_pt.p);
-                        local_edges.push((u_orig, v_pt.orig_idx));
+                    let mut causal_checked = 0u32;
+                    let mut blocked_count = 0u32;
+
+                    for &v_idx in &candidates {
+                        let v_pt = &buffer[v_idx];
+                        if u_orig == v_pt.orig_idx { continue; }
+                        if !is_causal(&u_pt.p, &v_pt.p) { continue; }
+                        causal_checked += 1;
+                        let redundant = children_coords.iter().any(|z| is_causal(z, &v_pt.p));
+                        if redundant {
+                            blocked_count += 1;
+                        } else {
+                            children_coords.push(v_pt.p);
+                            local_edges.push((u_orig, v_pt.orig_idx));
+                        }
+                    }
+
+                    // ── Valve 1: Degree cap ──
+                    if children_coords.len() >= MAX_HASSE_DEGREE { break; }
+                    // ── Valve 2: Alexandrov short-circuit ──
+                    if causal_checked > 0 && blocked_count == causal_checked && children_coords.len() >= 1 { break; }
+                    // ── Valve 3: Adaptive dry-shell (two consecutive) ──
+                    if children_coords.len() == links_before {
+                        consecutive_dry += 1;
+                        if consecutive_dry >= 2 && children_coords.len() >= 2 { break; }
+                    } else {
+                        consecutive_dry = 0;
                     }
                 }
                 local_edges
@@ -1018,9 +1054,9 @@ fn scan_edges_sparse_ext<F>(
 ) where
     F: FnMut(&[(u32, u32)], f64),
 {
-    use std::collections::HashMap;
+    use rustc_hash::FxHashMap as HashMap;
 
-    let big_t = (24.0 * n_total as f64).powf(0.25);
+    let big_t = (24.0 * n_total as f64 / PI).powf(0.25);
     let half_t = big_t / 2.0;
 
     let margin = 2.0;
@@ -1108,7 +1144,7 @@ fn scan_edges_sparse_ext<F>(
         buffer.par_sort_unstable_by_key(|gp| gp.cell);
 
         // 3. Build sparse grid index (HashMap: cell → (start, count))
-        let mut grid: HashMap<usize, (u32, u32)> = HashMap::with_capacity(buffer.len().min(500_000));
+        let mut grid: HashMap<usize, (u32, u32)> = HashMap::with_capacity_and_hasher(buffer.len().min(500_000), Default::default());
         for (i, gp) in buffer.iter().enumerate() {
             if gp.cell >= grid_size { continue; }
             let entry = grid.entry(gp.cell).or_insert((i as u32, 0));
@@ -1130,6 +1166,7 @@ fn scan_edges_sparse_ext<F>(
                 let mut local_edges = Vec::new();
                 let mut children_coords: Vec<[f64; 4]> = Vec::with_capacity(32);
                 let mut candidates: Vec<usize> = Vec::with_capacity(128);
+                let mut consecutive_dry = 0u16;
 
                 for dt in 0..max_dt {
                     let target_t = qt + dt;
@@ -1141,6 +1178,9 @@ fn scan_edges_sparse_ext<F>(
                     let r_min_f = (dt_f * dt_f - MAX_PROPER_TIME_SQ).max(0.0).sqrt();
                     let r_min = r_min_f.floor() as i16;
                     let r_min_sq = (r_min as i32) * (r_min as i32);
+
+                    let links_before = children_coords.len();
+                    candidates.clear();
 
                     for dx in -r_max..=r_max {
                         for dy in -r_max..=r_max {
@@ -1168,32 +1208,47 @@ fn scan_edges_sparse_ext<F>(
                                                  + (ty as usize) * grid_stride_y
                                                  + (tz as usize);
 
-                                    // Sparse lookup (HashMap instead of dense array)
                                     if let Some(&(start, count)) = grid.get(&cell_idx) {
                                         let s = start as usize;
-                                        let c = count as usize;
-                                        let neighbors = &buffer[s..(s + c)];
-                                        candidates.extend((0..neighbors.len()).map(|k| s + k));
+                                        candidates.extend(s..(s + count as usize));
                                     }
                                 }
                             }
                         }
                     }
-                }
 
-                candidates.sort_unstable_by(|&a, &b| {
-                    buffer[a].p[0].partial_cmp(&buffer[b].p[0]).unwrap_or(std::cmp::Ordering::Equal)
-                });
-                candidates.dedup();
+                    candidates.sort_unstable_by(|&a, &b| {
+                        buffer[a].p[0].partial_cmp(&buffer[b].p[0]).unwrap_or(std::cmp::Ordering::Equal)
+                    });
+                    candidates.dedup();
 
-                for v_idx in candidates {
-                    let v_pt = &buffer[v_idx];
-                    if u_orig == v_pt.orig_idx { continue; }
-                    if !is_causal(&u_pt.p, &v_pt.p) { continue; }
-                    let redundant = children_coords.iter().any(|z| is_causal(z, &v_pt.p));
-                    if !redundant {
-                        children_coords.push(v_pt.p);
-                        local_edges.push((u_orig, v_pt.orig_idx));
+                    let mut causal_checked = 0u32;
+                    let mut blocked_count = 0u32;
+
+                    for &v_idx in &candidates {
+                        let v_pt = &buffer[v_idx];
+                        if u_orig == v_pt.orig_idx { continue; }
+                        if !is_causal(&u_pt.p, &v_pt.p) { continue; }
+                        causal_checked += 1;
+                        let redundant = children_coords.iter().any(|z| is_causal(z, &v_pt.p));
+                        if redundant {
+                            blocked_count += 1;
+                        } else {
+                            children_coords.push(v_pt.p);
+                            local_edges.push((u_orig, v_pt.orig_idx));
+                        }
+                    }
+
+                    // ── Valve 1: Degree cap ──
+                    if children_coords.len() >= MAX_HASSE_DEGREE { break; }
+                    // ── Valve 2: Alexandrov short-circuit ──
+                    if causal_checked > 0 && blocked_count == causal_checked && children_coords.len() >= 1 { break; }
+                    // ── Valve 3: Adaptive dry-shell (two consecutive) ──
+                    if children_coords.len() == links_before {
+                        consecutive_dry += 1;
+                        if consecutive_dry >= 2 && children_coords.len() >= 2 { break; }
+                    } else {
+                        consecutive_dry = 0;
                     }
                 }
                 local_edges
@@ -1255,7 +1310,7 @@ pub fn scan_edges_with_analysis(
 
     // We need the time coordinate of each node for finalization checking.
     // Store it as nodes are first seen in edges.
-    let big_t = (24.0 * n_total as f64).powf(0.25);
+    let big_t = (24.0 * n_total as f64 / PI).powf(0.25);
     let max_dt: f64 = ((big_t + 4.0).ceil() as f64).min(MAX_CAUSAL_DEPTH as f64);
     let safety_delay = 2.0 * max_dt + 4.0; // generous finalization delay
 
@@ -1410,6 +1465,91 @@ pub fn compute_degrees(
 ///
 /// Second pass over the same Poisson sprinkling (deterministic seed).
 /// Only core-induced edges are kept (~0.1% of total at core = 10%).
+/// Symmetrize a directed CSR graph into an undirected one.
+///
+/// The Hasse diagram from Phase 1 is a DAG: each edge u→v is stored once
+/// (forward in time).  Spectral walkers need the **undirected** graph so
+/// they can step both past→future and future→past, probing the full
+/// manifold geometry.
+///
+/// Algorithm:
+///   1. Extract every directed edge u→v from the input CSR.
+///   2. Insert both (u,v) and (v,u) into an edge list.
+///   3. Sort + dedup to remove any duplicates.
+///   4. Build a new CSR from the deduplicated undirected edges.
+///
+/// At N=10M with ~245M directed edges, this produces ~490M undirected
+/// entries (~1.9 GB).  The directed CSR can be dropped afterwards.
+pub fn make_symmetric(
+    n: usize,
+    head: &[u32],
+    data: &[u32],
+) -> (Vec<u32>, Vec<u32>) {
+    // Pass 1: count undirected degree of each node
+    // Each directed edge u→v contributes +1 to both deg[u] and deg[v].
+    let mut deg = vec![0u32; n];
+    for u in 0..n {
+        let s = head[u] as usize;
+        let e = head[u + 1] as usize;
+        let out = (e - s) as u32;
+        deg[u] += out;
+        for &v in &data[s..e] {
+            deg[v as usize] += 1;
+        }
+    }
+
+    // Build head array from degree counts
+    let mut sym_head = vec![0u32; n + 1];
+    for i in 0..n {
+        sym_head[i + 1] = sym_head[i] + deg[i];
+    }
+    let total = sym_head[n] as usize;
+    let mut sym_data = vec![0u32; total];
+
+    // Pass 2: fill both directions
+    let mut pos = sym_head[..n].to_vec();
+    for u in 0..n {
+        let s = head[u] as usize;
+        let e = head[u + 1] as usize;
+        for &v in &data[s..e] {
+            // u → v (forward)
+            sym_data[pos[u] as usize] = v;
+            pos[u] += 1;
+            // v → u (reverse)
+            sym_data[pos[v as usize] as usize] = u as u32;
+            pos[v as usize] += 1;
+        }
+    }
+
+    // Sort each adjacency list and dedup (handles any duplicate edges)
+    for u in 0..n {
+        let s = sym_head[u] as usize;
+        let e = sym_head[u + 1] as usize;
+        sym_data[s..e].sort_unstable();
+    }
+    // Dedup in-place: compact each row, then rebuild head
+    let mut write = 0usize;
+    let mut new_head = vec![0u32; n + 1];
+    for u in 0..n {
+        new_head[u] = write as u32;
+        let s = sym_head[u] as usize;
+        let e = sym_head[u + 1] as usize;
+        let mut prev = u32::MAX;
+        for r in s..e {
+            let v = sym_data[r];
+            if v != prev {
+                sym_data[write] = v;
+                write += 1;
+                prev = v;
+            }
+        }
+    }
+    new_head[n] = write as u32;
+    sym_data.truncate(write);
+
+    (new_head, sym_data)
+}
+
 pub fn build_core_edges(
     n_total: usize, chunk_size: usize, seed: u64, core_mask: &[bool],
 ) -> Vec<(u32, u32)> {

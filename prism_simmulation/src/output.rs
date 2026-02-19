@@ -18,9 +18,9 @@
 //! | `dS_Anti1` | Spectral dimension of antimatter | dimensionless |
 //! | `Flux_Attr` | Causal flux: Gen1→AntiGen1 (attraction) | probability |
 //! | `Flux_Repu` | Causal flux: Gen1→Gen1 (repulsion) | probability |
-//! | `Flux_Attr_Norm` | Normalized flux: Flux_Attr / |targets| (C3) | per-node prob |
-//! | `Flux_Repu_Norm` | Normalized flux: Flux_Repu / |targets| (C3) | per-node prob |
-//! | `P_Sterile` | Return probability for sterile prism nodes (N>5) | probability |
+//! | `Flux_Attr_Norm` | Normalized flux: Flux_Attr / |targets| (per-charge def.) | per-node prob |
+//! | `Flux_Repu_Norm` | Normalized flux: Flux_Repu / |targets| (per-charge def.) | per-node prob |
+//! | `P_Sterile` | Return probability for sterile prism nodes (Φ=0) | probability |
 //! | `dS_Sterile` | Spectral dimension for sterile prisms (C6) | dimensionless |
 //! | `Mass_Gen1..3` | Average topological mass (N) per generation | integer (avg) |
 //! | `Mass_Anti1` | Average topological mass for antimatter | integer (avg) |
@@ -155,6 +155,18 @@ pub fn export_topology_summary(
     let _ = writeln!(file, "avg_mass_gen2,{:.4}", topo.avg_mass_gen2);
     let _ = writeln!(file, "avg_mass_gen3,{:.4}", topo.avg_mass_gen3);
     let _ = writeln!(file, "avg_mass_sterile,{:.4}", topo.avg_mass_sterile);
+    let _ = writeln!(file, "visible_mass_total,{}", topo.visible_mass_total);
+    let _ = writeln!(file, "dark_mass_total,{}", topo.dark_mass_total);
+    let _ = writeln!(file, "grav_mass_total,{}", topo.grav_mass_total);
+    let _ = writeln!(file, "omega_ratio,{:.6}", topo.omega_ratio);
+    let _ = writeln!(file, "phase_sq_total,{}", topo.phase_sq_total);
+    let _ = writeln!(file, "mass_sq_total,{}", topo.mass_sq_total);
+    let q_topo = if topo.mass_sq_total > 0 {
+        topo.phase_sq_total as f64 / topo.mass_sq_total as f64
+    } else { 0.0 };
+    let _ = writeln!(file, "q_topo,{:.8}", q_topo);
+    let _ = writeln!(file, "alpha_em,{:.8}", topo.alpha_em);
+    let _ = writeln!(file, "omega_energy,{:.8}", topo.omega_energy);
     println!("  Saved {path}");
 }
 
