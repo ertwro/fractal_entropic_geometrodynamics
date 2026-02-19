@@ -4,7 +4,7 @@ All results in this repository were produced on a **ThinkPad T480**
 (Intel i5-8250U, 4 cores / 8 threads, 16 GB RAM) running Arch Linux.
 No GPU, no cluster, no cloud.
 
-DOI: [10.5281/zenodo.18696083](https://doi.org/10.5281/zenodo.18696083)
+DOI: [10.5281/zenodo.18697574](https://doi.org/10.5281/zenodo.18697574)
 
 ---
 
