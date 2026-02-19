@@ -703,6 +703,70 @@ def comprehensive_analysis():
             'gap_to_137_percent': abs(inv_alpha_inf - 137.036) / 137.036 * 100,
         }
 
+    # ── Vacuum polarization block ─────────────────────────────────────
+    # Measured phase fractions (N=100k, 19 chunks)
+    _pp, _p0, _pm = 4340 / 13648, 250 / 13648, 9058 / 13648
+    _mu = _pp - _pm
+    _sigma2 = (_pp + _pm) - _mu**2
+
+    # Load belly distribution for <n>/<n^2> moment ratio
+    _belly_path = None
+    for _name in ["mass_spectrum_M20.csv", "mass_spectrum.csv"]:
+        _p = PROD_DIR / _name
+        if _p.exists():
+            _belly_path = _p
+            break
+    if _belly_path is None:
+        # Try FSS largest available
+        for _n in reversed(N_VALUES):
+            _p = FSS_DIR / f"N_{_n}" / "mass_spectrum.csv"
+            if _p.exists():
+                _belly_path = _p
+                break
+
+    _q_pred_iid = None
+    if _belly_path is not None:
+        _ns, _fs = [], []
+        with open(_belly_path) as _fh:
+            for _line in _fh:
+                _s = _line.strip()
+                if not _s or _s.startswith('#') or _s.startswith('intermediates'):
+                    continue
+                _parts = _s.split(',')
+                if len(_parts) >= 2:
+                    try:
+                        _ns.append(int(_parts[0]))
+                        _fs.append(int(_parts[1]))
+                    except ValueError:
+                        continue
+        if _ns:
+            _n_arr = np.array(_ns, dtype=float)
+            _f_arr = np.array(_fs, dtype=float)
+            _f_norm = _f_arr / _f_arr.sum()
+            _mean_n = float(np.sum(_n_arr * _f_norm))
+            _mean_n2 = float(np.sum(_n_arr**2 * _f_norm))
+            _q_pred_iid = _mu**2 + _sigma2 * _mean_n / _mean_n2
+
+    vp_block = {
+        'mu_measured': float(_mu),
+        'sigma2_measured': float(_sigma2),
+        'phase_fractions': {'p_plus': float(_pp), 'p_zero': float(_p0), 'p_minus': float(_pm)},
+    }
+    if _q_pred_iid is not None:
+        vp_block['Q_pred_iid'] = float(_q_pred_iid)
+
+    screening_by_N = {}
+    for d in data:
+        q_obs = d['Q_topo']
+        scr = float((_q_pred_iid - q_obs) / _q_pred_iid) if _q_pred_iid else 0.0
+        screening_by_N[str(d['N'])] = {
+            'Q_obs': float(q_obs),
+            'inv_alpha': float(d['inv_alpha']),
+            'screening_frac': float(scr),
+        }
+    vp_block['screening_by_N'] = screening_by_N
+    results['vacuum_polarization'] = vp_block
+
     json_path = out_dir / 'fss_comprehensive_results.json'
     with open(json_path, 'w') as f:
         json.dump(results, f, indent=2)

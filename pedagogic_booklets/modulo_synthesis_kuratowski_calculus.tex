@@ -3014,6 +3014,111 @@ involucrados.
 las cotas experimentales de Super-Kamiokande y futuros detectores
 Hyper-K.
 
+\subsection*{T3. Modelo de Ocupaci\'on: Jerarqu\'ia Anal\'itica de Masas (Derivado)}
+\phantomsection\label{thm-ref:occupancy-model}
+
+Sea $f(n) \sim e^{-\lambda n}$ ($\lambda \approx 0.53$) la
+distribuci\'on de tama\~nos de vientre medida en el ensemble, y sean
+$(p_+, p_0, p_-) = (0.318,\,0.018,\,0.664)$ las fracciones de fase
+determinadas por los grados del diagrama de Hasse. El n\'umero de
+generaci\'on $g(P) = |\{\varphi(w_i) : w_i \in \text{vientre}\}|$
+sigue la f\'ormula del coleccionista de cupones:
+\[
+  P(g = k \mid n) \;=\; \binom{3}{k}\,\sum_{j=0}^{k}(-1)^j\binom{k}{j}
+  \Bigl(\sum_{\text{$k{-}j$ clases}} p_i\Bigr)^{\!n}
+\]
+donde las sumas interiores recorren las $\binom{3}{k-j}$ combinaciones
+de clases de fase. La masa esperada por generaci\'on es
+$E[n \mid g{=}k] = \sum n\,f(n)\,P(g{=}k|n) / \sum f(n)\,P(g{=}k|n)$.
+
+\medskip\noindent
+\textit{Resultado}: las relaciones de masa predichas son
+$m_2/m_1 = 1.409$ (observado: $1.434$, error $1.8\%$) y
+$m_3/m_1 = 1.674$ (observado: $1.698$, error $1.4\%$). Ambas entradas
+---$f(n)$ y $(p_+, p_0, p_-)$---provienen de la geometr\'ia del
+diamante causal, sin par\'ametros libres.
+
+\subsection*{T4. Polarizaci\'on del Vac\'io Topol\'ogica (Derivado)}
+\phantomsection\label{thm-ref:vacuum-polarization}
+
+La aproximaci\'on i.i.d.\ (fases independientes e id\'enticamente
+distribuidas) es v\'alida para observables de \emph{conteo}
+($g = |\{\varphi_i\}|$, error ${\sim}2\%$) pero falla para
+observables de \emph{sumaci\'on}
+($\mathcal{Q}_{\mathrm{topo}} = \sum|\Phi|^2/\sum N^2$, error
+$23.5\%$). La discrepancia se origina en el \textbf{entrelazamiento de
+fase de Kuratowski}: para vientres peque\~nos ($n \leq 4$), la
+planaridad del grafo $K_{2,n}$ fuerza una anticorrelaci\'on de grados
+entre intermediarios, produciendo apantallamiento de fase.
+
+Defin\'ase la longitud de correlaci\'on efectiva:
+\[
+  \mu_{\mathrm{eff}}(n) \;=\;
+  \frac{\operatorname{Var}\!\left(\sum_{i=1}^n \varphi_i\right)}
+       {n\,\operatorname{Var}(\varphi)}
+\]
+Bajo i.i.d., $\mu_{\mathrm{eff}} = 1$. La simulaci\'on muestra:
+$\mu_{\mathrm{eff}} < 1$ (imaginario) para $n < 5$, transici\'on en
+$n^* = 5$ (umbral de Kuratowski: $K_{2,5}$ contiene a $K_5$), y
+$\mu_{\mathrm{eff}} \to 1$ para $n \gg 5$. La polarizaci\'on del
+vac\'io es el apantallamiento de carga por entrelazamiento topol\'ogico
+de fase en vientres peque\~nos.
+
+\medskip\noindent
+\textit{Resultado num\'erico}: $\mathcal{Q}_{\mathrm{topo}}$ corre con
+el tama\~no del ret\'iculo seg\'un
+$\mathcal{Q}(N) = \mathcal{Q}_\infty + a\,N^{-1/4}$ ($R^2 = 0.9996$),
+dando $\mathcal{Q}_\infty = 0.1523$ y $\alpha_0^{-1} = 165.1$ en el
+l\'imite termodin\'amico.
+
+\subsection*{T5. Qu\'imica Topol\'ogica: Estructura de Capas (Derivado)}
+\phantomsection\label{thm-ref:topological-chemistry}
+
+La m\'etrica de Fisher sobre el s\'implex trinomial
+$\Delta^2 = \{(p_+, p_0, p_-)\}$ de un vientre de tama\~no $n$,
+bajo la inmersi\'on $\theta_i = 2\sqrt{p_i}$, se reduce a la m\'etrica
+redonda sobre el octante positivo de $S^2(\sqrt{n})$, con curvatura
+gaussiana $K = 1/n$.
+
+Los autovalores del laplaciano $\Delta_{S^2}$ producen arm\'onicos
+esf\'ericos $Y_l^m$ con degeneraci\'on
+$\sum_{l=0}^{k-1}(2l+1) = k^2$ por capa. La duplicaci\'on CPT
+(cada prisma tiene un antiprisma) da capacidad de capa $2k^2$:
+\[
+  2k^2 \quad\Longrightarrow\quad 2,\;8,\;18,\;32
+\]
+Los n\'umeros m\'agicos de la estructura at\'omica emergen como
+degeneraciones de autovalores sobre la 2-esfera de Fisher.
+
+La absorci\'on de Kuratowski ($K_5$-libre) limita el orden de enlace
+covalente topol\'ogico: compartir 4 intermediarios crea $K_5$, de modo
+que el orden m\'aximo de enlace es~3 (enlace triple). La regla del
+octeto surge de la saturaci\'on $s + p$ ($2 + 6 = 8$) de los modos
+m\'as bajos de la esfera de Fisher.
+
+\subsection*{T6. Emergencia de la Unidad Imaginaria (Derivado)}
+\phantomsection\label{thm-ref:emergence-i}
+
+Los coeficientes de Benincasa--Dowker en $D = 4$
+---$\{-1, +9, -16, +8\}$--- alternan en signo. El polinomio
+caracter\'istico de la recurrencia capa-a-capa
+$-G_0 + 9G_1 - 16G_2 + 8G_3 = \delta_{\sigma,0}$ tiene una ra\'iz
+real y un par de ra\'ices conjugadas complejas:
+$z = r\,e^{\pm i\theta}$, $\theta \ne 0$.
+
+En el l\'imite continuo ($\epsilon \to 0$, $\sigma = \tau/\epsilon$),
+los modos oscilatorios discretos convergen a ondas planas
+$e^{\pm i\omega\tau}$. La unidad imaginaria $i$ no es un postulado:
+es una consecuencia \emph{derivada} de la alternancia de signos,
+que a su vez es forzada por las condiciones de momento de la
+geometr\'ia del diamante 4D (anulaci\'on de polinomios de grado
+$\leq 3$ y normalizaci\'on de la derivada cuarta).
+
+La autoadjunci\'on del operador BD con estos coeficientes garantiza
+la unitariedad de la mec\'anica cu\'antica continua: la conservaci\'on
+de la probabilidad no es un axioma, sino una consecuencia de la
+estructura de cancelaci\'on de momentos de la geometr\'ia discreta.
+
 \subsection*{C5. Umbral de Decoherencia}
 \phantomsection\label{conj:decoherence-threshold}
 

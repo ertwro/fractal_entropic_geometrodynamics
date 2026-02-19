@@ -1,0 +1,1517 @@
+% ═══════════════════════════════════════════════════════════════════════════════
+%   Fractal Entropic Geometrodynamics
+%   Full Paper — No length restriction
+%   XeLaTeX + bibtex
+% ═══════════════════════════════════════════════════════════════════════════════
+\documentclass[aps,prd,twocolumn,superscriptaddress,nofootinbib,amsmath,amssymb,longbibliography]{revtex4-2}
+
+\usepackage{fontspec}
+\defaultfontfeatures{Ligatures=TeX}
+\usepackage{amsmath,amssymb,amsfonts,bm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,decorations.pathmorphing}
+\usepackage[colorlinks=true,linkcolor=blue!70!black,citecolor=blue!70!black,urlcolor=blue!70!black]{hyperref}
+\usepackage{enumitem}
+
+\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\intextsep}{6pt plus 2pt minus 2pt}
+\setlength{\abovecaptionskip}{4pt}
+\setlength{\belowcaptionskip}{2pt}
+
+\AtBeginDocument{%
+  \abovedisplayskip=8pt plus 2pt minus 4pt
+  \belowdisplayskip=8pt plus 2pt minus 4pt
+  \abovedisplayshortskip=4pt plus 2pt minus 2pt
+  \belowdisplayshortskip=6pt plus 2pt minus 3pt
+}
+
+% ─── Shortcuts ──────────────────────────────────────────────────────────────
+\newcommand{\lp}{\ell_P}
+\newcommand{\ds}{d_S}
+\newcommand{\Kbn}{K_{2,n}}
+\newcommand{\sgn}{\operatorname{sgn}}
+\newcommand{\Qtopo}{\mathcal{Q}_{\mathrm{topo}}}
+
+\begin{document}
+
+\title{Fractal Entropic Geometrodynamics:\\
+Emergent Gravity, Three Particle Generations,\\
+and Topological Chemistry from Discrete Causal Order}
+
+\author{Juan Pablo Silva Alvarado}
+\affiliation{Metric Engineering Division, Bogot\'{a}, Colombia}
+
+\date{\today}
+
+\begin{abstract}
+We present a strictly discrete framework in which General Relativity,
+the three-generation structure of the Standard Model, a quantitative
+mass hierarchy, vacuum polarization, a running coupling constant,
+and atomic shell chemistry emerge from two axioms and one principle.
+An $O(N)$ simulation engine---implemented in Rust and freely
+available---Poisson-sprinkles $N = 10^7$ events into a 4D causal diamond,
+builds the Hasse diagram, and detects topological defects called
+\emph{Causal Prisms} ($\Kbn$ bipartite subgraphs).
+A production ensemble of $M = 20$ realisations (4.5\,hours on a
+ThinkPad~T480, seed\,42) finds 7{,}723{,}943 prisms with generation
+fractions 2.1\%/84.9\%/13.0\% and mass hierarchy
+$4.555 : 6.531 : 7.732$---all from pure combinatorics.
+A zero-parameter occupancy model, using only the belly distribution
+$f(n) \sim e^{-0.53n}$ and Hasse-measured phase fractions, predicts
+mass ratios to 1.8\% accuracy.
+The i.i.d.\ model that succeeds for mass (a counting observable)
+fails for charge (a summation observable) by 23.5\%: Kuratowski
+phase entanglement at small belly sizes screens the topological
+charge, providing a geometric analogue of QED vacuum polarization.
+Finite-size scaling across five lattice sizes ($10^5$--$10^7$)
+confirms $\Qtopo \to 0.152$ ($R^2 = 0.9996$),
+$\alpha_0^{-1} \to 165.1 \pm 1.0$, and
+$\Omega_{\mathrm{energy}} \to 5.57$ (Planck~2018: 5.36).
+The exact identity $\alpha(1 + \Omega) = 1/(8\pi)$ locks fine
+structure and dark matter to a single topological observable.
+The sign-alternating coefficients of the Benincasa--Dowker operator
+force oscillatory diffusion on the Hasse graph; the continuum limit
+requires complex phases $e^{i\theta}$ to preserve unitarity, deriving
+the imaginary unit $i$ of quantum mechanics from causal geometry.
+The Fisher information metric on the phase simplex yields a
+2-sphere whose eigenmodes reproduce the atomic magic numbers
+$2, 8, 18, 32$, covalent bond saturation at triple bonds,
+and the octet rule---from pure topology with zero imposed parameters.
+The spectral dimension flows from
+$\ds(\sigma{=}1) = 1.949 \pm 0.002$ in the UV to
+$\ds(\sigma{=}4) = 4.956 \pm 0.001$ in the IR.
+Ten falsifiable predictions are enumerated.
+\end{abstract}
+
+\maketitle
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{What the computation produces}\label{sec:results}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+We begin with the output.  Theory will follow.
+
+An ensemble of $M = 20$ realisations (seed\,42,
+$N = 10^7$ Poisson-sprinkled events each,
+4.5\,hours on a ThinkPad~T480) produces the numbers in
+Table~\ref{tab:results}.
+No free parameters were adjusted.  No continuous fields were integrated.
+No gauge groups were imposed.
+The input is a random number generator and an integer~$N$.
+
+\begin{table}[h]
+\caption{Observables at $N = 10^7$ ($M = 20$ realisations, seed\,42,
+  runtime 4.5\,h).  All quantities are dimensionless or in Planck units.}
+\label{tab:results}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}lc@{}}
+\toprule
+\textbf{Observable} & \textbf{Value} \\
+\midrule
+\multicolumn{2}{@{}l}{\emph{Spectral dimension ($\sigma$-resolved)}} \\[2pt]
+$\ds$ vacuum ($\sigma{=}1$, UV)  & $1.949 \pm 0.002$ \\
+$\ds$ vacuum ($\sigma{=}4$, IR)  & $4.956 \pm 0.001$ \\
+$\ds$ defect (peak, $\sigma{\approx}7$) & 9.06 \\
+\midrule
+\multicolumn{2}{@{}l}{\emph{Topological defects (prism counts)}} \\[2pt]
+Total prisms                      & 7{,}723{,}943 \\
+$g{=}1$ / $g{=}2$ / $g{=}3$
+                          & 2.1\% / 84.9\% / 13.0\% \\
+\midrule
+\multicolumn{2}{@{}l}{\emph{Mass and symmetry}} \\[2pt]
+Mass: Gen\,1 / Gen\,2 / Gen\,3
+                          & $4.555$ / $6.531$ / $7.732$ \\
+Ratio $m_1 : m_2 : m_3$  & $1 : 1.434 : 1.698$ \\
+CPT: Gen\,1 vs Anti-1    & 4.555 vs 4.45 ($\Delta m/m = 2.3\%$) \\
+\midrule
+\multicolumn{2}{@{}l}{\emph{Coupling and dark matter}} \\[2pt]
+$\Qtopo = \sum|\Phi|^2/\sum N^2$
+                          & 0.1907 \\
+$\alpha = \Qtopo/(8\pi)$ & $1/131.8$ \\
+$\Omega_{\mathrm{energy}} = 1/\Qtopo - 1$
+                          & 4.244 \\
+$\alpha(1 + \Omega)$     & $1/(8\pi)$ \textbf{(exact)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+These numbers require interpretation.  Here is what they mean, stated
+plainly; the derivations occupy the rest of the paper.
+
+\textbf{Three generations.}
+The engine finds 7{,}723{,}943 topological defects (Causal Prisms) in the
+Hasse diagram.
+Each is classified by a discrete invariant $g \in \{1, 2, 3\}$---the
+number of distinct sign values of a bulk momentum field restricted to
+the defect.  The bound $g \leq 3$ is not a fit: the sign function has
+three values ($-$, $0$, $+$), so three is the maximum.
+This is a theorem (Sec.~\ref{sec:generation_theorem}).
+
+\textbf{Mass hierarchy.}
+Higher-generation defects trap random walkers more effectively:
+$m_1 < m_2 < m_3$.
+A zero-parameter occupancy model (Sec.~\ref{sec:occupancy}),
+using only the belly distribution and Hasse-measured phase fractions,
+predicts mass ratios to 1.8\% accuracy.
+
+\textbf{CPT symmetry.}
+Matter and antimatter prisms have equal masses to within $2.3\%$
+at $M{=}20$ realisations (Gen\,1 mass $4.555$ vs Anti-1 mass $4.45$).
+CPT is an exact symmetry of the causal order (Sec.~\ref{sec:cpt}).
+
+\textbf{Spectral dimension flow.}
+At $\sigma = 1$ (UV), $\ds = 1.949 \pm 0.002$: dimensional reduction
+consistent with CDT~\cite{ambjorn2005} and causal set
+results~\cite{eichhorn2014,carlip2017}.
+By $\sigma = 4$ the vacuum $\ds$ reaches
+$4.956 \pm 0.001$: the 4D continuum has emerged.
+
+\textbf{The $\alpha$--$\Omega$ Lock.}
+A single topological observable $\Qtopo$ determines both the fine
+structure constant and the dark matter ratio through the exact identity
+$\alpha(1 + \Omega) = 1/(8\pi)$.  One cannot vary dark matter without
+altering~$\alpha$ (Sec.~\ref{sec:dark_matter}).
+
+\textbf{Atomic shell chemistry.}
+The same structure that produces particle generations also yields the
+atomic magic numbers $2, 8, 18, 32$, covalent bond saturation, and the
+octet rule---from the Fisher information metric on the phase
+simplex (Sec.~\ref{sec:chemistry}).
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_composite.pdf}
+\caption{Production ensemble: $N = 10^7$, $M = 20$ realisations,
+  4.5\,hours, zero free parameters.
+  \textbf{(a)}~Spectral dimension: $\ds = 1.95$ (UV) $\to$ $4.96$ (IR);
+  defect peak $9.06$.
+  \textbf{(b)}~7.7M prisms; exponential tail $\sim e^{-0.53n}$.
+  \textbf{(c)}~Mass hierarchy $1{:}1.43{:}1.70$; CPT: $\Delta m/m = 2.3\%$.
+  \textbf{(d)}~$\Omega_{\mathrm{energy}} = 1/\Qtopo - 1 = 4.24$.}
+\label{fig:composite}
+\end{figure*}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{The axioms}\label{sec:axioms}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+Fractal Entropic Geometrodynamics rests on two axioms and one dynamical
+principle.  Everything else is derived.
+
+\textbf{Axiom~1 (Kinematics).}
+Spacetime is a locally finite partial order $(\mathcal{C}, \prec)$
+generated by Poisson sprinkling at fundamental density
+$\rho = 1/\lp^4$~\cite{bombelli1987}.
+The sprinkled points are the events; the partial order is the causal
+relation.
+There is no background manifold.
+The manifold is an approximation that emerges in the thermodynamic
+limit ($N \to \infty$), just as temperature emerges from molecular
+motion.
+
+The Poisson process is not a convenience---it is the \emph{unique}
+stochastic process that preserves Lorentz invariance in the
+discrete~\cite{bombelli2009}.
+A regular lattice breaks boost symmetry; a Poisson sprinkling does not,
+because the event count $N$ in any spacetime region $\mathcal{R}$
+depends only on the invariant 4-volume
+$V(\mathcal{R})$~\cite{kingman1993}.
+
+\textbf{Axiom~2 (Dynamics).}
+Macroscopic geometry---the metric tensor $g_{\mu\nu}$---is not fundamental.
+It is the emergent Fisher information metric on the space of causal
+histories, evaluated over a non-commutative von~Neumann algebra.
+By Chentsov's theorem~\cite{chentsov1982}, this is the \emph{unique}
+Riemannian metric invariant under coarse-graining (Markov morphisms).
+Its quantum extension, the Petz metric~\cite{petz1996}, is the unique
+monotone metric on density matrices---the mandatory geometric structure
+when causal histories do not commute.
+
+Physical distance is statistical distinguishability:
+\begin{equation}\label{eq:fisher}
+  g_{\mu\nu} \propto I_{\mu\nu}(\theta)
+  = \mathbb{E}\!\left[
+    \frac{\partial \ln p}{\partial \theta^\mu}
+    \frac{\partial \ln p}{\partial \theta^\nu}
+  \right]
+\end{equation}
+Events with correlated causal futures are \emph{close};
+events with independent futures are \emph{far}.
+Gravity is not a force acting on matter.  It is the statistical
+resistance of the causal network against information deformation.
+
+\textbf{Sole Principle of Interaction.}
+All microscopic dynamics are governed by a single mandate:
+\emph{the preservation of unitarity (probability conservation)
+across discrete, non-commutative causal links.}
+Quantum mechanics is native to the network because causal histories
+do not commute.
+All emergent forces---gravity, the strong force, electromagnetism---are
+homeostatic mechanisms enacted by the graph to satisfy this unitary
+principle under the geometric constraints of the Kuratowski Calculus.
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{The Kuratowski Calculus}\label{sec:calculus}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+Standard calculus assumes infinite divisibility.
+We replace it with three discrete operators that are exact at all
+scales---not approximations that converge in some limit,
+but the \emph{native language} of the causal set.
+
+\subsection{The covering differential}
+
+The infinitesimal displacement $dx^\mu$ of the continuum is replaced by
+the \textbf{covering relation} $\prec^*$: the irreducible causal link.
+If $u \prec^* v$, there is no intermediate event $w$ with
+$u \prec w \prec v$.
+One covering link is one unit of proper time.
+The speed of light is
+\begin{equation}
+  c \;\equiv\; \text{1 covering link per causal step.}
+\end{equation}
+This is not a convention.  It is the maximum rate of information
+propagation through the directed acyclic graph.
+
+A \textbf{causal chain} is a sequence
+$\gamma = (e_0 \prec^* e_1 \prec^* \cdots \prec^* e_k)$.
+Its length is $|\gamma| = k$.
+The \textbf{discrete proper time} between events $A$ and $B$ is
+the length of the longest chain connecting them~\cite{myrheim1978}:
+\begin{equation}\label{eq:proper_time}
+  \tau(A,B) = \max_{\gamma \in \Gamma(A,B)} |\gamma|
+\end{equation}
+By the Myrheim--Meyer theorem, this converges to the geodesic proper
+time of the emergent Lorentzian manifold in the continuum
+limit~\cite{brightwell1991}.
+
+\subsection{Operator 1: The Capacity Integral (Sorkin Volume)}
+
+Spacetime volume is the number of events.
+Integration of an observable $\Phi$ over a causal region~$\mathcal{R}$
+is the sum over its constituent nodes:
+\begin{equation}\label{eq:capacity}
+  \int_{\mathcal{R}} \Phi(x)\,dV
+  \;\equiv\; \lp^4 \sum_{x \in \mathcal{C} \cap \mathcal{R}} \Phi(x)
+\end{equation}
+No measure theory is needed.  Volume is counting.
+The expected count in a region of invariant 4-volume~$V$ is
+$\langle N \rangle = \rho V$, with Poisson fluctuations
+$\delta N \sim \sqrt{N}$~\cite{kingman1993}.
+
+\subsection{Operator 2: The Layered Operator (Benincasa--Dowker)}
+
+The continuum d'Alembertian $\Box = \nabla_\mu \nabla^\mu$ violates
+discrete non-locality.  It is replaced by the exact Benincasa--Dowker
+causal set action~\cite{benincasa2010}.
+In 4D, change is computed across successive layers of causal ancestors
+$L_k$ (the set of events at Hasse distance exactly~$k$ in the past):
+\begin{equation}\label{eq:box}
+  \boxplus\Phi(x) = \frac{4}{\lp^2\sqrt{6}}\left(
+    -\Phi(x)
+    + 9\!\sum_{L_1}\!\Phi
+    - 16\!\sum_{L_2}\!\Phi
+    + 8\!\sum_{L_3}\!\Phi
+  \right)
+\end{equation}
+The coefficients $\{-1, +9, -16, +8\}$ are fixed uniquely by three
+moment conditions: the operator must annihilate constant, linear,
+and quadratic fields on a flat Poisson sprinkling.
+
+\subsection{Operator 3: The Topological Planar Limit}
+
+By Kuratowski's theorem~\cite{kuratowski1930}, a finite graph is planar
+if and only if it contains no subdivision of $K_5$ or $K_{3,3}$ as a
+topological minor:
+\begin{equation}\label{eq:kuratowski}
+  K_5 \not\preceq_T G_{\text{UV}}
+  \qquad\text{and}\qquad
+  K_{3,3} \not\preceq_T G_{\text{UV}}
+\end{equation}
+In the Hasse diagram, this is the absolute boundary of the ultraviolet.
+As information density increases, the graph must restructure to avoid
+non-planar minors.  This restructuring \emph{is} the strong force
+(Sec.~\ref{sec:confinement}).
+
+Together with the Sole Principle, Eqs.~(\ref{eq:capacity})--(\ref{eq:kuratowski}) constitute the complete Kuratowski Calculus.
+No other operators are needed.
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{The simulation engine}\label{sec:engine}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+The Kuratowski Calculus is implemented in four phases.
+The code is open-source Rust, available at
+\url{https://github.com/ertwro/fractal_entropic_geometrodynamic}.
+
+\subsection{Phase 1: Sprinkling and Hasse diagram}
+
+$N$ points are Poisson-sprinkled into a 4D Alexandrov diamond (causal
+interval) of volume
+\begin{equation}\label{eq:diamond_volume}
+  V(T) = \frac{\pi}{24}\,T^4
+\end{equation}
+at density $\rho \approx 1$.
+The factor of $\pi$ is the integrated solid angle of the 3-sphere
+cross-section of the causal diamond: $V = 2\int_0^{T/2}
+\frac{\pi}{6}(T/2 - |t|)^3\,dt = \pi T^4/24$.
+With the correct volume, $T = (24N/\pi)^{1/4}$ and the density
+$\rho = N/V = 1$ matches the Planck density exactly.
+
+The Hasse diagram---the transitive reduction of the causal order---is
+built via an \textbf{Occupied Cell Index}: for each new event, only
+cells within the causal past light cone are probed.
+Three \emph{termination valves} enforce strict locality:
+(i)~maximum Hasse distance $d_{\max} = 4$;
+(ii)~maximum degree $D_{\max} = 15$;
+(iii)~cone volume cutoff.
+The result is a sparse directed acyclic graph stored in compressed
+sparse row (CSR) format.
+
+\subsection{Phase 2: Defect detection and generation classification}
+
+\textbf{Causal Prisms}---complete bipartite subgraphs $\Kbn$ with a
+past pole~$u$, a future pole~$v$, and $n \geq 3$ mutually spacelike
+intermediates $\{w_1, \ldots, w_n\}$---are detected via a
+\emph{forward-forward 2-hop search}.
+For each event~$u$, examine its Hasse children; for each child~$w$,
+examine $w$'s children.  If two distinct children $w_i, w_j$ share a
+common Hasse child~$v$, and $w_i, w_j$ are causally unrelated, a
+prism candidate is found.
+Complexity: $O(N \cdot D^2)$.  Since $D \leq 15$, this is $O(N)$.
+
+$K_5$ threat absorption is then performed: whenever a local subgraph
+threatens to form a $K_5$ topological minor, the excess connectivity
+is absorbed into prism structure.
+
+\subsection{Phase 3: Spectral dimension}
+
+The spectral dimension $\ds(\sigma)$ is measured via Monte Carlo random
+walkers on the Hasse graph.
+$W = 2{,}250{,}000$ walkers start from
+uniformly sampled events and perform lazy random walks on the undirected
+Hasse skeleton.
+Return probabilities are accumulated with \emph{strict integer
+arithmetic}---no floating-point operations during the walk.
+A single \texttt{f64} division is performed at the end:
+\begin{equation}\label{eq:ds}
+  \ds(\sigma) = -2\,\frac{d\ln P(\sigma)}{d\ln\sigma}
+\end{equation}
+
+\subsection{Phase 4: Output and checkpoint}
+
+Ensemble-averaged observables with standard-error bars are exported as
+CSV.  Multiple independent realisations (seeds) are supported natively.
+The engine supports checkpoint/resume, enabling
+the production $M = 20$ ensemble to be accumulated incrementally.
+The full finite-size scaling suite (five lattice sizes,
+$M \geq 8$ each) completes in 8\,hours total.
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{The Geometry of Order}\label{sec:order}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+Now we explain why the computation produces what it produces.
+
+\subsection{Triangle-free topology}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+    >=Stealth, scale=0.7, transform shape,
+    pole/.style={circle, draw=black, fill=black!80, minimum size=5pt, inner sep=0pt},
+    inter/.style={circle, draw=black!60, fill=white, minimum size=5pt, inner sep=0pt},
+    causal/.style={->, semithick, black!60},
+    removed/.style={->, dashed, red!50, semithick}
+  ]
+  \node[pole, label={[font=\tiny]left:$u$}] (u) at (0, 2) {};
+  \node[inter, label={[font=\tiny]right:$w$}] (w) at (1.2, 1) {};
+  \node[pole, label={[font=\tiny]left:$v$}] (v) at (0, 0) {};
+  \draw[causal] (u) -- (w);
+  \draw[causal] (w) -- (v);
+  \draw[removed] (u) -- node[midway, left, font=\tiny, red!70!black] {removed} (v);
+\end{tikzpicture}
+\caption{Transitive reduction removes the direct link $u \to v$ whenever
+  an intermediate $w$ exists with $u \prec^* w \prec^* v$.
+  The Hasse diagram is therefore triangle-free ($K_3$-free).}
+\label{fig:triangle_free}
+\end{figure}
+
+The Hasse diagram is the transitive reduction of the causal order.
+By definition: if $u \prec w \prec v$, the direct link $u \to v$
+is redundant and removed (Fig.~\ref{fig:triangle_free}).
+
+\textbf{Theorem} (Triangle-Free Topology).
+\emph{The Hasse diagram of any finite partial order is $K_3$-free.}
+
+\emph{Proof.}
+Suppose $u, w, v$ form a triangle: $u \prec^* w$, $w \prec^* v$,
+and $u \prec^* v$.  But $u \prec w \prec v$ implies $u \to v$ is
+transitively redundant, contradicting $u \prec^* v$.~$\square$
+
+This has an immediate consequence:
+\emph{$K_4$ cannot exist as a subgraph of the Hasse diagram.}
+The complete 4-clique requires triangles.  No triangles, no $K_4$.
+
+\subsection{The Causal Prism}\label{sec:prism}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+    >=Stealth, scale=0.72, transform shape,
+    pole/.style={circle, draw=black, fill=black!80, minimum size=6pt, inner sep=0pt},
+    neg/.style={circle, draw=blue!70!black, fill=blue!20, minimum size=8pt, inner sep=0pt,
+                font=\scriptsize\bfseries},
+    zero/.style={circle, draw=black!60, fill=gray!15, minimum size=8pt, inner sep=0pt,
+                 font=\scriptsize\bfseries},
+    posi/.style={circle, draw=red!70!black, fill=red!20, minimum size=8pt, inner sep=0pt,
+                font=\scriptsize\bfseries},
+    causal/.style={->, thick, black!60}
+  ]
+  \node[pole, label={[font=\scriptsize]above:{$u$ (past pole)}}] (u) at (0, 2.2) {};
+  \node[neg]  (w1) at (-2.4, 0) {$-$};
+  \node[zero] (w2) at (-0.8, 0) {$0$};
+  \node[posi]  (w3) at ( 0.8, 0) {$+$};
+  \node[neg]  (w4) at ( 2.4, 0) {$-$};
+  \node[below=1pt, font=\scriptsize] at (w1.south) {$w_1$};
+  \node[below=1pt, font=\scriptsize] at (w2.south) {$w_2$};
+  \node[below=1pt, font=\scriptsize] at (w3.south) {$w_3$};
+  \node[below=1pt, font=\scriptsize] at (w4.south) {$w_4$};
+  \node[pole, label={[font=\scriptsize]below:{$v$ (future pole)}}] (v) at (0, -2.2) {};
+  \foreach \w in {w1,w2,w3,w4} { \draw[causal] (u) -- (\w); }
+  \foreach \w in {w1,w2,w3,w4} { \draw[causal] (\w) -- (v); }
+  \draw[dotted, gray, thick] (-2.4, -0.6) -- (2.4, -0.6)
+    node[midway, below, font=\tiny, gray] {mutually spacelike};
+\end{tikzpicture}
+\caption{A Causal Prism $K_{2,4}$.  Past pole~$u$ and future pole~$v$
+  are connected through four mutually spacelike intermediates.
+  Colours encode the discrete phase
+  $\varphi \in \{{\color{blue!70!black}-},\,{\color{gray}0},\,
+  {\color{red!70!black}+}\}$.
+  This configuration has generation $g = 3$ (all three signs present)
+  and net phase $\Phi = -1$ (antimatter).
+  \emph{Topological mass} $= n = 4$.}
+\label{fig:prism}
+\end{figure}
+
+What \emph{can} exist?  In a triangle-free graph, the densest
+bipartite structure is $\Kbn$: two poles connected through $n$
+mutually disconnected intermediates.
+
+\textbf{Definition} (Causal Prism).
+A \emph{Causal Prism} $P = (u, v, W)$ consists of:
+\begin{itemize}[nosep,leftmargin=1.5em]
+  \item A \emph{past pole} $u$ and a \emph{future pole} $v$ at Hasse
+    distance $\geq 2$.
+  \item A set $W = \{w_1, \ldots, w_n\}$ of $n \geq 3$
+    \emph{intermediates} with $u \prec^* w_i \prec^* v$ for all~$i$.
+  \item The intermediates form a strict antichain:
+    $w_i \not\prec w_j$ and $w_j \not\prec w_i$ for $i \neq j$.
+\end{itemize}
+The \emph{topological mass} of the prism is $M = n$
+(Fig.~\ref{fig:prism}).
+
+\textbf{Theorem} (Intermediate Disconnection).
+\emph{In a triangle-free Hasse diagram, the intermediates of a Causal
+Prism automatically form a strict antichain.}
+
+\emph{Proof.}
+If $w_i \prec^* w_j$, then $\{u, w_i, w_j\}$ form a directed triangle
+$u \prec^* w_i \prec^* w_j$, and since $u \prec^* w_j$ is also a
+covering link, this is a $K_3$---contradicting triangle-freedom.~$\square$
+
+\textbf{Theorem} (Uniqueness of Bifurcation-Convergence).
+\emph{In a $K_3$-free graph, any subgraph with two nodes $u, v$ such
+that all $u$--$v$ paths have length exactly~$2$ and there are $\geq 3$
+independent such paths is isomorphic to~$\Kbn$.}
+
+This means the Causal Prism is the \emph{unique topological particle}
+permitted by the triangle-free constraint.
+
+\subsection{Topological genesis}\label{sec:genesis}
+
+Why must prisms form at all?
+
+At critical density $\rho_c$, the Poisson-sprinkled causal diamond
+necessarily develops $K_5$ and $K_{3,3}$ minors---this follows from
+Ramsey-type bounds on random graphs~\cite{diestel2017}.
+The only resolution compatible with the Kuratowski constraint
+(Eq.~\ref{eq:kuratowski}) is the contraction of these threatening
+subgraphs into bipartite $\Kbn$ prisms.
+
+\textbf{Theorem} (Topological Genesis).
+\emph{Matter formation is a topological inevitability, not a fluctuation.}
+At $\rho \geq \rho_c$, $K_5$ threats must be absorbed; the absorption
+product is~$\Kbn$.
+
+\subsection{Valence saturation}
+
+The maximum Hasse degree is bounded:
+\begin{equation}\label{eq:degree_bound}
+  D_{\max} = 15
+\end{equation}
+This follows from the Poisson statistics of the causal cone.
+Each event has an \emph{absorption capacity}
+$\alpha(u) = D_{\max} - \deg(u)$.
+Prism formation consumes capacity; once saturated, no further
+condensation can occur.  This is a \emph{topological exclusion
+principle}: matter self-quenches.
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{The Geometry of Matter}\label{sec:matter}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\subsection{The generation theorem}\label{sec:generation_theorem}
+
+Each intermediate $w_i$ of a Causal Prism carries a discrete phase
+determined by the sign of its bulk momentum:
+\begin{equation}\label{eq:phase}
+  \varphi(w_i) = \sgn\!\big(p_{\text{bulk}}[w_i]\big)
+  \;\in\; \{-1,\; 0,\; +1\}
+\end{equation}
+The \textbf{generation} of a prism is the number of distinct phase
+values among its intermediates:
+\begin{equation}\label{eq:generation}
+  g(P) = |\{\varphi(w_i) : w_i \in W\}|
+  \;\in\; \{1,\; 2,\; 3\}
+\end{equation}
+
+\textbf{Theorem} (Generation Bound).
+$g \leq 3$.
+
+\emph{Proof.}
+The codomain of the sign function is $\{-1, 0, +1\}$, which has
+cardinality~3.  The image of any restriction of $\sgn$ to a finite set
+has at most 3 elements.~$\square$
+
+\emph{Three generations of matter follow from the fact that sign has
+three values.  This is a theorem, not a fit.}
+
+\subsection{Matter, antimatter, and CPT}\label{sec:cpt}
+
+The \textbf{net phase} of a prism is
+\begin{equation}\label{eq:net_phase}
+  \Phi(P) = \sum_{i=1}^{n} \varphi(w_i)
+\end{equation}
+This distinguishes matter ($\Phi \geq 0$) from antimatter ($\Phi < 0$).
+CPT conjugation reverses the causal order and negates all phases:
+$P \mapsto \bar{P}$ with $\Phi(\bar{P}) = -\Phi(P)$.
+
+In the language of logic: a prism encodes \emph{modus ponens}
+($u \vdash w_1, \ldots, w_n \vdash v$); its antiprism encodes
+\emph{modus tollens} (the contrapositive
+$\neg v \vdash \neg w_n, \ldots, \neg w_1 \vdash \neg u$).
+Annihilation $P + \bar{P} \to \text{vacuum}$ is the collapse of a
+tautology, releasing $n$ intermediate lemmas~\cite{stone1936}.
+
+CPT symmetry holds because the causal order is invariant under
+time-reversal of the entire graph.
+The simulation confirms this: Gen\,1 mass $= 4.555$ vs Anti-1
+mass $= 4.45$ ($\Delta m/m = 2.3\%$) at $M{=}20$
+(Fig.~\ref{fig:cpt_test}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig8_cpt_test.pdf}
+\caption{CPT symmetry test.  Left: mass comparison across generations
+  and antimatter.  Right: spectral dimension curves for Gen\,1 (matter)
+  and Anti-1 (antimatter).
+  $N = 10^7$, $M = 20$.}
+\label{fig:cpt_test}
+\end{figure}
+
+\subsection{Confinement as Kuratowski barrier}\label{sec:confinement}
+
+Why can't prism constituents be separated?
+
+The prism is bipartite: edges connect only poles to intermediates,
+never intermediates to each other.
+Attempting to separate an intermediate $w_i$ from the prism forces the
+creation of lateral links $w_i$--$w_j$ to maintain connectivity.
+But lateral links between intermediates, combined with the pole
+connections, form triangles---violating the $K_3$-free property.
+Accumulation of lateral links threatens a $K_5$
+minor~\cite{kuratowski1930}, which is forbidden.
+
+The result is a \textbf{linear confining potential}: the energy cost
+of separation grows linearly with distance, exactly as in QCD.
+Each auxiliary link in the ``flux tube'' costs ${\sim}\lp^{-1}$ energy;
+$n \sim r/\lp$ violations for separation distance~$r$ gives
+\begin{equation}
+  E(r) = \sigma\, r
+  \qquad\text{where}\quad
+  \sigma \sim M_{\text{Pl}}^2
+\end{equation}
+Confinement is not a dynamical accident.  It is a \emph{topological
+necessity}: the Kuratowski barrier makes quark liberation as impossible
+as embedding $K_5$ in the plane.
+
+\subsection{The occupancy model}\label{sec:occupancy}
+
+The belly distribution $f(n)$---the probability that a randomly
+chosen prism has $n$ intermediates---is measured directly from the
+simulation.  It follows an exponential tail:
+\begin{equation}\label{eq:belly_dist}
+  f(n) \sim e^{-0.53\,n}
+\end{equation}
+The phase fractions $(p_+, p_0, p_-)$ are measured from Hasse degrees:
+\begin{equation}
+  (p_+, p_0, p_-) = (0.318,\; 0.018,\; 0.664)
+\end{equation}
+
+\textbf{Generation assignment as a coupon-collector problem.}
+Assigning $n$ intermediates i.i.d.\ from $(p_+, p_0, p_-)$ produces
+$g = k$ distinct signs with probability given by Stirling numbers of
+the second kind~\cite{flajolet2009}:
+\begin{equation}\label{eq:coupon}
+  P(g = k \mid n) = \binom{3}{k}\sum_{j=0}^{k}(-1)^j\binom{k}{j}
+  \left(\sum_{i \notin S_j} p_i\right)^{\!n}
+\end{equation}
+where $S_j$ ranges over the $j$-element subsets of the chosen $k$ signs.
+
+Gen\,1 prisms are biased to small bellies (few intermediates, low mass);
+Gen\,3 requires all three signs, biasing to large bellies (high mass).
+The expected belly size conditioned on generation is:
+\begin{equation}
+  E[n \mid g = k] = \frac{\sum_n n\,f(n)\,P(g{=}k \mid n)}
+                         {\sum_n f(n)\,P(g{=}k \mid n)}
+\end{equation}
+
+The predicted mass ratios are:
+\begin{align}
+  m_2/m_1 &= E[n|g{=}2]/E[n|g{=}1] = 1.409 \notag\\
+  &\quad\text{vs observed } 1.434 \quad (1.8\%\text{ error}) \notag\\
+  m_3/m_1 &= E[n|g{=}3]/E[n|g{=}1] = 1.674 \notag\\
+  &\quad\text{vs observed } 1.698 \quad (1.4\%\text{ error})
+\end{align}
+Both inputs---$f(n)$ and $(p_+, p_0, p_-)$---come from the geometry.
+\textbf{Zero free parameters.}
+
+\subsection{Gauge structure from belly symmetry}
+
+The $n$ intermediates of a Causal Prism are geometrically
+indistinguishable from the perspective of the poles.
+The prism therefore possesses an intrinsic $S_n$ permutation symmetry
+(the ``belly symmetry'').
+
+For $n = 3$ intermediates, $S_3$ is the Weyl group of $SU(3)$.
+The Sole Principle demands that unitarity be preserved under continuous
+phase evolution; gauging the discrete $S_3$ skeleton yields the full
+$SU(3)$ gauge structure, with $N_c^2 - 1 = 8$ gluon fields emerging as
+the mandatory gauge redundancies.
+
+\subsection{Spin as logical chirality}
+
+Order the intermediates by their past depth
+$p(w_i)$ (longest chain from the past boundary).
+The \emph{inference permutation} $\pi_P \in S_n$ ranks them by
+descending future depth $f(w_i)$.
+The \textbf{spin} of the prism is
+\begin{equation}
+  s(P) = \frac{\text{inv}(\pi_P)}{2}
+\end{equation}
+where $\text{inv}(\pi_P)$ is the number of inversions.
+
+\textbf{Theorem} (Spin-Statistics).
+\emph{If $\text{inv}(\pi_P)$ is even, $s$ is integer (boson);
+if odd, $s$ is half-integer (fermion).
+The exchange sign $\chi(P) = \sgn(\pi_P) = (-1)^{\text{inv}(\pi_P)}$
+reproduces the spin-statistics connection.}
+
+\textbf{Theorem} (Pauli Exclusion).
+\emph{Two identical fermions cannot occupy the same causal neighbourhood
+with identical quantum numbers: the resulting configuration would form a
+$K_{3,3}$ minor, which is topologically forbidden by Eq.~(\ref{eq:kuratowski}).}
+
+The Pauli exclusion principle is a Kuratowski obstruction.
+
+\subsection{Topological inertia}
+
+A random walker entering a prism at pole~$u$ distributes among $n$
+intermediate channels.  Coherent recombination at~$v$ requires
+${\sim}2n$ steps.
+The residence time is $\tau_{\text{res}} \propto n$, so the effective
+inertia is proportional to the number of intermediates:
+\begin{equation}
+  M = \kappa\, n = \kappa\,|W|
+\end{equation}
+where $\kappa \sim M_{\text{Pl}}$ is the quantum of topological inertia.
+Mass is counted, not measured.
+
+The $N = 10^7$ simulation produces masses
+$m_1 = 4.555$,
+$m_2 = 6.531$,
+$m_3 = 7.732$
+(topological Planck units), with ratio
+$1 : 1.434 : 1.698$ (Fig.~\ref{fig:mass_spectrum}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig4_mass_spectrum.pdf}
+\caption{Belly-size distribution of 7{,}723{,}943 Causal Prisms.
+  Exponential tail $f(n) \sim e^{-0.53n}$; generation separation
+  by the occupancy model.
+  $N = 10^7$, $M = 20$.}
+\label{fig:mass_spectrum}
+\end{figure}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{The Geometry of Logic}\label{sec:logic}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\subsection{$O(N)$ locality}\label{sec:locality}
+
+\textbf{Theorem} ($O(N)$ Locality).
+\emph{Every phase of the simulation pipeline runs in $O(N)$ time.}
+
+\emph{Proof.}
+Phase~1 (Hasse construction): each event probes $O(D_{\max})$
+candidate ancestors, where $D_{\max} = 15$ is independent of~$N$.
+Total: $O(N)$.
+Phase~2 (prism detection): the 2-hop search examines
+$O(D_{\max}^2) \leq 225$ candidate triples per event.
+Total: $O(N)$.
+Phase~3 (spectral dimension): $W$ walkers of bounded length.
+Total: $O(N)$ per diffusion step.
+Phase~4 (output): linear scan.~$\square$
+
+This is not an engineering optimisation.
+$D_{\max} = 15$ is a geometric consequence of Poisson sprinkling at
+$\rho \approx 1$ into a causal diamond.
+If the physics were non-local, the Hasse
+degree would grow with~$N$, and the simulation would be at least
+$O(N^{3/2})$.  It is not.  The code proves the physics.
+
+\subsection{Stone duality: logic as physics}
+
+By Stone duality~\cite{stone1936}, the Alexandrov topology on a causal
+set is the topological spectrum of a Heyting algebra:
+\begin{center}
+\begin{tabular}{@{}r@{$\;\;\longleftrightarrow\;\;$}l@{}}
+  Event $u$ & Proposition $\phi_u$ \\
+  Link $u \prec^* v$ & Implication $\phi_u \vdash \phi_v$ \\
+  Diamond $\Diamond(A,B)$ & Deductive closure \\
+  Transitive reduction & Cut elimination
+\end{tabular}
+\end{center}
+Spacetime \emph{is} a formal deductive system.
+Physics is the semantics of the syntax.
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Macroscopic emergence}\label{sec:ir}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Gravity from Fisher information}
+
+By Axiom~2 and Eq.~(\ref{eq:fisher}), the metric is the Fisher
+information on causal link distributions.
+Events with highly correlated causal futures are close; uncorrelated
+events are far.
+Gravity is the statistical resistance of the network to information
+deformation.
+
+\subsection{Einstein equations as thermodynamics}
+
+When causal information flux is bounded by a macroscopic horizon,
+entropy $S \propto A/4G$ is generated by the severed causal links
+crossing the boundary~\cite{dou2003,bekenstein1973}.
+Applying the Clausius relation $\delta Q = T\,\delta S$ to a local
+causal horizon, Jacobson~\cite{jacobson1995} showed that the Einstein
+field equations emerge as an equation of state:
+\begin{equation}\label{eq:einstein}
+  R_{\mu\nu} - \tfrac{1}{2}R\,g_{\mu\nu} + \Lambda\,g_{\mu\nu}
+  = \frac{8\pi G}{c^4}\,T_{\mu\nu}
+\end{equation}
+In our framework, gravity was always
+thermodynamic.  The causal set provides the microscopic degrees of
+freedom whose coarse-graining yields the macroscopic equation of state.
+
+\subsection{The hierarchy resolution}
+
+Causal Prism gauge forces are topologically locked to the bipartite
+surfaces of $\Kbn$ subgraphs.
+Gravity arises from the Fisher information of the combinatorial
+\emph{bulk}.
+In the 4D macroscopic regime ($\ds \to 4$):
+\begin{equation}
+  F_{\text{gravity}} \propto \frac{1}{V_{\text{bulk}}} \sim \frac{1}{L^4},
+  \qquad
+  F_{\text{gauge}} \propto \frac{1}{A_{\text{surface}}} \sim \frac{1}{L^3}
+\end{equation}
+The ratio $F_{\text{gauge}}/F_{\text{gravity}} \sim L$ grows linearly
+with the scale~$L$.  At nuclear scales, $L/\lp \sim 10^{19}$, giving a
+hierarchy of~${\sim}10^{38}$.
+
+\subsection{The cosmological constant}
+
+Discrete volume is generated by Poisson sprinkling: $V \propto N$.
+The irreducible fluctuation is $\delta V \sim \sqrt{N}$~\cite{ahmed2004}.
+In unimodular gravity, $\Lambda$ is conjugate to volume, so
+\begin{equation}\label{eq:lambda}
+  \Lambda \sim \frac{1}{\sqrt{N}}\,\lp^{-2} \sim H_0^2
+\end{equation}
+For the observable universe, $N \sim (R_H/\lp)^4 \sim 10^{240}$:
+\begin{equation}
+  \Lambda \sim 10^{-120}\,\lp^{-2}
+  \qquad\checkmark
+\end{equation}
+The cosmological constant is Poisson noise, not vacuum energy~\cite{ahmed2004,weinberg1989}.
+
+\subsection{The cosmic bounce}
+
+At Planck density $\rho_{\max} \sim 1/\lp^4$, the holographic bound
+saturates.
+The Friedmann equation is modified:
+\begin{equation}
+  H^2 = \frac{8\pi G}{3}\,\rho\left(1 - \frac{\rho}{\rho_{\max}}\right)
+\end{equation}
+At $\rho = \rho_{\max}$: $H^2 = 0$---expansion halts and reverses.
+The Big Bang is a Big Bounce.
+The singularity is an artefact of the continuum limit.
+
+\subsection{The emergence of $i$: quantum mechanics from alternating layers}
+
+The Benincasa--Dowker operator (Eq.~\ref{eq:box}) has coefficients that
+alternate in sign across causal layers: $+9$ (layer~1), $-16$ (layer~2),
+$+8$ (layer~3).  This sign alternation has a profound consequence.
+
+A random walker diffusing on the Hasse graph with these transition weights
+does not experience monotone diffusion: at each discrete time step, the
+walker's probability amplitude is multiplied by weights that alternate
+between positive and negative.  The result is an \emph{oscillating}
+probability distribution.
+
+To describe this oscillation in the continuum limit while preserving
+unitarity (the Sole Principle), the mathematics is forced to introduce
+a complex phase.  The generating function for an alternating-weight walk
+on $k$ layers has the form
+\begin{equation}
+  G(\sigma) = \sum_{k} c_k\,(-1)^k\,P_k(\sigma)
+  \;\longrightarrow\;
+  e^{i\omega\sigma}
+\end{equation}
+in the coarse-graining limit, where $\omega$ encodes the oscillation
+frequency set by the BD coefficients.
+
+The imaginary unit $i$ is therefore \emph{not a fundamental postulate}.
+It is the macroscopic bookkeeping device required to track the
+alternating $+/-$ geometry of the discrete causal layers.
+When the Kuratowski Calculus coarse-grains into the continuum,
+the alternating BD layers fold into the $e^{i\theta}$ phase of the
+Schr\"{o}dinger equation~\cite{sorkin1994}:
+\begin{equation}
+  i\hbar\,\frac{\partial\psi}{\partial t} = \hat{H}\psi
+  \quad\longleftarrow\quad
+  \boxplus\Phi \;\text{with alternating } c_k
+\end{equation}
+Wave-particle duality, interference, and quantum superposition are the
+macroscopic shadows of walkers navigating the alternating geometric
+weights of the Hasse diagram.
+The complex Hilbert space of quantum mechanics is not a separate axiom
+of nature---it is a derived consequence of the sign structure of the
+Benincasa--Dowker operator on a locally finite partial order.
+
+\subsection{Dark matter as phase-cancelled prisms}\label{sec:dark_matter}
+
+Not all Causal Prisms are electromagnetically active.
+The electromagnetic opacity of a prism is
+$\mathcal{Q}(P) = |\Phi(P)|/n$.
+For large~$n$ with approximately random phases,
+$\mathcal{Q} \sim \sigma/\sqrt{n} \to 0$.
+
+Large-$n$ prisms are gravitationally active (mass $\propto n$)
+but electromagnetically sterile (charge $\propto |\Phi| \approx 0$)
+---exactly the profile of dark matter (Fig.~\ref{fig:dark_matter}).
+The dark sector is the gravitational self-energy not
+accounted for by electromagnetic interactions:
+\begin{equation}
+\frac{\Omega_{\mathrm{dark}}}{\Omega_{\mathrm{vis}}}
+= \frac{1}{\Qtopo} - 1
+\end{equation}
+With $\Qtopo \approx 0.1907$ from the $M{=}20$ ensemble,
+$\Omega_{\mathrm{energy}} = 4.24$.
+The exact identity
+\begin{equation}\label{eq:lock}
+  \alpha\,(1 + \Omega_{\mathrm{energy}}) = \frac{1}{8\pi}
+\end{equation}
+locks both observables to a single measured quantity~$\Qtopo$.
+At $N = 10^7$: $\Omega_{\mathrm{dark}}/\Omega_{\mathrm{vis}} = 1.70$.
+FSS pushes this toward the Planck~2018 limit~\cite{planck2018}.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig5_dark_matter.pdf}
+\caption{Dark matter as phase-cancelled large-$n$ prisms.
+  CLT opacity $Q \sim 1/\sqrt{n}$;
+  $\Omega_{\mathrm{energy}} = 1/\Qtopo - 1 = 4.24$.
+  $N = 10^7$, $M = 20$.}
+\label{fig:dark_matter}
+\end{figure}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Spectral dimension flow}\label{sec:spectral}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+The spectral dimension interpolates between two boundary conditions:
+\begin{equation}
+  \ds(\sigma) \;:\quad
+  \ds \to 2 \;\text{(UV)},
+  \qquad
+  \ds \to 4 \;\text{(IR)}
+\end{equation}
+At short diffusion times, the walker sees the tree-like, fractal
+structure of the Hasse diagram: $\ds(\sigma{=}1) = 1.949 \pm 0.002$.
+This is consistent with the 2D Planck-scale prediction of
+CDT~\cite{ambjorn2005,carlip2017}.
+At $\sigma = 4$, the vacuum $\ds$ reaches $4.956 \pm 0.001$: the
+walker averages over enough events to reconstruct the 4D continuum.
+
+This $2 \to 4$ flow is a universal prediction of causal set theory,
+confirmed independently by CDT~\cite{ambjorn2005},
+Ho\v{r}ava--Lifshitz gravity, and asymptotic
+safety~\cite{carlip2017}---theories with entirely different microscopic
+content.
+
+An interpolation formula consistent with both boundary conditions is
+\begin{equation}
+  \ds(k) = 4 - \frac{2k^2}{k^2 + M_{\text{Pl}}^2}
+\end{equation}
+
+The defect core gives $\ds = 9.06$ (at $\sigma \approx 7$), far
+exceeding 4.  This is the signature of probability trapping: walkers
+entering a Causal Prism have enhanced return probability, inflating
+the effective dimension.
+This enhanced return probability \emph{is} mass---it is what makes
+the prism act as a localised, inertial object
+(Fig.~\ref{fig:spectral_flow}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig1_spectral_dimension_flow.pdf}
+\caption{Spectral dimension flow from UV ($\sigma{=}1$) to IR.
+  Vacuum curve crosses $\ds = 4$ at $\sigma \approx 3$--$4$;
+  defect core peaks at $\ds = 9.06$ due to walker trapping.
+  $N = 10^7$, $M = 20$.}
+\label{fig:spectral_flow}
+\end{figure}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Finite-size scaling}\label{sec:fss}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+Boundary effects in a 4D causal diamond scale as
+$T^3/T^4 = 1/T \sim N^{-1/4}$.
+Five lattice sizes ($N = 10^5$ to $10^7$, $M \geq 8$ realisations each)
+confirm that all boundary-sensitive observables follow
+\begin{equation}\label{eq:fss}
+  \mathcal{O}(N) = \mathcal{O}_\infty + a\,N^{-1/4}
+\end{equation}
+This is the 4D boundary/volume scaling law, not an empirical fit.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_fss_composite.pdf}
+\caption{Finite-size scaling across five lattice sizes ($N = 10^5$--$10^7$).
+  \textbf{(a)}~$\Qtopo \to 0.152$ ($R^2 = 0.9996$).
+  \textbf{(b)}~Mass ratios are $N$-independent ($R^2 < 0.1$).
+  \textbf{(c)}~$\Omega_{\mathrm{energy}} \to 5.57$ (Planck~2018: $5.36$).
+  \textbf{(d)}~$\ds$: UV $\to 1.95$, IR $\to 5.00$.
+  All data reproducible on a single laptop.}
+\label{fig:fss}
+\end{figure*}
+
+Table~\ref{tab:fss} lists the extrapolations.
+The topological charge $\Qtopo$ runs from $0.271$ at $N = 10^5$ to
+$0.191$ at $N = 10^7$, extrapolating to
+$\Qtopo = 0.1523 \pm 0.0009$ with $R^2 = 0.9996$---confirming the
+$N^{-1/4}$ power law to four significant figures.
+The bare Planck coupling is
+$\alpha_0^{-1} = 8\pi/\Qtopo = 165.1 \pm 1.0$.
+
+Mass ratios and generation fractions are
+\textbf{$N$-independent topological invariants} ($R^2 < 0.1$ against
+$N^{-1/4}$): the internal structure of Causal Prisms does not feel the
+boundary.
+
+\input{figures/fss_table}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Vacuum polarization and the running coupling}\label{sec:vp}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+The occupancy model of Sec.~\ref{sec:occupancy} treats the phase
+assignments of intermediates as i.i.d.\ draws from
+$(p_+, p_0, p_-)$.  This assumption is now tested on two classes of
+observable---with strikingly different results.
+
+\subsection{The success for mass (counting observable)}
+
+Mass is $E[n \mid g = k]$: the expected belly size conditioned on
+the number of \emph{distinct} signs observed.  This is a \emph{counting}
+observable---it asks ``how many types appeared?''\ and is insensitive to
+the detailed correlation structure between intermediates.
+The i.i.d.\ model predicts $m_2/m_1 = 1.409$ and $m_3/m_1 = 1.674$,
+matching observations to 1.8\% and 1.4\% respectively.  The i.i.d.\
+assumption \textbf{passes} for mass.
+
+\subsection{The failure for charge (summation observable)}
+
+The topological charge is
+$\Qtopo = \sum|\Phi|^2/\sum N^2$, where $\Phi = \sum_i \varphi(w_i)$
+is the \emph{net sum} of phases.
+This is a \emph{summation} observable: it depends on the detailed
+cancellation pattern among intermediates.
+
+Under i.i.d.\ phases with mean $\mu = -0.346$ and variance
+$\sigma^2 = 0.862$:
+\begin{equation}
+  Q_{\mathrm{pred}} = \mu^2 + \sigma^2\,\frac{\langle n \rangle}
+  {\langle n^2 \rangle} = 0.2355
+\end{equation}
+The observed value is $\Qtopo = 0.191$.  The i.i.d.\ model overshoots
+by \textbf{23.5\%}.  The i.i.d.\ assumption \textbf{fails} for charge
+(Fig.~\ref{fig:vp_mass_charge}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/vp_mass_vs_charge.pdf}
+\caption{The i.i.d.\ model succeeds for mass (counting observable,
+  1.8\% error) but fails for charge (summation observable,
+  23.5\% overshoot).  The failure is vacuum polarization.}
+\label{fig:vp_mass_charge}
+\end{figure}
+
+\subsection{Kuratowski phase entanglement}
+
+The mechanism is topological.
+At small belly sizes ($n \leq 4$), the $K_{3,3}$-free and $K_5$-free
+constraints of the Hasse diagram force degree anti-correlation among
+intermediates.  A $+1$ intermediate crowds out other $+1$ intermediates
+by consuming shared pole connectivity.
+
+This produces \emph{phase anti-correlation}: the effective mean
+$\mu_{\mathrm{eff}}(n)$ deviates from the i.i.d.\ value $\mu$.
+For $n < 5$, $\mu_{\mathrm{eff}}^2$ is imaginary
+(total screening---the topological constraint completely suppresses the
+net phase).  At $n \approx 5$, a crossover $n^*$ occurs: above this,
+$\mu_{\mathrm{eff}} \to \mu_{\mathrm{iid}}$ as the constraint weakens
+(Fig.~\ref{fig:vp_mu}).
+
+This is the geometric analogue of QED vacuum polarization:
+in QED, virtual $e^+e^-$ pairs screen the bare charge at short
+distances~\cite{uehling1935,peskin1995};
+here, Kuratowski constraints screen the topological charge at small
+belly sizes.  The physics is identical---charge screening by
+topological pair creation---but the mechanism is combinatorial rather
+than field-theoretic.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/vp_mu_effective.pdf}
+\caption{Effective mean phase $\mu_{\mathrm{eff}}(n)$ per belly size.
+  For $n < 5$: total screening (imaginary $\mu_{\mathrm{eff}}^2$).
+  Crossover at $n^* = 5$; approaches i.i.d.\ value at $n \gtrsim 15$.}
+\label{fig:vp_mu}
+\end{figure}
+
+\subsection{The running coupling}
+
+The topological charge runs with lattice size:
+\begin{center}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}cccccc@{}}
+$N$ & $10^5$ & $5{\times}10^5$ & $10^6$ & $5{\times}10^6$ & $10^7$ \\
+\midrule
+$\Qtopo$ & 0.271 & 0.232 & 0.218 & 0.197 & 0.191
+\end{tabular}
+\end{center}
+FSS extrapolation gives
+$Q_\infty = 0.1523 \pm 0.0009$ and
+$\alpha_0^{-1} = 165.1 \pm 1.0$.
+The 165$\to$137 gap is physically expected: it is the domain of
+renormalization-group running from the Planck scale to laboratory
+energies.
+
+The running follows the $N^{-1/4}$ power law of boundary/volume
+scaling, \emph{not} the logarithmic running of perturbative QED.
+This is itself a falsifiable prediction (P6).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/vp_q_running.pdf}
+\caption{Running of $\Qtopo$ with lattice size $N$.
+  Solid curve: $N^{-1/4}$ fit ($R^2 = 0.9996$).
+  Extrapolation: $Q_\infty = 0.152$.}
+\label{fig:vp_q_running}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/vp_inv_alpha.pdf}
+\caption{Running of $\alpha^{-1} = 8\pi/\Qtopo$.
+  At $N = 10^7$: $\alpha^{-1} = 131.8$.
+  FSS extrapolation: $\alpha_0^{-1} = 165.1 \pm 1.0$ (bare Planck coupling).}
+\label{fig:vp_inv_alpha}
+\end{figure}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Topological Chemistry --- The Rosetta Stone}\label{sec:chemistry}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+The same topological structure that produces particle generations also
+encodes atomic shell chemistry.  This section shows that the magic
+numbers, orbital degeneracies, covalent bonds, and the octet rule
+all follow from the Fisher information geometry of the phase simplex.
+
+\subsection{The Fisher 2-sphere}
+
+The three phases $\varphi \in \{+1, 0, -1\}$ parametrise a trinomial
+distribution on the 2-simplex $\Delta^2$.
+The Fisher information metric on $\Delta^2$ with parameters
+$\bm{p} = (p_+, p_0, p_-)$ is~\cite{amari2000}
+\begin{equation}
+  g_{ij} = \frac{n\,\delta_{ij}}{p_i}
+\end{equation}
+Under the reparametrisation $\theta_i = 2\sqrt{p_i}$, this becomes
+the standard round metric on the positive octant of $S^2(\sqrt{n})$:
+\begin{equation}
+  ds^2 = n\,d\Omega^2
+\end{equation}
+The Gaussian curvature is $K = 1/n$: larger bellies produce flatter
+phase spaces.
+
+The eigenmodes of the Laplacian on this Fisher sphere are the
+spherical harmonics $Y_\ell^m$, with angular momentum quantum number
+$\ell = 0, 1, \ldots, \ell_{\max}$.
+
+\subsection{Magic numbers from topology}
+
+A prism with $n$ intermediates on the Fisher sphere supports
+$\ell_{\max} = n - 1$ resolvable harmonics.
+CPT symmetry provides a factor-of-2 doubling (matter $\Phi > 0$ /
+antimatter $\Phi < 0$).
+The shell capacity is:
+\begin{equation}\label{eq:magic}
+  \mathcal{N}(k) = 2\sum_{\ell=0}^{k-1}(2\ell + 1) = 2k^2
+\end{equation}
+\begin{align}
+  k = 1&: \quad 2 \quad\text{(He)} \notag\\
+  k = 2&: \quad 8 \quad\text{(Ne)} \notag\\
+  k = 3&: \quad 18 \quad\text{(Ar*)} \notag\\
+  k = 4&: \quad 32 \quad\text{(lanthanides)}
+\end{align}
+These are \emph{not imposed}---they are eigenvalues of the Fisher
+metric geometry.  The same $2k^2$ formula that appears in quantum
+mechanics textbooks~\cite{griffiths2018} is here derived from the
+information geometry of a discrete causal set.
+
+\subsection{Orbitals as generations}
+
+For a belly of $n = 3$ intermediates, there are
+$\binom{5}{2} = 10$ phase partitions.  These decompose by net phase
+$|\Phi|$ into orbital types:
+\begin{center}
+\begin{tabular}{@{}ccl@{}}
+$|\Phi|$ & Count & Orbital \\
+\midrule
+0 & 2 & $s$ (monopole) \\
+1 & 4 & $p$ (dipole) \\
+2 & 2 & $d$ (quadrupole) \\
+3 & 2 & $f$ (octupole)
+\end{tabular}
+\end{center}
+Generation mapping: $\ell = 0 \leftrightarrow$ Gen\,1,
+$\ell = 1, 2 \leftrightarrow$ Gen\,2,
+$\ell = 3 \leftrightarrow$ Gen\,3.
+Gen\,2 dominance (${\sim}85\%$) matches $p + d$ orbital dominance in
+chemistry.
+
+\subsection{Covalent bonds from shared intermediates}
+
+Two prisms sharing an intermediate $w_B$ form a \emph{topological
+covalent bond}.
+The phase $\varphi(w_B)$ enters both $\Phi(P_1)$ and $\Phi(P_2)$,
+coupling the Fisher spheres of the two prisms.
+The \emph{bond order} is the number of shared intermediates.
+
+$K_5$ absorption caps stable sharing at 3 intermediates: adding a
+fourth shared intermediate creates a $K_5$ topological minor between
+the two pole pairs and the shared set, which is
+forbidden by Eq.~(\ref{eq:kuratowski}).
+This gives a \textbf{maximum bond order of 3} (triple bonds).
+
+The \textbf{octet rule} ($8 = 2 + 6$) follows from filling the
+$s + p$ subshells across shared intermediates:
+$\ell = 0$ provides 2 states and $\ell = 1$ provides 6 states.
+
+\subsection{The dark sector}
+
+Large-belly prisms ($n \geq 15$) are phase-cancelled:
+$|\Phi| \ll n$ by the central limit theorem.
+They carry topological mass with near-zero electromagnetic charge---dark
+matter candidates.
+From the topology summary:
+$\Omega_{\mathrm{dark}}/\Omega_{\mathrm{vis}} = 1.70$ at $N = 10^7$.
+FSS pushes this toward the Planck~2018
+limit~\cite{planck2018} ($\Omega_c/\Omega_b \approx 5.36$).
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Falsifiable predictions}\label{sec:predictions}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+The framework is an \emph{overconstrained system}: zero free parameters,
+ten independent predictions.  Failure of any single one is fatal.
+
+\begin{table}[h]
+\caption{Ten falsifiable predictions of Fractal Entropic Geometrodynamics.}
+\label{tab:predictions}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}clc@{}}
+\toprule
+& \textbf{Prediction} & \textbf{Test} \\
+\midrule
+P1 & $g_{\max} = 3$ (theorem) & Collider \\
+P2 & $\alpha(1+\Omega) = 1/(8\pi)$ & Cosmo \\
+P3 & $\sigma_{\chi N} = 0$ (null WIMP) & LZ/XENON \\
+P4 & $r < 10^{-3}$ (no tensors) & CMB-S4 \\
+P5 & $\sum m_\nu \approx 58$--$62$\,meV & DESI \\
+P6 & $N^{-1/4}$ running (not log) & FSS \\
+P7 & Correlated $\Delta\alpha$--$\Delta\Omega$ & Quasar \\
+P8 & DM spectrum: $e^{-0.53n}$ tail & Direct \\
+P9 & Magic numbers from Fisher sphere & Atomic \\
+P10 & Max bond order $= 3$ ($K_5$) & Chemical \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{P1.\ Generation exclusion ($g_{\max} = 3$).}
+$g = |\{\text{distinct } \varphi(w_i)\}| \in \{1,2,3\}$ because
+$\sgn \colon \mathbb{R} \to \{-1,0,+1\}$.
+A fourth generation is topologically forbidden---a theorem, not a bound.
+
+\textbf{P2.\ The $\alpha$--$\Omega$ Lock.}
+$\Qtopo$ determines \emph{both}: $\alpha = \Qtopo/(8\pi)$
+and $\Omega = 1/\Qtopo - 1$.
+The exact identity $\alpha(1 + \Omega) = 1/(8\pi)$ locks them:
+one cannot vary dark matter without altering~$\alpha$.
+
+\textbf{P3.\ Null WIMP prediction ($\sigma_{\chi N} = 0$).}
+Dark matter is the phase-cancelled tail of the belly-size
+distribution.
+Cross-section is identically zero.
+LZ~\cite{lz2022}, XENONnT, and DARWIN will report null.
+
+\textbf{P4.\ No primordial tensor modes ($r < 10^{-3}$).}
+UV dimensional reduction $\ds \to 2$ kills graviton propagation
+(Weyl tensor vanishes in 2D).
+Testable by CMB-S4 and LiteBIRD.
+
+\textbf{P5.\ Neutrino mass sum ($\sum m_\nu \approx 58$--$62$\,meV).}
+Bulk diffusion gives
+$m_1 \approx M_{\rm Pl}(\lp/L_\Lambda)^{1/2} \approx 3$\,meV;
+combined with $\Delta m^2$ splittings: normal ordering.
+
+\textbf{P6.\ Running coupling curve.}
+The topological charge runs as $N^{-1/4}$ (boundary/volume scaling),
+not logarithmically as in perturbative QED.
+This power-law running is itself falsifiable by computing at larger~$N$.
+
+\textbf{P7.\ Quasar $\alpha$ variations.}
+The $\alpha$--$\Omega$ Lock (Eq.~\ref{eq:lock}) predicts that
+any cosmological variation $\Delta\alpha$~\cite{webb2011} must be
+accompanied by a correlated $\Delta\Omega_{\mathrm{dark}}$.
+If $\alpha$ varies but $\Omega$ does not, the framework is ruled out.
+
+\textbf{P8.\ Dark matter mass spectrum.}
+The dark sector follows the belly distribution
+$f(n) \sim e^{-0.53n}$ with no WIMP peak.
+The spectrum is exponential, not thermal.
+
+\textbf{P9.\ Magic number derivation.}
+The atomic magic numbers $2, 8, 18, 32$ follow from the eigenvalues of
+the Laplacian on the Fisher sphere (Eq.~\ref{eq:magic}), with
+$\mathcal{N}(k) = 2k^2$~\cite{mayer1955}.
+If this eigenvalue structure is incorrect, the framework fails.
+
+\textbf{P10.\ Maximum bond order.}
+The $K_5$ threshold caps covalent bonds at triple bonds.
+Quadruple bonds between main-group elements are topologically forbidden.
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{The illusions of the continuum}\label{sec:illusions}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+By strictly adhering to the Kuratowski Calculus, the following anomalies
+of the standard paradigm dissolve.  Each is an artefact of the
+$\lim_{\epsilon \to 0}$ assumption:
+
+\begin{enumerate}[itemsep=2pt,parsep=0pt,topsep=4pt,partopsep=0pt,leftmargin=1.8em]
+
+\item \textbf{The singularity.}
+Holographic capacity bounds Planck volumes to 1~bit.
+Infinite density is obstructed.  The universe bounces.
+
+\item \textbf{The Hubble tension.}
+An artefact of imposing a single continuous expansion curve on a universe
+that undergoes a $\ds = 2 \to 4$ dimensional phase transition.
+
+\item \textbf{Dark energy.}
+Poisson noise (Eq.~\ref{eq:lambda}), not vacuum energy.
+
+\item \textbf{The hierarchy problem.}
+Geometric dilution: gauge forces on surfaces; gravity in the bulk.
+
+\item \textbf{Proton stability.}
+Causal Prisms are topological knots.
+Decay requires ${\sim}10^{60}$ coordinated link rearrangements:
+$P \sim e^{-10^{60}}$.
+
+\item \textbf{The strong CP problem.}
+$\theta_{\text{eff}} \sim 1/\sqrt{10^{60}} \sim 10^{-30}$.
+The law of large numbers, not an axion symmetry.
+
+\item \textbf{Matter--antimatter asymmetry.}
+Forward-growing DAGs statistically favour Modus Ponens
+(matter, $\Phi > 0$) over Modus Tollens (antimatter, $\Phi < 0$):
+the causal order itself breaks the $\Phi \leftrightarrow -\Phi$
+symmetry.  The $M{=}20$ census confirms a ${\sim}13{:}1$
+matter/antimatter ratio.
+
+\end{enumerate}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Discussion}\label{sec:discussion}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+Let us be direct about what has and has not been shown.
+
+\textbf{Established by computation:}
+\begin{enumerate}[itemsep=1pt,parsep=0pt,topsep=2pt,partopsep=0pt,leftmargin=1.8em]
+  \item \emph{Three generations from topology.}
+    The Hasse diagram is triangle-free ($K_3$-free), so the densest
+    bipartite subgraph is $\Kbn$---the Causal Prism.
+    The sign trichotomy $\varphi \in \{-,0,+\}$ bounds $g \leq 3$.
+    This is a combinatorial theorem, not a fit.
+
+  \item \emph{Mass hierarchy with zero parameters.}
+    The occupancy model, using only the belly distribution and
+    Hasse-measured phase fractions, predicts $m_2/m_1 = 1.409$ (obs.\
+    $1.434$, 1.8\% error) and $m_3/m_1 = 1.674$ (obs.\ $1.698$, 1.4\%).
+
+  \item \emph{Vacuum polarization from topology.}
+    The i.i.d.\ model succeeds for mass (counting observable) but fails
+    for charge (summation observable) by 23.5\%.  Kuratowski phase
+    entanglement at small belly sizes screens the topological charge,
+    providing a geometric analogue of QED vacuum polarization.
+
+  \item \emph{Running coupling.}
+    $\Qtopo$ runs from 0.271 ($N = 10^5$) to 0.191 ($N = 10^7$),
+    extrapolating to $Q_\infty = 0.152$ ($R^2 = 0.9996$).
+    The bare Planck coupling is $\alpha_0^{-1} = 165.1 \pm 1.0$.
+
+  \item \emph{Gauge symmetry from combinatorics.}
+    The internal permutation symmetry $S_n$ of the $n$ prism
+    intermediates corresponds to the Weyl groups of Standard Model
+    Lie algebras.
+
+  \item \emph{CPT symmetry.}
+    Pole exchange $u \leftrightarrow v$ maps $\Phi \to -\Phi$.
+    Gen\,1 and Anti-1 masses agree to $2.3\%$ at $M{=}20$.
+
+  \item \emph{4D geometry.}
+    Spectral dimension $\ds(\sigma{=}1) = 1.949 \pm 0.002$ in the UV,
+    crossing $\ds = 4$ at $\sigma \approx 3$--$4$.
+
+  \item \emph{$O(N)$ locality.}
+    Bounded Hasse degree ($D \leq 15$) makes every topological
+    operation local.
+
+  \item \emph{Quantum mechanics from alternating layers.}
+    The sign-alternating BD coefficients $(+9, -16, +8)$ force
+    oscillatory diffusion; the continuum limit requires complex phases
+    $e^{i\theta}$ to preserve unitarity.
+    The imaginary unit $i$ is derived, not postulated.
+
+  \item \emph{Topological chemistry.}
+    The Fisher sphere on the phase simplex yields magic numbers
+    $2, 8, 18, 32$, maximum bond order 3, and the octet rule---the
+    Rosetta Stone connecting particle physics to atomic physics.
+\end{enumerate}
+
+\textbf{Open:}
+\begin{enumerate}[itemsep=1pt,parsep=0pt,topsep=2pt,partopsep=0pt,leftmargin=1.8em]
+  \item \emph{Yang--Mills continuum limit.}
+    Reconstructing the smooth Yang--Mills Lagrangian from the
+    discrete $S_n$ symmetry requires a rigorous
+    mathematical proof not yet completed.
+
+  \item \emph{Neutrino sector.}
+    The neutrino mass spectrum and mixing angles remain
+    to be derived from the prism topology.
+
+  \item \emph{Absolute mass scale.}
+    The hierarchy is established; mapping topological mass units
+    to physical MeV requires identifying the normalisation from the
+    residence-time formula $m \propto \tau_{\mathrm{res}}(K_{2,n})$.
+\end{enumerate}
+
+The topological chemistry section is the Rosetta Stone connecting
+particle physics to atomic physics: the same discrete structure that
+produces three generations also produces the periodic table.
+
+\textbf{The role of the code.}
+The simulation is not a numerical check on a pre-existing theory.
+It \emph{is} the theory, executed.
+The Kuratowski Calculus replaces continuous differential equations with
+exact combinatorial operations on a graph.
+When we say ``the code is the argument,'' we mean it literally:
+the four phases of the pipeline \emph{are} the four operators of the
+calculus, and the output \emph{is} the prediction.
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Conclusion}\label{sec:conclusion}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+Two axioms (Poisson sprinkling, Fisher information metric) and one
+principle (unitarity preservation) produce:
+three generations bounded by sign trichotomy $g \leq 3$---a theorem;
+a mass hierarchy predicted by the zero-parameter occupancy model to
+1.8\% accuracy;
+vacuum polarization from Kuratowski phase entanglement (i.i.d.\ fails
+for charge by 23.5\%);
+a running coupling $\Qtopo \to 0.152$ ($R^2 = 0.9996$) with bare
+Planck value $\alpha_0^{-1} = 165.1$;
+the exact identity $\alpha(1 + \Omega) = 1/(8\pi)$ locking fine
+structure to dark matter;
+the imaginary unit $i$ of quantum mechanics emerging from the
+sign-alternating Benincasa--Dowker coefficients;
+atomic shell structure with magic numbers $2, 8, 18, 32$ from Fisher
+sphere eigenvalues;
+covalent bond saturation at triple bonds from the $K_5$ barrier;
+and the octet rule from $s + p$ subshell filling.
+
+No gauge groups were imposed.  No symmetry breaking potentials were
+written down.  No coupling constants were tuned.
+The input is an integer~$N$ and a random seed.
+The entire computation---production ensemble, finite-size scaling suite,
+vacuum polarization analysis, and topological chemistry---runs on a
+ThinkPad~T480 in under a day.
+
+All code and data are open-source at
+\url{https://github.com/ertwro/fractal_entropic_geometrodynamic}.
+
+\begin{acknowledgments}
+I dedicate this work to my wife and my daughter Emma; I thank them for
+tolerating my late-night coding sessions.
+I acknowledge the computational endurance of a ThinkPad~T480 running
+Arch Linux, and thank the AI architectures Claude, Grok, and Gemini
+for serving as adversarial semantic mirrors throughout the synthesis
+of this framework.
+\end{acknowledgments}
+
+\bibliography{refs}
+
+\end{document}

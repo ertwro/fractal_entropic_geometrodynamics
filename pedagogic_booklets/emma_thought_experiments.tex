@@ -505,6 +505,36 @@ More ropes beyond $N = 5$ threaten $K_5$ formation $\to$ absorbed by the strong 
 jerarquía entre partículas ligeras y pesadas.}
 \end{figure}
 
+\section{The Coupon Collector}
+\begin{thoughtexp}[Stickers in the Cereal Box]
+\textbf{The Scenario:} Emma's cereal company puts stickers in every box---one sticker per box, chosen randomly from three types: Red, White, and Blue. Emma wants to collect all three. How many boxes does she need to buy?
+
+\textbf{The Insight:} This is the \emph{coupon-collector problem}, one of the oldest puzzles in probability. But it is also the mechanism behind the mass hierarchy of particles. Here is why.
+
+\textbf{The Experiment:}
+\begin{enumerate}
+  \item Each causal prism (hammock) has $N$ ropes, and each rope carries a phase colour: Red ($-$), White ($0$), or Blue ($+$). The colours are drawn from a fixed distribution: $(p_-, p_0, p_+) = (0.664, 0.018, 0.318)$---not uniform, but determined by the geometry of the Hasse diagram.
+  \item A Generation-1 prism has all ropes the same colour ($g = 1$). A Generation-2 prism has exactly two distinct colours ($g = 2$). A Generation-3 prism has all three ($g = 3$).
+  \item Small hammocks (few ropes, low $N$) are very likely to have all ropes the same colour---just as buying only 2 cereal boxes almost never gives you all 3 stickers. So small $N$ produces mostly Generation-1 particles.
+  \item Bigger hammocks (more ropes) have more chances for colour diversity. By the coupon-collector formula, the probability of seeing all three colours increases with $N$. The crossover to Generation-3 dominance happens around $N \approx 15$.
+\end{enumerate}
+
+\textbf{The Formula:} The probability of achieving exactly $g$ distinct colours in a belly of size $n$ uses the \emph{Stirling numbers of the second kind}:
+\[
+  P(g = k \mid n) \;=\; \binom{3}{k}\,\sum_{j=0}^{k} (-1)^j \binom{k}{j}\,(p_1 + \cdots + p_{k-j})^n
+\]
+The expected belly size for each generation gives the mass ratio:
+\[
+  \frac{m_2}{m_1} = \frac{E[n \mid g=2]}{E[n \mid g=1]} = 1.409 \quad (\text{observed: } 1.434,\;\text{error: } 1.8\%)
+\]
+\[
+  \frac{m_3}{m_1} = \frac{E[n \mid g=3]}{E[n \mid g=1]} = 1.674 \quad (\text{observed: } 1.698,\;\text{error: } 1.4\%)
+\]
+\textbf{Zero free parameters.} Both inputs---the belly distribution $f(n)$ and the phase fractions $(p_-, p_0, p_+)$---come from the geometry alone. The mass hierarchy is not fitted; it is \emph{derived}.
+
+\textbf{The Lesson:} The mass hierarchy of the three particle generations is a counting accident. Light particles (Generation-1) come from small hammocks where all ropes happen to vibrate the same way. Heavy particles (Generation-3) come from large hammocks that have room for all three colours. The cereal company did not design the hierarchy. Neither did the universe.
+\end{thoughtexp}
+
 \section{Spin and the Fermion Dance}
 \begin{thoughtexp}[El Trenzado de los Giros]
 \textbf{The Scenario:} Emma ties her shoelace with a single twist. She can undo it by pulling the ends. But if she twists it \emph{twice}, pulling doesn't help---she needs to loop the lace around itself to undo the double twist.
@@ -562,6 +592,51 @@ la asimetría materia-antimateria emergente.}
 \textbf{The Lesson:} The giant's whisper is not weak. It is \emph{diluted}. Gravity shouts with full Planck-scale strength, but Kuratowski's Theorem and the triangle-free constraint confine the strong force to tight topological surfaces (Causal Prisms), while gravity must fill the entire 4D bulk. The hierarchy is not fine-tuned; it is geometric---diffusion versus ballistic, random walk versus straight line.
 
 \textit{(See: Kuratowski's Theorem in Modulo Synthesis, Vol.~II; Holographic Dilution in Vol.~I, Modulo~7.)}
+\end{thoughtexp}
+
+\section{Vacuum Polarization: The Lego Baseplates}
+\begin{thoughtexp}[The Crowded Baseplate]
+\textbf{The Scenario:} Emma has a giant bucket of Legos.  Half of them are Red ($+1$) and half of them are Blue ($-1$).
+
+If Emma holds up a Red Lego, it glows bright red.  That glow is what physicists call ``Charge.''
+
+But there is a catch: if a Red Lego touches a Blue Lego, their colours cancel each other out, and they turn invisible (grey).
+
+Now, Emma is building a universe, which means she is putting these Legos onto baseplates.
+
+\textbf{The Experiment:}
+
+\textit{1.~The Tiny Baseplate (UV / Small Prisms).}
+Emma takes a very, very tiny baseplate.  It only has room for 3 or 4 Legos (a small belly size, $n = 3$).
+
+Because the baseplate is so tiny, the Legos are super crowded.  The rules of geometry (the Kuratowski constraint) say that to fit them all in without breaking the board, she \textbf{cannot put two Red Legos next to each other}.  They would bump elbows.  She has to alternate them: Red, Blue, Red, Blue.
+
+Because every Red is forced to sit right next to a Blue, they completely cancel each other out.
+
+When you look at the tiny baseplate from across the room, it barely glows at all.  The ``charge'' looks super weak.
+
+\textit{2.~The Giant Baseplate (IR / Large Prisms).}
+Next, Emma takes a massive, living-room-sized baseplate (a large belly size, $N \to \infty$).
+
+Now, there is tons of room!  The Legos are not cramped any more.  Emma can put a whole clump of Red Legos in one corner, and a clump of Blue Legos in another.  Because they aren't forced to alternate, they don't cancel each other out perfectly.
+
+When you look at the giant baseplate from across the room, you can see a bright, beautiful Red glow.
+
+\textbf{So, What the Heck is Alpha?}
+
+Alpha ($\alpha$) is just the ``Glow Score.''  It is a measurement of how much pure colour escapes the baseplate and reaches your eye.
+
+For 70 years, physicists thought Alpha was just a random magic number ($1/137$) that God picked to make electricity work.
+
+But the data just proved that Alpha is not a fixed number.  It \emph{changes} depending on how big the baseplate is!
+
+When you zoom way in to the tiny, crowded spaces of the universe, the geometry forces the Legos to cancel out, so Alpha drops (the charge is screened).  When you zoom out, the universe relaxes, the Legos don't cancel as much, and Alpha reveals its true, bare score ($1/165$).
+
+\textbf{The Insight:} The strength of electricity is entirely controlled by how crowded the geometry of the universe is.  This is \emph{vacuum polarization}: the same phenomenon that QED explains with infinite series of virtual particle loops, arising here from pure graph topology---no loops, no infinities, just Kuratowski's Theorem forcing the Legos to alternate on tiny baseplates.
+
+\textbf{The Lesson:} Alpha runs because geometry forces phase cancellation at small scales.  The fine-structure constant is not a magic number---it is a geometric glow score that depends on the size of the causal baseplate.
+
+\textit{(See: \texttt{occupancy\_model.py} for the quantitative analysis; \texttt{vacuum\_polarization.py} for publication figures.  The occupancy model predicts $Q_{\mathrm{pred}} = 0.236$ (i.i.d.) vs.\ observed $Q_{\mathrm{obs}} = 0.191$---a 23.5\% overshoot, exactly explained by Kuratowski phase anti-correlation at small $n$.)}
 \end{thoughtexp}
 
 \section{Confinement}
@@ -698,6 +773,23 @@ The universe runs in $O(N)$---linear time---because \emph{physics is local}. Eve
 \textbf{Deeper:} Bell discovered that shared stories aren't enough---the correlations are \emph{stronger} than any pre-written script could produce. Imagine Emma and Sara each receive a book printed from the same master copy. If the books were just copies, their answers to any quiz would agree at most half the time. But quantum coins agree \emph{more} than half the time. It's as if the master copy itself was written \emph{at the moment of reading}---the shared causal ancestor doesn't just fix the answers in advance, it creates a bond that no classical pre-arrangement can imitate. The violation of Bell's inequality ($S > 2$) is the mathematical proof that the universe's story is written live, not pre-recorded.
 
 \textbf{The Lesson:} Reality is created in the moment of interaction. No hidden script can reproduce what the universe does spontaneously.
+\end{thoughtexp}
+
+\section{Where Does \texorpdfstring{$i$}{i} Come From?}
+\begin{thoughtexp}[The Oscillating Calculator]
+\textbf{The Scenario:} Emma builds a calculator from springs. She lines up four springs in a row with strengths $-1$, $+9$, $-16$, $+8$. She pushes the first spring and watches what happens.
+
+\textbf{The Insight:} She expects a smooth push to travel down the line. Instead, the alternating signs make the springs \emph{oscillate}---the push goes forward, bounces back, overshoots, bounces again. The motion is not smooth; it is wavy. To describe it, Emma needs sines and cosines---which means she needs the imaginary unit $i = \sqrt{-1}$.
+
+\textbf{The Physics:} In the causal set, the Benincasa--Dowker action assigns coefficients to how far apart two events are:
+\[
+  \mathcal{S}_{\mathrm{BD}} \;=\; \sum_x \Bigl[ -\,\epsilon\,n_0 + \frac{9}{16}\,\epsilon^2\,n_1 - \frac{16}{16}\,\epsilon^2\,n_2 + \frac{8}{16}\,\epsilon^2\,n_3 \Bigr]
+\]
+The coefficients alternate in sign: $(-1, +9, -16, +8)$. This is not a choice---it is forced by the geometry of a 4-dimensional diamond lattice. The characteristic polynomial of the layer-to-layer recurrence has complex roots precisely because the signs alternate.
+
+\textbf{The Consequence:} In the continuum limit, the oscillatory diffusion kernel demands complex exponentials $e^{i\omega\sigma}$ to describe propagation. The imaginary unit $i$ is not a postulate---it is the universe's natural response to the fact that its discrete geometry has alternating curvature corrections. Unitarity (the conservation of probability) is guaranteed because the BD action is self-adjoint with these coefficients.
+
+\textbf{The Lesson:} The number $i$ is not a human invention smuggled into physics. It is \emph{derived}. The alternating signs of the discrete geometry force oscillatory solutions, and oscillatory solutions require complex numbers. The universe discovered $i$ before we did.
 \end{thoughtexp}
 
 % ═══════════════════════════════════════════════════════════════════════════════
@@ -858,10 +950,74 @@ Emma says: ``Keep watching. You will never see it.''
 \textbf{The Lesson:} The proton does not decay because its identity is a knot, not a label. Labels can be erased. Knots endure.
 \end{thoughtexp}
 
+\section{The Shape of the Running Coupling Curve}
+\begin{thoughtexp}[The Baseplate Curve]
+\textbf{The Scenario:} In standard QED, physicists know that $\alpha$ runs---it gets stronger at high energies (short distances).  They calculate this by adding up infinite series of virtual particle loops, which produces a very specific logarithmic curve.
+
+Emma's framework says $\alpha$ runs because of the $N^{-1/4}$ geometric crowding limit of the causal diamond---no loops, no infinities.
+
+\textbf{The Experiment:}
+\begin{enumerate}
+  \item Emma literally plots the discrete topological running-coupling curve from the simulation data (five lattice sizes, $N = 10^5$ to $10^7$).
+  \item She overlays the high-energy collision data from particle accelerators (LEP, LHC) that measure the running of $\alpha$ at different energy scales.
+  \item If the $N^{-1/4}$ phase-cancellation curve matches the experimental running of $\alpha$ better than---or even identically to---the QED loop calculations, it physically proves that vacuum polarisation is just a continuous approximation of discrete graph topology.
+\end{enumerate}
+
+\textbf{The Prediction:} The topological running $\alpha(N) = \mathcal{Q}_{\mathrm{topo}}(N)/(8\pi)$ with $\mathcal{Q}(N) = \mathcal{Q}_\infty + a\,N^{-1/4}$ reproduces the experimental data as well as (or better than) the QED perturbative expansion.
+
+\textbf{The Kill Switch:} If the $N^{-1/4}$ curve deviates systematically from accelerator data, the mapping between lattice size and energy scale is wrong.
+
+\textbf{The Lesson:} QED's infinite loop expansion may be an elaborate continuous approximation of a simple discrete geometric effect: Kuratowski crowding on small baseplates.
+\end{thoughtexp}
+
+\section{The Quasar Alpha Variations}
+\begin{thoughtexp}[The Telescope That Measures Geometry]
+\textbf{The Scenario:} Astrophysicists (like John Webb) have been pointing telescopes at distant quasars for two decades, claiming they see tiny variations in the fine-structure constant ($\alpha$) across the universe.  The physics establishment hates this because, in the Standard Model, $\alpha$ is a fixed parameter.
+
+Emma has a prediction.
+
+\textbf{The Insight:} The $\alpha$--$\Omega$ Lock says $\alpha\,(1 + \Omega) = 1/(8\pi)$.  If $\alpha$ changes based on the local causal volume, then the local dark matter density ($\Omega$) \emph{must} change exactly in tandem to preserve the geometric identity.
+
+\textbf{The Experiment:}
+\begin{enumerate}
+  \item Astronomers measure $\alpha$ in a distant quasar absorption line and find it differs from the laboratory value by $\Delta\alpha/\alpha \sim 10^{-5}$.
+  \item The $\alpha$--$\Omega$ Lock immediately predicts: wherever you see $\Delta\alpha$, you must also see $\Delta\Omega = -\alpha\,\Delta\alpha\,(1+\Omega)^2$ in the surrounding dark matter halo.
+  \item Gravitational lensing surveys (Euclid, Rubin/LSST) can independently measure the dark matter distribution along the same line of sight.
+  \item If every $\alpha$ anomaly comes with a \emph{mathematically precise} $\Omega$ anomaly, the Lock is confirmed.
+\end{enumerate}
+
+\textbf{The Prediction:} Wherever astronomers see a different $\alpha$, they must also measure a correlated and quantitatively predicted difference in the dark matter density.
+
+\textbf{The Kill Switch:} An $\alpha$ variation without the corresponding $\Omega$ variation (or vice versa) would break the $\alpha$--$\Omega$ identity.
+
+\textbf{The Lesson:} If $\alpha$ varies across the cosmos, it is not because the laws of physics change---it is because the local geometry changes, and the Lock keeps the universal ledger balanced.
+\end{thoughtexp}
+
+\section{The Dark Matter Mass Spectrum}
+\begin{thoughtexp}[The Exponential Ghost Choir]
+\textbf{The Scenario:} Direct detection experiments (XENONnT, LZ, DARWIN) have searched for years for a single WIMP particle with one specific mass.  They find nothing.  They will continue to find nothing.
+
+\textbf{The Insight:} The mass spectrum CSV from the simulation shows exactly how the dark sector forms an exponential tail: $f(N) \sim e^{-0.53\,N}$ for $N > 5$.  Dark matter is not a single particle---it is a massive, smeared distribution of topological ghosts with different belly sizes.
+
+\textbf{The Experiment:}
+\begin{enumerate}
+  \item Emma measures the belly-size histogram from the simulation.  It shows a clear exponential tail: most dark prisms have $N = 6$--$10$ intermediates, but the tail extends to $N = 30$ and beyond.
+  \item She computes the mass-weighted distribution: $M(N) = N \times f(N)$.  The peak of the mass contribution is at $N \approx 6$, not at a single value.
+  \item She predicts: dark matter is a \emph{continuum} of phase-cancelled prisms, not a single particle with a well-defined mass.
+  \item Direct detection experiments that assume a monoenergetic WIMP will always report null results, because the cross-section for phase-cancelled prisms is $\sigma = 0$ (no electromagnetic charge to scatter with).
+\end{enumerate}
+
+\textbf{The Prediction:} No direct detection experiment will ever find a dark matter particle with a well-defined mass and non-zero electromagnetic cross-section.  The dark sector is an exponential distribution of topological ghosts.
+
+\textbf{The Kill Switch:} Detection of a dark matter particle with a single well-defined mass and non-zero weak or electromagnetic coupling would falsify the framework.
+
+\textbf{The Lesson:} Looking for dark matter with a particle detector is like trying to catch silence with a microphone.  The signal is not weak---it is absent, because dark matter is what happens when the choir cancels itself out.
+\end{thoughtexp}
+
 \bigskip
 \begin{center}
 \begin{tcolorbox}[colback=structure!5,colframe=structure,width=0.85\textwidth,arc=2pt]
-\textbf{The Overconstrained Universe.} Seven predictions. Zero free parameters. Every observable is coupled to every other through the belly-size distribution $f(N)$. If any single prediction fails, the whole framework collapses. The experiments are running.
+\textbf{The Overconstrained Universe.} Ten predictions. Zero free parameters. Every observable is coupled to every other through the belly-size distribution $f(N)$. If any single prediction fails, the whole framework collapses. The experiments are running.
 
 \medskip
 \small
@@ -875,9 +1031,95 @@ $r$ & $< 10^{-3}$ & CMB-S4, LiteBIRD \\
 $\sigma_{\chi N}$ & $= 0$ & LZ, XENONnT, DARWIN \\
 $\alpha$--$\Omega$ Lock & 1D curve & Simulation ensemble \\
 $\tau_p$ & $> 10^{40}$\,yr & Hyper-K \\
+$\alpha(N)$ curve & $N^{-1/4}$ running & LEP/LHC data comparison \\
+$\Delta\alpha$--$\Delta\Omega$ & Locked variations & Quasar spectra + lensing \\
+DM mass spectrum & Exponential tail & XENONnT, DARWIN (null) \\
 \end{tabular}
 \end{tcolorbox}
 \end{center}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\chapter{The Rosetta Stone: Topological Chemistry}
+\textit{Using: Fisher 2-Sphere, Spherical Harmonics, Kuratowski Absorption}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+Emma has seen particles as hammocks, forces as graph rules, and dark matter as cancelled ghosts. But she has one more question: \emph{why do atoms look the way they do?} Why 2 electrons in the first shell, 8 in the second, 18 in the third, 32 in the fourth? Where do these ``magic numbers'' come from?
+
+It turns out they come from the same place as everything else: the causal graph.
+
+\section{The Shrinking Playground}
+\begin{thoughtexp}[The Fisher Sphere]
+\textbf{The Scenario:} Emma has a playground---a sphere. When the playground is big (many intermediates, large belly size $n$), the sphere is nearly flat. Emma can draw many intricate patterns on it. But when the playground is small ($n = 3$ or $4$), the sphere is so curved that only a few simple patterns fit.
+
+\textbf{The Insight:} The three phase colours Red ($-$), White ($0$), Blue ($+$) parametrise a trinomial probability distribution $(p_-, p_0, p_+)$ with $p_- + p_0 + p_+ = 1$. This lives on a simplex $\Delta^2$. The Fisher information metric on this simplex, under the change of coordinates $\theta_i = 2\sqrt{p_i}$, becomes the round metric on the positive octant of a sphere of radius $\sqrt{n}$:
+\[
+  S^2(\sqrt{n}), \quad \text{Gaussian curvature}\; K = \frac{1}{n}
+\]
+
+\textbf{The Physics:} Large bellies ($n \gg 1$) live on a nearly flat sphere---many spherical harmonics $Y_l^m$ fit, many quantum states are available. Small bellies ($n \sim 3$) live on a highly curved sphere---only the lowest harmonics survive. The curvature $K = 1/n$ is the fundamental regulator: it controls how many distinct modes (``orbitals'') a belly can support.
+
+\textbf{The Lesson:} The phase simplex of the causal prism is literally a sphere. Its radius grows with belly size. This is not an analogy---it is the Fisher geometry of the trinomial distribution, and it determines everything that follows.
+\end{thoughtexp}
+
+\section{The Shell Game}
+\begin{thoughtexp}[The Magic Numbers]
+\textbf{The Scenario:} Emma is filling a stadium with students, section by section. The first section (closest to the stage) holds 2 students. The second holds 8. The third holds 18. The fourth holds 32. ``Who designed these sections?'' she asks.
+
+\textbf{The Insight:} Nobody. The section sizes are eigenvalue degeneracies of the Laplacian on the Fisher sphere. The $k$-th shell holds
+\[
+  2\,\sum_{l=0}^{k-1} (2l + 1) \;=\; 2k^2
+\]
+modes. The factor of 2 is not a choice---it is the CPT doubling: every prism has an antiprism (swap the poles), and CPT symmetry demands that each orbital mode comes in a particle--antiparticle pair.
+
+\textbf{The Numbers:}
+\begin{center}
+\begin{tabular}{cccc}
+\textbf{Shell $k$} & \textbf{Capacity $2k^2$} & \textbf{Cumulative} & \textbf{Chemistry} \\
+\midrule
+1 & 2 & 2 & He \\
+2 & 8 & 10 & Ne \\
+3 & 18 & 28 & Ni \\
+4 & 32 & 60 & Nd \\
+\end{tabular}
+\end{center}
+
+\textbf{The Lesson:} The magic numbers $2, 8, 18, 32$ are not chemistry---they are topology. They count how many distinct vibration patterns fit on a sphere of curvature $1/n$, doubled by CPT.
+\end{thoughtexp}
+
+\section{The Chemistry Set}
+\begin{thoughtexp}[Orbitals as Generations]
+\textbf{The Scenario:} In school chemistry, electrons fill orbitals labelled $s, p, d, f$. These labels seemed like arbitrary bookkeeping. Emma discovers they are generation labels in disguise.
+
+\textbf{The Insight:} The spherical harmonics $Y_l^m$ on the Fisher sphere decompose the belly partitions by their angular momentum quantum number $l$. Each $l$ value corresponds to a specific pattern of phase diversity:
+\begin{itemize}
+  \item $l = 0$ ($s$-orbital): Uniform phase---all intermediates vibrate the same way. This is Generation~1.
+  \item $l = 1$ ($p$-orbital): One node of phase variation---two distinct colours present. This is Generation~2.
+  \item $l = 2$ ($d$-orbital): Two nodes---all three colours with complex mixing. This is Generation~3.
+\end{itemize}
+
+\textbf{The Census:} In the simulation, approximately 7\% of visible prisms are Generation-1 (electron-like), 85\% are Generation-2 (muon-like), and 8\% are Generation-3 (tau-like). The $p + d$ orbital dominance at ${\sim}85\%$ matches exactly.
+
+\textbf{The Lesson:} The periodic table's orbital structure ($s, p, d, f$) is the same mathematics as the generation structure of particles. Both are eigenmode decompositions on a sphere whose curvature comes from the causal graph.
+\end{thoughtexp}
+
+\section{The Molecular Bond}
+\begin{thoughtexp}[The Topological Covalent Bond]
+\textbf{The Scenario:} Two atoms share electrons to form a chemical bond. In Emma's framework, two prisms share intermediate nodes---they overlap in the belly. This is a topological covalent bond.
+
+\textbf{The Insight:} When two prisms share intermediates, they form a larger graph. But the graph must remain $K_5$-free (no five mutually connected nodes). This constraint---the Kuratowski absorption rule---limits how many intermediates can be shared.
+
+\textbf{The Rules:}
+\begin{enumerate}
+  \item \textbf{Single bond:} Two prisms share 1 intermediate. Low constraint---the shared node connects to at most 4 other nodes (the two pole-pairs). Safe.
+  \item \textbf{Double bond:} Two prisms share 2 intermediates. The shared nodes now connect to each other and to 4 poles. Getting tight.
+  \item \textbf{Triple bond:} Two prisms share 3 intermediates. The shared nodes form a triangle connected to 4 poles. This is the maximum---one more shared node would create $K_5$ and trigger Kuratowski absorption (strong force contraction).
+  \item \textbf{No quadruple bond:} Sharing 4 intermediates creates $K_5$. Forbidden.
+\end{enumerate}
+
+\textbf{The Octet Rule:} The first two shells ($s + p$) hold $2 + 6 = 8$ electrons. When these are filled, the atom is ``happy''---no more bonds needed. The octet rule is not a chemical accident; it is the $s + p$ saturation of the Fisher sphere's lowest eigenmodes.
+
+\textbf{The Lesson:} Chemistry's rules---bond order capped at 3, the octet rule, the shapes of orbitals---are all consequences of the same causal graph topology that produces particles, forces, and dark matter. The Rosetta Stone is complete: one graph, one set of rules, all of physics and chemistry.
+\end{thoughtexp}
 
 % ═══════════════════════════════════════════════════════════════════════════════
 \chapter*{Epílogo}

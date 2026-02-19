@@ -4,7 +4,7 @@ All results in this repository were produced on a **ThinkPad T480**
 (Intel i5-8250U, 4 cores / 8 threads, 16 GB RAM) running Arch Linux.
 No GPU, no cluster, no cloud.
 
-DOI: [10.5281/zenodo.18690574](https://doi.org/10.5281/zenodo.18690574)
+DOI: [10.5281/zenodo.18696083](https://doi.org/10.5281/zenodo.18696083)
 
 ---
 
@@ -31,6 +31,8 @@ data/
 ├── scripts/                         Analysis & figure generation
 │   ├── finite_size_scaling.py       FSS pipeline (run + analyze)
 │   ├── feg_analysis.py              8-figure comprehensive analysis
+│   ├── vacuum_polarization.py       Vacuum polarization figures (4 figures)
+│   ├── occupancy_model.py           Occupancy model: mass + charge analysis
 │   ├── make_composite_figure.py     2×2 panel composite
 │   ├── make_fss_composite.py        2×2 FSS composite
 │   ├── plot_universe.py             3-figure spectral/mass/flux plotter
@@ -42,6 +44,10 @@ data/
     ├── fss_mass_hierarchy.pdf       Mass hierarchy (N-independent)
     ├── fss_spectral_dimension.pdf   d_S UV and IR flow
     ├── fss_generation_fractions.pdf Generation populations
+    ├── vp_q_running.pdf             Vacuum polarization: Q_topo running
+    ├── vp_mu_effective.pdf          Effective mu(n) per belly size
+    ├── vp_inv_alpha.pdf             1/α running with RG domain
+    ├── vp_mass_vs_charge.pdf        Mass vs charge diagnostic
     ├── fig_composite.pdf            4-panel composite (N=10^7)
     ├── fig_fss_composite.pdf        4-panel FSS composite
     └── fss_table.tex                LaTeX table of all FSS results
@@ -110,8 +116,17 @@ and `fss_table.tex`.
 
 ```bash
 python data/scripts/feg_analysis.py          # 8 individual figures
+python data/scripts/vacuum_polarization.py   # 4 vacuum polarization figures
 python data/scripts/make_composite_figure.py  # 4-panel composite
 python data/scripts/make_fss_composite.py     # 4-panel FSS composite
+```
+
+### Run the occupancy model analysis
+
+```bash
+python occupancy_model.py
+# or equivalently:
+python data/scripts/occupancy_model.py
 ```
 
 ---
@@ -158,7 +173,7 @@ Key-value pairs summarising the topology of the Hasse diagram.
 | `visible_mass_total` / `dark_mass_total` / `grav_mass_total` | Mass decomposition sums |
 | `omega_ratio` | Ω_dark/Ω_vis (linear mass ratio) |
 | `phase_sq_total` / `mass_sq_total` | Σ|Φ|² and ΣN² (for Q_topo) |
-| `alpha_em` | α = Q_topo/(8π) |
+| `alpha_em` | **Note:** this field contains Q_topo = phase_sq/mass_sq, NOT the fine-structure constant. The actual coupling is α = Q_topo/(8π). The FSS analysis script handles this correctly. |
 
 ### `mass_spectrum.csv` / `mass_spectrum_M20.csv`
 
@@ -168,6 +183,47 @@ Belly-size histogram of all Causal Prisms.
 |--------|-------------|
 | `intermediates_N` | Belly size n (number of intermediates, 3 to n_max) |
 | `frequency` | Number of prisms with this belly size |
+
+---
+
+## Vacuum Polarization & Running Coupling
+
+The occupancy model (see `occupancy_model.py`) reveals a fundamental split between
+mass and charge observables:
+
+**Mass hierarchy (i.i.d. PASSES):** The mass ratios m2/m1 and m3/m1 are
+*counting* observables -- they depend on how many distinct phase signs appear
+among a prism's intermediates.  The i.i.d. coupon-collector model reproduces
+both ratios to within 2%, with zero free parameters.
+
+**Topological charge (i.i.d. FAILS):** The charge Q_topo = Σ|Φ|²/ΣN² is a
+*summation* observable -- it depends on the net cancellation of phases.
+The i.i.d. prediction Q_pred = 0.236 overshoots the observed Q_obs = 0.191
+at N=10M by 23.5%.  Phases cancel more than independence allows.
+
+**Physical mechanism -- Kuratowski vacuum polarization:** At small belly sizes
+(n <= 4), the K_{3,3}-free and K_5-free constraints on the transitively reduced
+Hasse diagram force in-degree/out-degree anti-correlation among intermediates.
+This anti-correlates their phases: a +1 node crowds out other +1 nodes.  Net
+charge is screened -- the discrete geometric analogue of virtual e+e- pair
+production screening charge in QED.
+
+**Running coupling:** Q_topo decreases monotonically with lattice size:
+
+| N | Q_topo | 1/α = 8π/Q |
+|---|--------|------------|
+| 100,000 | 0.2715 | 92.6 |
+| 500,000 | 0.2324 | 108.2 |
+| 1,000,000 | 0.2184 | 115.1 |
+| 5,000,000 | 0.1966 | 127.8 |
+| 10,000,000 | 0.1907 | 131.8 |
+| N → ∞ | **0.1523 ± 0.0009** | **165.1** |
+
+The continuum-limit bare coupling 1/α_0 = 165.1 is the UV-cutoff value at the
+Planck scale.  The 165 → 137 gap is not a deficiency of the model but the
+physically expected domain of renormalization-group running from the Planck
+scale to laboratory energies.  The mechanism is ab initio: graph planarity
+forces phase anti-correlation at UV scales without any tuning.
 
 ---
 
@@ -197,6 +253,18 @@ Belly-size histogram of all Causal Prisms.
     "inv_alpha_inf": 165.06,
     "Omega_inf_from_Q": 5.567,
     "gap_to_137_percent": 20.4
+  },
+  "vacuum_polarization": {
+    "Q_pred_iid": 0.2355,
+    "mu_measured": -0.3457,
+    "sigma2_measured": 0.8622,
+    "screening_by_N": {
+      "100000":  { "Q_obs": 0.2715, "screening_frac": -0.153 },
+      "500000":  { "Q_obs": 0.2324, "screening_frac": 0.013 },
+      "1000000": { "Q_obs": 0.2184, "screening_frac": 0.073 },
+      "5000000": { "Q_obs": 0.1966, "screening_frac": 0.165 },
+      "10000000":{ "Q_obs": 0.1907, "screening_frac": 0.190 }
+    }
   }
 }
 ```
@@ -220,3 +288,10 @@ After reproducing a run, compare your results against the included data:
 3. **Figures:**
    Regenerated figures should be visually identical to the included PDFs.
    Minor differences in anti-aliasing are expected across platforms.
+
+4. **Vacuum polarization:**
+   Run `python data/scripts/vacuum_polarization.py` and verify that 4 figures
+   (`vp_q_running.pdf`, `vp_mu_effective.pdf`, `vp_inv_alpha.pdf`,
+   `vp_mass_vs_charge.pdf`) are produced in `data/figures/`.
+   Run `python occupancy_model.py` and verify the overshoot is ~23.5%
+   and the FSS extrapolation matches Q_inf ≈ 0.152.

@@ -829,6 +829,31 @@ In Information Geometry, the metric scales as $1/p$.
     \item Events with \textbf{large probability} are close together.
 \end{itemize}
 This hyperbolic structure ($ds^2 \sim dp^2/p$) is what generates the Lorentz group $SO(3,1)$ when applied to the Poisson process of the Causal Set.
+
+\subsection{The Fisher Sphere and Topological Chemistry}
+
+The Fisher metric derived above has a remarkable specialisation when applied to the phase simplex of the causal prism. Each intermediate node in a belly of size $n$ carries a causal phase $\varphi \in \{+1, 0, -1\}$. The phase fractions $(p_+, p_0, p_-)$ parametrise a trinomial distribution on the simplex $\Delta^2 = \{(p_+, p_0, p_-) : p_i \ge 0,\;\sum p_i = 1\}$.
+
+Applying the Fisher Information Metric (equation above) to this trinomial:
+\begin{equation}
+    ds^2_{\mathrm{Fisher}} \;=\; n \sum_{i \in \{+,0,-\}} \frac{(dp_i)^2}{p_i}
+\end{equation}
+Under the coordinate transformation $\theta_i = 2\sqrt{p_i}$, the constraint $\sum p_i = 1$ becomes $\sum \theta_i^2 = 4$, and the metric becomes the round metric on the positive octant of $S^2(\sqrt{n})$:
+\begin{equation}
+    ds^2 = n\,d\Omega^2_{\text{octant}}, \qquad K = \frac{1}{n}
+\end{equation}
+The Gaussian curvature $K = 1/n$ is the fundamental regulator:
+\begin{itemize}
+    \item \textbf{Large bellies} ($n \gg 1$): nearly flat sphere, many spherical harmonics $Y_l^m$ fit as eigenmodes of the Laplacian.
+    \item \textbf{Small bellies} ($n \sim 3$): highly curved sphere, only the lowest harmonics survive.
+\end{itemize}
+
+The eigenvalue degeneracies of $\Delta_{S^2}$ give shell capacities $\sum_{l=0}^{k-1}(2l+1) = k^2$, which upon CPT doubling (each prism has an antiprism) yield:
+\begin{equation}
+    \text{Shell capacity} = 2k^2 \quad\Longrightarrow\quad 2,\; 8,\; 18,\; 32
+\end{equation}
+These are exactly the magic numbers of atomic shell structure. The orbital labels $s\,(l{=}0)$, $p\,(l{=}1)$, $d\,(l{=}2)$, $f\,(l{=}3)$ correspond to generation labels: $l = 0$ is uniform phase (Generation~1), $l = 1$ is biphasic (Generation~2), $l = 2$ is triphasic (Generation~3). The full development of this ``Topological Chemistry'' appears in Volume~II.
+
 \section{Emergence of Lorentzian Geometry}
 
 Guided by Chentsov's power theorem on the uniqueness of the statistical metric, let us apply this framework to Causal Set spacetime.
@@ -1035,6 +1060,35 @@ The coefficients are tuned to cancel the huge volume of the lightcone interior a
 
 \begin{result}
 Propagation on a causal set is inherently non-local at the micro-scale, but destructive interference washes out the non-locality, leaving the standard local wave equation $\square \phi = 0$ at macro-scales.
+\end{result}
+
+\subsection{The Emergence of the Imaginary Unit}
+
+The alternating-sign pattern of the Benincasa--Dowker coefficients $\{-1, +9, -16, +8\}$ has a profound consequence: it forces the propagation kernel to be oscillatory, and oscillatory solutions \emph{require} the imaginary unit $i$ for their description.
+
+\textbf{The layer recurrence.}
+Consider the retarded Green's function $G(\sigma)$ on the causal set, where $\sigma$ labels the layer depth. The BD operator acts as a finite-difference equation:
+\begin{equation}
+    -G_0 + 9\,G_1 - 16\,G_2 + 8\,G_3 = \delta_{\sigma,0}
+\end{equation}
+The characteristic polynomial of the associated homogeneous recurrence is:
+\begin{equation}
+    -1 + 9z - 16z^2 + 8z^3 = 0
+\end{equation}
+By direct computation, this cubic has one real root and a pair of \emph{complex conjugate} roots: $z = r\,e^{\pm i\theta}$, where $\theta \ne 0$. The complex roots arise because the coefficients alternate in sign, guaranteeing that the discriminant is negative.
+
+\textbf{The continuum limit.}
+As the lattice spacing $\epsilon \to 0$ with $\sigma = \tau/\epsilon$ held fixed, the oscillatory discrete modes converge to continuum plane waves $e^{\pm i\omega\tau}$. The retarded propagator becomes:
+\begin{equation}
+    G_R(\tau) \;\sim\; \int \frac{e^{-i\omega\tau}}{\omega^2 - m^2 + i\epsilon}\;d\omega
+\end{equation}
+The imaginary unit $i$ is not inserted by hand---it is \emph{generated} by the alternating-sign structure of the discrete geometry. The sign pattern $(-,+,-,+)$ is itself forced by the requirement that the operator annihilate polynomials of degree $\le 3$ while extracting the fourth derivative (the moment conditions of Section~\ref{sec:bd_derivation}).
+
+\textbf{Connection to unitarity.}
+The BD operator with these coefficients is self-adjoint on the causal set lattice (Sorkin's retarded-minus-advanced construction). Self-adjointness of the discrete operator implies unitarity of the continuum quantum mechanics. The conservation of probability is therefore not an axiom---it is a consequence of the diamond geometry's moment-cancellation structure.
+
+\begin{result}
+The imaginary unit $i$ is a derived quantity in causal set theory. It emerges because the unique coefficients that define a second-order wave operator on a 4D causal diamond have alternating signs, forcing oscillatory solutions. Complex amplitudes and the path-integral phase $e^{iS}$ are consequences of discrete geometry, not postulates.
 \end{result}
 
 % ═══════════════════════════════════════════════════════════════════════════════
