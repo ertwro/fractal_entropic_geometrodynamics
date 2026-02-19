@@ -1,0 +1,20 @@
+# Build artefacts
+target/
+*.so
+*.pyd
+*.dylib
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+.venv/
+
+# Rendered output
+renders/
+**/frames/
+
+# IDE
+.idea/
+.vscode/

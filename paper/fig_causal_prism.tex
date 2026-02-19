@@ -1,0 +1,65 @@
+% Standalone TikZ figure: Causal Prism K_{2,4}
+% Compile with: xelatex fig_causal_prism.tex
+\documentclass[tikz,border=5pt]{standalone}
+\usepackage{amsmath,amssymb}
+\usetikzlibrary{arrows.meta,positioning}
+
+\begin{document}
+\begin{tikzpicture}[
+    >=Stealth,
+    pole/.style={circle, draw=black, fill=black!80, minimum size=8pt, inner sep=0pt},
+    neg/.style={circle, draw=blue!70!black, fill=blue!25, minimum size=10pt, inner sep=0pt,
+                font=\footnotesize\bfseries},
+    zero/.style={circle, draw=black!60, fill=gray!20, minimum size=10pt, inner sep=0pt,
+                 font=\footnotesize\bfseries},
+    pos/.style={circle, draw=red!70!black, fill=red!25, minimum size=10pt, inner sep=0pt,
+                font=\footnotesize\bfseries},
+    causal/.style={->, thick, black!70},
+    every node/.style={font=\small}
+  ]
+
+  % Past pole (top — earlier in time)
+  \node[pole, label={above:{$u$ (past pole)}}] (u) at (0, 2.5) {};
+
+  % Four intermediates (middle row) — color-coded by phase
+  \node[neg]  (w1) at (-2.7, 0) {$-$};
+  \node[zero] (w2) at (-0.9, 0) {$0$};
+  \node[pos]  (w3) at ( 0.9, 0) {$+$};
+  \node[neg]  (w4) at ( 2.7, 0) {$-$};
+
+  % Labels
+  \node[below=2pt] at (w1.south) {$w_1$};
+  \node[below=2pt] at (w2.south) {$w_2$};
+  \node[below=2pt] at (w3.south) {$w_3$};
+  \node[below=2pt] at (w4.south) {$w_4$};
+
+  % Future pole (bottom — later in time)
+  \node[pole, label={below:{$v$ (future pole)}}] (v) at (0, -2.5) {};
+
+  % Causal edges: u → w_i (past to intermediates)
+  \foreach \w in {w1,w2,w3,w4} {
+    \draw[causal] (u) -- (\w);
+  }
+
+  % Causal edges: w_i → v (intermediates to future)
+  \foreach \w in {w1,w2,w3,w4} {
+    \draw[causal] (\w) -- (v);
+  }
+
+  % No edges among intermediates — they are mutually spacelike
+
+  % Annotations
+  \node[anchor=west, text width=3.2cm, font=\footnotesize, align=left]
+    at (3.5, 1.2) {$\varphi(w_i) = \operatorname{sgn}(p_{\text{bulk}})$};
+  \node[anchor=west, text width=3.2cm, font=\footnotesize, align=left]
+    at (3.5, 0.4) {Generation $g = |\{\text{distinct } \varphi\}|$};
+  \node[anchor=west, text width=3.2cm, font=\footnotesize, align=left]
+    at (3.5, -0.4) {This prism: $g = 3$};
+  \node[anchor=west, text width=3.2cm, font=\footnotesize, align=left]
+    at (3.5, -1.2) {Net phase $\Phi = \sum \varphi_i = -1$};
+
+  % Title
+  \node[font=\bfseries] at (0, 3.6) {Causal Prism $K_{2,4}$};
+
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,271 @@
+% ═══════════════════════════════════════════════════════════════════════════════
+%   CausalWorlds 2026 Extended Abstract (Grenoble, June 22–26)
+%   1–3 pages excluding references
+% ═══════════════════════════════════════════════════════════════════════════════
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{fontspec}
+\defaultfontfeatures{Ligatures=TeX}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue!70!black,citecolor=blue!70!black,urlcolor=blue!70!black]{hyperref}
+
+% ─── Page geometry ──────────────────────────────────────────────────────────
+\usepackage[margin=2.3cm]{geometry}
+\setlength{\parskip}{3pt plus 1pt minus 1pt}
+\setlength{\parindent}{0pt}
+
+% ─── Compact sections ──────────────────────────────────────────────────────
+\usepackage{titlesec}
+\titleformat{\section}{\normalfont\bfseries\large}{\thesection.}{0.5em}{}
+\titlespacing*{\section}{0pt}{8pt plus 2pt minus 2pt}{4pt plus 1pt minus 1pt}
+
+% ─── Compact captions ──────────────────────────────────────────────────────
+\usepackage[font=small,labelfont=bf,skip=4pt]{caption}
+
+\begin{document}
+
+% ─── Title block ────────────────────────────────────────────────────────────
+\begin{center}
+  {\Large\bfseries An $O(N)$ Kuratowski Calculus Engine for Causal Sets:\\[2pt]
+  Emergent Particle Generations from\\[2pt]
+  Topological Defects at $N = 10^6$}
+
+  \medskip
+  {\normalsize Juan Pablo Silva Alvarado}\\
+  {\small Metric Engineering Division, Bogot\'{a}, Colombia}\\
+  {\small\url{https://github.com/ertwro/fractal_entropic_geometrodynamic}}
+
+  \medskip
+  {\small\itshape Extended abstract submitted to CausalWorlds 2026 (Grenoble, June 22--26)}
+\end{center}
+
+\medskip
+
+% ═══════════════════════════════════════════════════════════════════════════════
+%   Abstract
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\textbf{Abstract.}
+We present an $O(N)$ simulation engine for Poisson-sprinkled causal sets
+that detects topological defects---\emph{Causal Prisms} ($K_{2,n}$ bipartite
+subgraphs)---in the Hasse diagram and classifies them into exactly three
+generations via a topological invariant.
+At $N = 10^6$: spectral dimension $d_S = 3.64$ at the causal diamond core
+(approaching the 4D continuum); mass hierarchy
+Gen\,1\,:\,Gen\,2\,:\,Gen\,3 $= 4.49 : 6.51 : 7.80$;
+CPT symmetry between matter and antimatter prisms.
+The $O(N)$ scaling is not an engineering optimisation---it is
+a computational proof that the physics is local
+(bounded Hasse degree $D \leq 15$).
+The generation bound $g \leq 3$ follows from the sign trichotomy of bulk
+momentum, not from model fitting.
+Open-source Rust implementation and pedagogic booklets available at
+the repository above.
+
+% ═══════════════════════════════════════════════════════════════════════════════
+%   Section 1
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{The Engine --- $O(N)$ Kuratowski Calculus}
+
+We built a simulation that produces three particle generations, a mass
+hierarchy, and CPT symmetry from nothing but Poisson-sprinkled points and
+integer combinatorics.  It runs at $O(N)$ and processes $10^6$ events in
+63\,seconds on a standard laptop.
+
+The engine pipeline has four phases:
+
+\textbf{Phase 1: Sprinkling \& Hasse diagram}
+(\texttt{diamond.rs}).
+$N$ points are Poisson-sprinkled into a 4D causal diamond
+($V = \pi T^4/24$, $\rho \approx 1$).
+The Hasse diagram (transitive reduction of the causal order) is built
+via an Occupied Cell Index: for each new event, only cells within the
+causal past light cone are probed, and three termination valves
+enforce strict locality~\cite{bombelli1987,surya2019}.
+The resulting Hasse degree is bounded: $D \leq 15$.
+
+\textbf{Phase 2: Defect detection \& generation classification}
+(\texttt{skyrmion.rs}).
+\emph{Causal Prisms}---complete bipartite subgraphs $K_{2,n}$ with
+$n \geq 3$ mutually spacelike intermediates connecting a past pole
+to a future pole---are detected via a forward-forward 2-hop search:
+$O(N \cdot D^2) = O(N)$.
+$K_5$ threat absorption enforces topological confinement.
+Each intermediate $w_i$ carries a discrete phase
+$\varphi(w_i) = \operatorname{sgn}(p_{\text{bulk}}[w_i]) \in \{-1, 0, +1\}$.
+The generation of a prism is
+$g(P) = |\{\text{distinct } \varphi \text{ values}\}| \in \{1, 2, 3\}$.
+
+\textbf{Phase 3: Spectral dimension}
+(\texttt{spectral.rs}).
+$d_S(\sigma)$ is measured via Monte Carlo random walkers
+($W = \lceil (\sigma_{\max}/\varepsilon)^2 \rceil$) on the Hasse graph.
+Return probabilities are accumulated with strict integer arithmetic;
+a single \texttt{f64} division is performed at the end~\cite{eichhorn2014}.
+
+\textbf{Phase 4: Output}
+(\texttt{output.rs}).
+Ensemble-averaged observables with error bars, exported as CSV.
+
+\smallskip
+\textbf{Key claim:} $O(N)$ is not an optimisation---it is the
+\emph{Geometry of Logic}.
+Bounded Hasse degree means every topological operation is local.
+This is a computational proof of physical locality as an
+information-theoretic principle.
+
+% ═══════════════════════════════════════════════════════════════════════════════
+%   Section 2
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Results at $N = 10^6$}
+
+Table~\ref{tab:results} summarises a single realisation (seed\,42,
+runtime 63\,s).
+
+\begin{table}[h]
+\centering
+\caption{Observables at $N = 10^6$ (single realisation, seed\,42).}
+\label{tab:results}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}lc@{}}
+\toprule
+\textbf{Observable} & \textbf{Value} \\
+\midrule
+$d_S$ vacuum (global)     & 2.14 \\
+$d_S$ vacuum (core)       & 3.64 \\
+$d_S$ defect (core)       & 5.01 \\
+\midrule
+Prisms: $g{=}1$ / $g{=}2$ / $g{=}3$
+                          & 5{,}731 / 26{,}228 / 3{,}565 \\
+Mass: Gen\,1 / Gen\,2 / Gen\,3
+                          & 4.49 / 6.51 / 7.80 \\
+CPT: Gen\,1 vs Anti-1     & 4.49 vs 4.57 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ─── TikZ figure: Causal Prism ──────────────────────────────────────────────
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    >=Stealth, scale=0.72, transform shape,
+    pole/.style={circle, draw=black, fill=black!80, minimum size=6pt, inner sep=0pt},
+    neg/.style={circle, draw=blue!70!black, fill=blue!20, minimum size=8pt, inner sep=0pt,
+                font=\scriptsize\bfseries},
+    zero/.style={circle, draw=black!60, fill=gray!15, minimum size=8pt, inner sep=0pt,
+                 font=\scriptsize\bfseries},
+    pos/.style={circle, draw=red!70!black, fill=red!20, minimum size=8pt, inner sep=0pt,
+                font=\scriptsize\bfseries},
+    causal/.style={->, thick, black!60}
+  ]
+  \node[pole, label={[font=\scriptsize]above:$u$}] (u) at (0, 2) {};
+  \node[neg]  (w1) at (-2.2, 0) {$-$};
+  \node[zero] (w2) at (-0.75, 0) {$0$};
+  \node[pos]  (w3) at ( 0.75, 0) {$+$};
+  \node[neg]  (w4) at ( 2.2, 0) {$-$};
+  \node[below=1pt, font=\scriptsize] at (w1.south) {$w_1$};
+  \node[below=1pt, font=\scriptsize] at (w2.south) {$w_2$};
+  \node[below=1pt, font=\scriptsize] at (w3.south) {$w_3$};
+  \node[below=1pt, font=\scriptsize] at (w4.south) {$w_4$};
+  \node[pole, label={[font=\scriptsize]below:$v$}] (v) at (0, -2) {};
+  \foreach \w in {w1,w2,w3,w4} { \draw[causal] (u) -- (\w); }
+  \foreach \w in {w1,w2,w3,w4} { \draw[causal] (\w) -- (v); }
+\end{tikzpicture}
+\caption{A Causal Prism $K_{2,4}$.  Past pole~$u$ and future pole~$v$
+  are connected through four mutually spacelike intermediates $w_i$.
+  Colours encode the discrete phase
+  $\varphi(w_i) \in \{{\color{blue!70!black}-},\,{\color{gray}0},\,{\color{red!70!black}+}\}$.
+  This configuration has generation $g = 3$ and net phase
+  $\Phi = -1$ (antimatter).}
+\label{fig:prism}
+\end{figure}
+
+\textbf{Interpretation.}
+The global vacuum spectral dimension $d_S = 2.14$ reflects UV dimensional
+reduction, consistent with CDT~\cite{ambjorn2005} and causal set
+results~\cite{carlip2017}.
+At the diamond core, where boundary effects vanish, $d_S = 3.64$
+---the 4D continuum is emerging.
+The defect core gives $d_S = 5.01$: Causal Prisms \emph{trap} random
+walkers, enhancing return probability.
+This topological probability retention \emph{is} mass.
+
+The mass hierarchy Gen\,1 $<$ Gen\,2 $<$ Gen\,3 arises because
+higher-generation prisms have more complex phase structure: more distinct
+$\varphi$ values produce more intermediates and stronger trapping.
+CPT symmetry holds at the \textasciitilde2\% level for $M{=}1$
+realisation (Gen\,1 mass 4.49 vs Anti-1 mass 4.57), expected to
+sharpen with ensemble averaging.
+Generation populations are naturally unequal ($g{=}2$ dominates at 26k
+prisms), as dictated by the combinatorics of phase assignment.
+
+% ═══════════════════════════════════════════════════════════════════════════════
+%   Section 3
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Why It Works --- The Three Geometries}
+
+The theoretical framework rests on three interlocking structures.
+
+\textbf{Geometry of Order.}
+Poisson sprinkling + transitive reduction $\to$ Hasse diagram.
+The Hasse diagram is triangle-free by construction: if $u \prec w \prec v$,
+the edge $u \to v$ is removed.  Therefore $K_4$ (the complete 4-clique)
+cannot exist as a subgraph.
+The densest bipartite structure is $K_{2,n}$---the \emph{Causal Prism}:
+two causally related poles connected through $n \geq 3$ mutually
+spacelike intermediates~\cite{kuratowski1930,diestel2017}.
+Topological mass $= n$.
+
+\textbf{Geometry of Matter.}
+For each intermediate, $\varphi(w_i) = \operatorname{sgn}(p_{\text{bulk}}[w_i])
+\in \{-1, 0, +1\}$.
+The generation is $g(P) = |\{\text{distinct } \varphi\}| \in \{1, 2, 3\}$.
+\textbf{Exactly three, because the sign function has three values---a theorem,
+not a fit.}
+The net phase $\Phi(P) = \sum_i \varphi(w_i)$ distinguishes matter
+($\Phi \geq 0$) from antimatter ($\Phi < 0$).
+$K_5$ threat absorption acts as topological confinement:
+isolated prism components cannot exist, mirroring colour
+confinement~\cite{kuratowski1930}.
+The permutation symmetry $S_n$ of the intermediates
+suggests emergent gauge structure.
+
+\textbf{Geometry of Logic.}
+$D \leq 15 \Rightarrow O(N) \Rightarrow$ locality.
+This is not an engineering choice: it is a consequence of $\rho \approx 1$
+sprinkling into the Hasse diagram of a causal diamond.
+The simulation's efficiency is itself the proof~\cite{stone1936,bombelli2009}.
+
+% ═══════════════════════════════════════════════════════════════════════════════
+%   Section 4
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Outlook}
+
+\begin{itemize}\setlength\itemsep{1pt}
+  \item $N = 10^7$ ensemble currently running
+    (target: $\varepsilon = 0.001$, 22 realisations).
+  \item The $S_n$ belly symmetry of Causal Prisms is conjectured to
+    generate gauge structure; proving $S_3 \to SU(3)$ from first
+    principles is open.
+  \item Mass ratios are observed---theoretical derivation is ongoing.
+  \item All code and four pedagogic booklets (Vol.\,I, Vol.\,II,
+    Kuratowski Calculus, \emph{Emma's Thought Experiments})
+    are open-source at the repository above.
+\end{itemize}
+
+The Hasse diagram---already central to causal set dynamics---naturally
+hosts bipartite defects whose classification reproduces the
+three-generation structure of the Standard Model.
+The code is available for independent verification.
+
+% ═══════════════════════════════════════════════════════════════════════════════
+%   References
+% ═══════════════════════════════════════════════════════════════════════════════
+\bibliographystyle{unsrt}
+\bibliography{refs}
+
+\end{document}
