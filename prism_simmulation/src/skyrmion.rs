@@ -174,6 +174,16 @@ pub struct TopologySummary {
     /// Ω_energy = 1/Q_topo − 1 = (ΣN² − Σ|Φ|²) / Σ|Φ|² — self-energy dark matter ratio.
     /// Satisfies the exact identity α(1 + Ω_energy) = 1/(8π).
     pub omega_energy: f64,
+    /// Intermediate phase census: count of intermediate nodes with φ = +1 (source-like).
+    pub phase_pos_count: usize,
+    /// Intermediate phase census: count of intermediate nodes with φ = 0 (balanced).
+    pub phase_zero_count: usize,
+    /// Intermediate phase census: count of intermediate nodes with φ = -1 (sink-like).
+    pub phase_neg_count: usize,
+    /// Number of prisms per generation (prism count, not node count).
+    pub prisms_gen1: usize,
+    pub prisms_gen2: usize,
+    pub prisms_gen3: usize,
 }
 
 /// Build a frequency histogram of committed prism belly sizes.
@@ -781,6 +791,35 @@ pub fn apply_defect(
     let max_intermediates = prisms.iter()
         .map(|p| p.intermediates.len()).max().unwrap_or(0);
 
+    // ── Intermediate phase census (occupancy model diagnostic) ──
+    let mut phase_pos_count: usize = 0;
+    let mut phase_zero_count: usize = 0;
+    let mut phase_neg_count: usize = 0;
+    for prism in &prisms {
+        for &w in &prism.intermediates {
+            match bulk_momentum[w].signum() {
+                1  => phase_pos_count += 1,
+                0  => phase_zero_count += 1,
+                -1 => phase_neg_count += 1,
+                _  => {}
+            }
+        }
+    }
+    let phase_total = (phase_pos_count + phase_zero_count + phase_neg_count) as f64;
+    if phase_total > 0.0 {
+        println!("  Intermediate phase census: φ=+1: {} ({:.4})  φ=0: {} ({:.4})  φ=-1: {} ({:.4})",
+            phase_pos_count, phase_pos_count as f64 / phase_total,
+            phase_zero_count, phase_zero_count as f64 / phase_total,
+            phase_neg_count, phase_neg_count as f64 / phase_total);
+    }
+
+    // ── Per-generation prism counts ──
+    let prisms_gen1 = classifications.iter().filter(|c| c.generation == 1).count();
+    let prisms_gen2 = classifications.iter().filter(|c| c.generation == 2).count();
+    let prisms_gen3 = classifications.iter().filter(|c| c.generation == 3).count();
+    println!("  Prism generation census: Gen1={prisms_gen1}  Gen2={prisms_gen2}  Gen3={prisms_gen3}  (total={})",
+        prisms_gen1 + prisms_gen2 + prisms_gen3);
+
     // ── Phase-coherence mass decomposition (Theorem: zero free parameters) ──
     //
     //  M_grav(P) = N,  M_vis(P) = |Φ(P)|,  M_dark(P) = N - |Φ(P)|
@@ -862,6 +901,12 @@ pub fn apply_defect(
         mass_sq_total,
         alpha_em,
         omega_energy,
+        phase_pos_count,
+        phase_zero_count,
+        phase_neg_count,
+        prisms_gen1,
+        prisms_gen2,
+        prisms_gen3,
     };
 
     (DefectResult {
@@ -1294,6 +1339,36 @@ pub fn process_streaming(
     let max_intermediates = prisms.iter()
         .map(|p| p.intermediates.len()).max().unwrap_or(0);
 
+    // ── Intermediate phase census (occupancy model diagnostic) ──
+    let mut phase_pos_count: usize = 0;
+    let mut phase_zero_count: usize = 0;
+    let mut phase_neg_count: usize = 0;
+    for prism in &prisms {
+        for &w_local in &prism.intermediates {
+            let w_global = core_global[w_local];
+            match bulk_momentum[w_global].signum() {
+                1  => phase_pos_count += 1,
+                0  => phase_zero_count += 1,
+                -1 => phase_neg_count += 1,
+                _  => {}
+            }
+        }
+    }
+    let phase_total = (phase_pos_count + phase_zero_count + phase_neg_count) as f64;
+    if phase_total > 0.0 {
+        println!("  Intermediate phase census: φ=+1: {} ({:.4})  φ=0: {} ({:.4})  φ=-1: {} ({:.4})",
+            phase_pos_count, phase_pos_count as f64 / phase_total,
+            phase_zero_count, phase_zero_count as f64 / phase_total,
+            phase_neg_count, phase_neg_count as f64 / phase_total);
+    }
+
+    // ── Per-generation prism counts ──
+    let prisms_gen1 = stream_classes.iter().filter(|c| c.generation == 1).count();
+    let prisms_gen2 = stream_classes.iter().filter(|c| c.generation == 2).count();
+    let prisms_gen3 = stream_classes.iter().filter(|c| c.generation == 3).count();
+    println!("  Prism generation census: Gen1={prisms_gen1}  Gen2={prisms_gen2}  Gen3={prisms_gen3}  (total={})",
+        prisms_gen1 + prisms_gen2 + prisms_gen3);
+
     // ── Phase-coherence mass decomposition (Theorem: zero free parameters) ──
     let mut visible_mass_total: usize = 0;
     let mut dark_mass_total: usize = 0;
@@ -1381,6 +1456,12 @@ pub fn process_streaming(
         mass_sq_total,
         alpha_em,
         omega_energy,
+        phase_pos_count,
+        phase_zero_count,
+        phase_neg_count,
+        prisms_gen1,
+        prisms_gen2,
+        prisms_gen3,
     };
 
     // Split into (vacuum, defect) tuple matching in-memory format

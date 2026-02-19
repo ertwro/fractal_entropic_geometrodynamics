@@ -167,6 +167,12 @@ pub fn export_topology_summary(
     let _ = writeln!(file, "q_topo,{:.8}", q_topo);
     let _ = writeln!(file, "alpha_em,{:.8}", topo.alpha_em);
     let _ = writeln!(file, "omega_energy,{:.8}", topo.omega_energy);
+    let _ = writeln!(file, "phase_pos_count,{}", topo.phase_pos_count);
+    let _ = writeln!(file, "phase_zero_count,{}", topo.phase_zero_count);
+    let _ = writeln!(file, "phase_neg_count,{}", topo.phase_neg_count);
+    let _ = writeln!(file, "prisms_gen1,{}", topo.prisms_gen1);
+    let _ = writeln!(file, "prisms_gen2,{}", topo.prisms_gen2);
+    let _ = writeln!(file, "prisms_gen3,{}", topo.prisms_gen3);
     println!("  Saved {path}");
 }
 

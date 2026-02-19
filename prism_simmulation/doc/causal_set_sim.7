@@ -692,6 +692,35 @@ Q\dtopo\u = \(*S|\(*F|\u2\d/\(*SN\u2\d|0.191|0.152 \(+- 0.001 (R\u2\d=0.9996)
 \(*W\denergy\u = 1/Q \- 1|4.24|5.57 (Planck 2018: 5.36)
 \(*a(1+\(*W)|1/(8\(*p)|1/(8\(*p) (exact at every N)
 .TE
+.SS "Occupancy Model (Analytical Mass Hierarchy)"
+The mass hierarchy m\d1\u < m\d2\u < m\d3\u is a coupon-collector selection
+effect on the belly size distribution f(N).  Each intermediate carries a
+causal phase \(*f(w) = sign(out_deg \- in_deg) \(mo {\-1, 0, +1}.
+Generation g(P) counts how many distinct phase signs appear among the N
+intermediates.  Since P(g=1|N) ~ p\dmax\u\uN\d decays exponentially,
+Gen1 prisms are biased toward small bellies (low mass), while Gen3
+requires all three signs (large bellies, high mass).
+.PP
+The simulation reports the intermediate phase census:
+(p\d+\u, p\d0\u, p\d\-\u) = (0.318, 0.018, 0.664).  Plugging these
+into the occupancy formula reproduces the mass ratios with zero free
+parameters:
+.TS
+tab(|) allbox;
+lb lb lb
+l l l.
+Ratio|Predicted|Observed (error)
+m\d2\u/m\d1\u|1.409|1.434 (1.8%)
+m\d3\u/m\d1\u|1.674|1.698 (1.4%)
+.TE
+.PP
+New topology_summary.csv fields:
+.B phase_pos_count, phase_zero_count, phase_neg_count
+(intermediate phase census) and
+.B prisms_gen1, prisms_gen2, prisms_gen3
+(per-generation prism counts).
+Analysis script:
+.B data/scripts/occupancy_model.py
 .SS "Causal Flux"
 Directed walker transmission probabilities measure electromagnetic-like
 interactions:

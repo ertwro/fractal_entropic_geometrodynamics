@@ -317,6 +317,33 @@ Causal Prisms are classified by the **Vol I phase function** φ(w) = sign(bulk_m
 At N=10^7 (M=20): Total prisms: 7,723,943. g=1: 63,278 (2.1%), g=2: 2,552,871 (84.9%), g=3: 391,039 (13.0%). Sterile (Φ=0): 400,986.
 Mass ratios 1 : 1.43 : 1.70 are **N-independent topological invariants**.
 
+### Occupancy Model (Analytical Mass Hierarchy)
+
+The mass hierarchy m₁ < m₂ < m₃ is explained analytically as a **coupon-collector selection effect** on the belly size distribution f(N). The generation classification counts how many distinct phase signs {-1, 0, +1} appear among N intermediates. Since P(g=1|N) ~ p_max^N decays exponentially, Gen1 prisms are biased toward small bellies (low mass), while Gen3 requires all three signs present (large bellies, high mass).
+
+The expected mass per generation is:
+
+> E[N | g=k] = Σ_N  N · P(g=k|N) · f(N)  /  Σ_N  P(g=k|N) · f(N)
+
+where P(g=k|N) follows from inclusion-exclusion on the phase probabilities (p₊, p₀, p₋).
+
+The simulation now reports the **intermediate phase census** — the fraction of prism intermediates with each phase sign:
+
+| Phase | Fraction | Interpretation |
+|-------|----------|---------------|
+| φ = -1 | 0.664 | Sink-like (in_degree > out_degree) |
+| φ = +1 | 0.318 | Source-like (out_degree > in_degree) |
+| φ = 0 | 0.018 | Balanced |
+
+Plugging the measured belly distribution and phase fractions into the occupancy formula reproduces the mass ratios with **zero free parameters**:
+
+| Ratio | Predicted | Observed | Error |
+|-------|-----------|----------|-------|
+| m₂/m₁ | 1.409 | 1.434 | 1.8% |
+| m₃/m₁ | 1.674 | 1.698 | 1.4% |
+
+Both inputs (f(N) and phase fractions) are determined entirely by the Poisson sprinkling geometry. See `data/scripts/occupancy_model.py` for the full analysis.
+
 ### Coupling Constants
 
 | Observable | Value (N=10^7) | N→∞ extrapolation | Note |
@@ -357,6 +384,8 @@ Prisms with Φ = 0 (fully phase-cancelled) are classified as "sterile" — gravi
 - **P_Sterile / dS_Sterile**: Spectral dimension from walkers starting on sterile nodes (Φ = 0).
 - **count_sterile / avg_mass_sterile**: Population and average topological mass in `topology_summary.csv`.
 - **omega_ratio / alpha_em**: Ω_dark/Ω_vis and α reported in `topology_summary.csv`.
+- **phase_pos_count / phase_zero_count / phase_neg_count**: Intermediate phase census (occupancy model input).
+- **prisms_gen1 / prisms_gen2 / prisms_gen3**: Per-generation prism counts (not node counts).
 
 ### Ensemble Error Bars
 
