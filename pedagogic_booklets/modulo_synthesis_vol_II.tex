@@ -32,8 +32,8 @@
 \usepackage{amsmath,amssymb,amsthm,mathtools}
 \usepackage{graphicx,booktabs,enumitem,microtype,float}
 \usepackage{fancyhdr,titlesec,titletoc}
-% \usepackage[style=alphabetic]{biblatex} % BibLaTeX missing
-% \addbibresource{modulo_synthesis.bib}
+\usepackage[numbers,sort&compress]{natbib}
+\bibliographystyle{unsrtnat}
 \usepackage{tcolorbox}
 \tcbuselibrary{skins,breakable,theorems}
 \usepackage{etoolbox}
@@ -757,7 +757,7 @@ The classical bound of~$2$ is exceeded because the shared ancestor $z$ constrain
 
 \begin{introduction}
   \item Baryons as Skyrmions (Knots in the Causal Prism bipartite structure).
-  \item Winding Number = Twist in pole assignment (past ↔ future reversal count).
+  \item Winding Number = Twist in pole assignment (past $\leftrightarrow$ future reversal count).
   \item Why geometrical knots are stable.
   \item Stability of the proton $> 10^{34}$ years.
 \end{introduction}
@@ -767,14 +767,14 @@ The classical bound of~$2$ is exceeded because the shared ancestor $z$ constrain
 If particles are just ripples, why don't they dissipate? Why is a proton stable for billions of years?
 The answer is \textbf{Topology}.
 
-\textbf{Skyrmions as Causal Prism Twists:} In the Causal Prism picture, a Skyrmion is a \emph{twist in the causal layer ordering}. Consider a region of spacetime containing multiple overlapping Prisms. The bipartite structure has a natural orientation: Origin → Intermediates → Destination (past → spacelike slice → future). A Skyrmion is a configuration where this orientation \emph{winds around} a central defect, reversing the pole assignment as you traverse a closed spatial loop.
+\textbf{Skyrmions as Causal Prism Twists:} In the Causal Prism picture, a Skyrmion is a \emph{twist in the causal layer ordering}. Consider a region of spacetime containing multiple overlapping Prisms. The bipartite structure has a natural orientation: Origin $\to$ Intermediates $\to$ Destination (past $\to$ spacelike slice $\to$ future). A Skyrmion is a configuration where this orientation \emph{winds around} a central defect, reversing the pole assignment as you traverse a closed spatial loop.
 
 In continuum language: imagine a localized twist in the $SU(2)$ frame field.
 The field $U(x)$ maps physical space ($\mathbb{R}^3 \cup \infty \sim S^3$) to the group manifold ($SU(2) \sim S^3$).
 These maps are classified by the homotopy group $\pi_3(S^3) = \mathbb{Z}$.
 This integer is the \textbf{Winding Number} or Baryon Number $B$.
 
-In discrete Prism language: $B$ counts how many times the bipartite pole orientation reverses (Origin ↔ Destination swap) as you traverse the spatial boundary around the defect.
+In discrete Prism language: $B$ counts how many times the bipartite pole orientation reverses (Origin $\leftrightarrow$ Destination swap) as you traverse the spatial boundary around the defect.
 
 \begin{itemize}
     \item $B=0$: Vacuum / Mesons (standard Prism orientation, no net twist, can unwind).
@@ -1534,58 +1534,7 @@ The exact algebraic identity $\alpha\,(1 + \Omega) = 1/(8\pi)$ locks them: one c
 
 \subsection{The Bekenstein--Hawking Factor: Emergent Gravity Verified}\label{sec:bh-factor}
 
-The Clausius relation $\delta Q = T\,\delta S$, applied to every local
-Rindler horizon in the causal diamond, is the micro\-scopic statement of
-Jacobson's theorem: the Einstein equations are the equation of state of the
-causal ensemble.  The $N = 10^7$ simulation data makes this explicit.
-
-\paragraph{Two routes to $G$.}
-Newton's constant can be extracted from the graph data by two independent
-methods:
-\begin{enumerate}[leftmargin=*]
-  \item \textbf{Thermodynamic (Clausius flux).}  The directed causal flux
-    $\delta Q$ and the Bekenstein--Hawking entropy change
-    $\delta S = \delta A_{\mathrm{phys}}/4$ are computed from the heat kernel.
-    Using the physical area $A = V^{1/2}$ (the $d = 4$ null horizon area), the
-    ratio $\delta Q / (T\,\delta S) = 8\pi G$ is approximately constant with
-    $\mathrm{CV} = 26.1\%$, giving $G_{\mathrm{thermo}} = 0.231$ (link units).
-  \item \textbf{Combinatorial (Bekenstein max bits).}  The bounded Hasse
-    degree $D_{\max} = 15$ limits the information per link to $\log_2(15)$
-    bits.  Matching this to $S = A/(4G)$ gives
-    $G_{\mathrm{BH}} = D_{\max}/(4\log_2 D_{\max}) = 0.960$ (link units).
-\end{enumerate}
-
-\paragraph{The factor of 4.}
-The ratio of the two determinations is
-\[
-  \frac{G_{\mathrm{BH}}}{G_{\mathrm{thermo}}} = \frac{0.960}{0.231} = 4.16
-  \approx 4,
-\]
-recovering the Bekenstein--Hawking entropy coefficient $S = A/4G$ to $4\%$
-error with zero adjustable parameters.
-
-\paragraph{Physical vs.\ spectral area.}
-The physical area formulation $A = V^{1/2}$ wins decisively over the
-spectral area $A = V^{(d_S - 2)/d_S}$: the latter gives $\mathrm{CV} = 61.0\%$.
-The horizon entropy is counted by the \emph{macroscopic} boundary area in
-$d = 4$, not the fractal area seen by the random walker.  This is the
-holographic principle verified from discrete causal structure.
-
-\paragraph{Stone duality reading.}
-In the Stone-dual picture, each causal link is a clopen set in the Boolean
-algebra of the Hasse diagram.  The bounded degree~$D_{\max}$ is the maximum
-number of clopens incident on any event.  The Bekenstein--Hawking relation
-$S = A/4G$ is then a statement about the information capacity of the boundary
-of the Stone space: the entropy of the clopen partition is one quarter of the
-boundary area measured in Planck units.
-
-\paragraph{Comparison with other programmes.}
-String theory recovered $S = A/4G$ for extremal (zero-temperature) black holes
-via the Strominger--Vafa D-brane microstate count (1996).  Loop quantum
-gravity requires the Immirzi parameter $\gamma = 0.2375$, tuned by hand, to
-match the factor of~4.  In both cases, non-trivial machinery beyond the core
-axioms is required.  Here the factor emerges from pure combinatorial topology
-with no adjustable parameters.
+\textbf{P6$\frac{1}{2}$. The Bekenstein--Hawking Factor of 4.}\quad The two-route determination of Newton's constant (thermodynamic: $G_{\mathrm{thermo}} = 0.231$; combinatorial: $G_{\mathrm{BH}} = 0.960$; ratio $= 4.16 \approx 4$) is derived in full in Volume~I, \S9.4. This recovers $S = A/4G$ to $4\%$ with zero adjustable parameters.
 
 \subsection{P7. Proton Stability ($\tau_p > 10^{40}$\,yr)}\label{pred:proton}
 
@@ -2265,7 +2214,5 @@ The two volumes are complementary. Volume II is the source term; Volume I is the
 \end{center}
 
 \backmatter
-\nocite{*}
-\bibliographystyle{alpha}
-\bibliography{modulo_synthesis}
+\bibliography{modulo_synthesis_vol_II}
 \end{document}

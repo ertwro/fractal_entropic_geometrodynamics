@@ -1,6 +1,6 @@
 # Fractal Entropic Geometrodynamics
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18715542.svg)](https://doi.org/10.5281/zenodo.18715542)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18719775.svg)](https://doi.org/10.5281/zenodo.18719775)
 [![License: MIT](https://img.shields.io/badge/Code-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CC BY-NC-ND 4.0](https://img.shields.io/badge/Theory-CC%20BY--NC--ND%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
 
@@ -401,8 +401,8 @@ All booklets are in `pedagogic_booklets/` with LaTeX source and compiled PDFs.
                Three Particle Generations from Discrete Topological Constraints},
   year      = {2026},
   publisher = {Zenodo},
-  doi       = {10.5281/zenodo.18697574},
-  url       = {https://doi.org/10.5281/zenodo.18697574}
+  doi       = {10.5281/zenodo.18719775},
+  url       = {https://doi.org/10.5281/zenodo.18719775}
 }
 ```
 
