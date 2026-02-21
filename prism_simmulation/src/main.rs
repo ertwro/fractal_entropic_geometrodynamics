@@ -570,6 +570,7 @@ fn print_usage() {
     eprintln!("  --target-error <F>   Relative SE target for convergence (default: 0.01)");
     eprintln!("  --resume             Resume from last checkpoint (skips completed batches)");
     eprintln!("  --export-slice <PATH>  Export topology slice (single realization, no ensemble)");
+    eprintln!("  --export-lightcone <PATH>  Export 4-layer BFS light cone CSV for BD/RMT analysis");
     eprintln!("  --help               Show this help message");
     eprintln!();
     eprintln!("Convergence: runs batches until rel. standard error on mass_gen1 drops");
@@ -608,6 +609,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut parsed_min_ensemble: Option<usize> = None;
     let mut parsed_target_error: Option<f64> = None;
     let mut export_slice_path: Option<String> = None;
+    let mut export_lightcone_path: Option<String> = None;
     for pair in args.windows(2) {
         if pair[0] == "--epsilon" {
             if let Ok(v) = pair[1].parse::<f64>() { epsilon = v; }
@@ -639,12 +641,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if pair[0] == "--export-slice" {
             export_slice_path = Some(pair[1].clone());
         }
+        if pair[0] == "--export-lightcone" {
+            export_lightcone_path = Some(pair[1].clone());
+        }
     }
 
     // Flags that consume the next argument
     let value_flags: std::collections::HashSet<&str> =
         ["--epsilon", "--tmax", "--seed", "--threads", "--eigen-cutoff", "--batch-size",
-         "--max-ensemble", "--min-ensemble", "--target-error", "--export-slice"]
+         "--max-ensemble", "--min-ensemble", "--target-error", "--export-slice",
+         "--export-lightcone"]
         .iter().copied().collect();
 
     // Parse positional args (skip flags and their values)
@@ -766,6 +772,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("[export-slice] Wrote {} ({} bytes)", slice_path, file_size);
         println!("  {} coordinates, {} edges, {} prisms",
             slice.n_total, slice.hasse_edges.len(), slice.prisms.len());
+        return Ok(());
+    }
+
+    // ── Export-lightcone early exit (Phases 1-2, BFS light cone → CSV) ──
+    if let Some(ref lc_path) = export_lightcone_path {
+        println!("[export-lightcone] Running single realization (seed={seed_base})...");
+
+        let mut rng = StdRng::seed_from_u64(seed_base);
+        let (pts_raw, _big_t) = diamond::sprinkle(n_points, &mut rng);
+        let (_pts, vac_head, vac_data, _momentum) = if n_points <= eigen_cutoff {
+            diamond::build_hasse_sparse(&pts_raw)
+        } else {
+            diamond::build_hasse_direct(&pts_raw)
+        };
+        drop(pts_raw);
+
+        let meta = format!(
+            "N: {n_points}  seed: {seed_base}  max_depth: 4\n\
+             Directed Hasse DAG — 4-layer BFS light cone for BD operator"
+        );
+
+        output::export_lightcone(lc_path, &vac_head, &vac_data, n_points, 4, &meta);
         return Ok(());
     }
 

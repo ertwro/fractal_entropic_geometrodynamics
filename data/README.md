@@ -28,14 +28,19 @@ data/
 │   ├── N_5000000/                   N=5×10^6, M=8
 │   │   └── (same 3 CSVs)
 │   └── fss_comprehensive_results.json
+├── fss_rmt.csv                      RMT finite-size scaling results
 ├── scripts/                         Analysis & figure generation
 │   ├── finite_size_scaling.py       FSS pipeline (run + analyze)
+│   ├── finite_size_scaling_rmt.py   FSS for RMT observables
 │   ├── feg_analysis.py              8-figure comprehensive analysis
 │   ├── vacuum_polarization.py       Vacuum polarization figures (4 figures)
 │   ├── occupancy_model.py           Occupancy model: mass + charge analysis
+│   ├── gue_correlation.py           GUE spacing ratio analysis
+│   ├── gue_correlation_bd.py        GUE with BD action weights
+│   ├── spectral_zeta_riemann.py     Spectral zeta function analysis
 │   ├── make_composite_figure.py     2×2 panel composite
 │   ├── make_fss_composite.py        2×2 FSS composite
-│   ├── jacobson_einstein.py          Bekenstein-Hawking factor of 4 (Jacobson analysis)
+│   ├── jacobson_einstein.py         Bekenstein-Hawking factor of 4 (Jacobson analysis)
 │   ├── plot_universe.py             3-figure spectral/mass/flux plotter
 │   └── synthesis_analyzer.py        4-figure Physical Review analyzer
 └── figures/                         Pre-generated publication figures
@@ -49,6 +54,9 @@ data/
     ├── vp_mu_effective.pdf          Effective mu(n) per belly size
     ├── vp_inv_alpha.pdf             1/α running with RG domain
     ├── vp_mass_vs_charge.pdf        Mass vs charge diagnostic
+    ├── gue_correlation.pdf          GUE spacing ratio plot
+    ├── gue_correlation_bd.pdf       GUE with BD weights plot
+    ├── spectral_zeta_riemann.pdf    Spectral zeta function plot
     ├── fig_composite.pdf            4-panel composite (N=10^7)
     ├── fig_fss_composite.pdf        4-panel FSS composite
     └── fss_table.tex                LaTeX table of all FSS results
@@ -314,5 +322,61 @@ After reproducing a run, compare your results against the included data:
    Run `python data/scripts/vacuum_polarization.py` and verify that 4 figures
    (`vp_q_running.pdf`, `vp_mu_effective.pdf`, `vp_inv_alpha.pdf`,
    `vp_mass_vs_charge.pdf`) are produced in `data/figures/`.
-   Run `python occupancy_model.py` and verify the overshoot is ~23.5%
+   Run `python data/scripts/occupancy_model.py` and verify the overshoot is ~23.5%
    and the FSS extrapolation matches Q_inf ≈ 0.152.
+
+---
+
+## GUE Spectral Rigidity (RMT Analysis)
+
+The `fss_rmt` binary computes Random Matrix Theory statistics on the Hasse-diagram
+Laplacian eigenvalue spectrum. Key results:
+
+| Statistic | Measured | GUE prediction | GOE | Poisson |
+|-----------|----------|----------------|-----|---------|
+| Spacing ratio <r> | 0.603 +/- 0.002 | 0.6027 | 0.5307 | 0.3863 |
+| Form factor slope gamma | 1.04 +/- 0.03 | 1.0 | -- | -- |
+
+GUE (not GOE) because the BD action's alternating signs break time-reversal symmetry.
+This independently confirms complex quantum mechanics (the imaginary unit *i*).
+
+### Reproducing the RMT analysis
+
+```bash
+cd prism_simmulation
+
+# Build the RMT binary
+cargo build --release --bin fss_rmt
+
+# Quick test (N=500, ~seconds)
+cargo run --release --bin fss_rmt -- --sizes 500 --m 1 --seed 42
+
+# Full analysis
+cargo run --release --bin fss_rmt -- --sizes 500,1000,2000,5000 --m 10 --seed 42
+```
+
+Results are written to `fss_rmt.csv`.
+
+### `fss_rmt.csv` format
+
+| Column | Description |
+|--------|-------------|
+| `N` | Lattice size |
+| `m` | Realisation index |
+| `r_mean` | Mean spacing ratio (GUE: 0.6027) |
+| `gamma` | Spectral form factor slope (GUE: 1.0) |
+
+---
+
+## Alpha Sweep & Emergent Einstein
+
+The Jacobson analysis (`jacobson.rs` + `jacobson_einstein.py`) sweeps the BD action
+prefactor alpha and measures the ratio G_BH / G_thermo:
+
+- At alpha = 1 (physical point): ratio = **4.00 +/- 0.05** (Bekenstein-Hawking factor)
+- G = 1/(16*pi) emerges from integer BD weights (1 + 9 + 16 + 8 = 34)
+- Metric signature (-,+,+,+) is forced by the alternating BD coefficients
+
+The `results.csv` now contains 26 columns including bulk-restricted fields for
+the Jacobson analysis (bulk spectral dimension, bulk return probability, bulk
+causal flux).

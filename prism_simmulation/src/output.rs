@@ -204,3 +204,77 @@ pub fn export_mass_spectrum(
     }
     println!("  Saved {path}");
 }
+
+/// Export the directed 4-layer future light cone of every node as CSV.
+///
+/// For each node `src`, performs a layered BFS through the **directed**
+/// Hasse DAG (following only forward edges `v > src`, i.e. causal future).
+/// Writes `(source, target, layer)` triples for layers 1..`max_depth`.
+///
+/// The vacuum CSR from Phase 1 is directed: `adj[u]` lists the children
+/// (causal future) of `u`.  If a symmetric CSR is passed instead, the
+/// `v > node` filter recovers the forward direction.
+///
+/// Intended for N ≤ 3 000 exact-diag graphs.  Used by `gue_correlation_bd.py`
+/// to construct the Benincasa–Dowker matrix with weights `[+1, -9, +16, -8]`.
+pub fn export_lightcone(
+    path: &str,
+    adj_head: &[u32],
+    adj_data: &[u32],
+    n: usize,
+    max_depth: usize,
+    metadata: &str,
+) {
+    let file = std::fs::File::create(path);
+    let file = match file {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("  Failed to create {path}: {e}");
+            return;
+        }
+    };
+    let mut w = std::io::BufWriter::with_capacity(1 << 20, file);
+
+    for line in metadata.lines() {
+        let _ = writeln!(w, "# {line}");
+    }
+    let _ = writeln!(w, "source,target,layer");
+
+    let mut visited = vec![false; n];
+    let mut count: usize = 0;
+
+    for src in 0..n {
+        // Reset visited for this source
+        for v in visited.iter_mut() {
+            *v = false;
+        }
+        visited[src] = true;
+
+        let mut frontier: Vec<usize> = vec![src];
+
+        for depth in 1..=max_depth {
+            let mut next: Vec<usize> = Vec::new();
+            for &node in &frontier {
+                let lo = adj_head[node] as usize;
+                let hi = adj_head[node + 1] as usize;
+                for &nbr_u32 in &adj_data[lo..hi] {
+                    let nbr = nbr_u32 as usize;
+                    // Forward edge: nbr is in the causal future of node
+                    if nbr > node && !visited[nbr] {
+                        visited[nbr] = true;
+                        next.push(nbr);
+                        let _ = writeln!(w, "{src},{nbr},{depth}");
+                        count += 1;
+                    }
+                }
+            }
+            frontier = next;
+            if frontier.is_empty() {
+                break;
+            }
+        }
+    }
+
+    let _ = w.flush();
+    println!("  Lightcone: {count} edges → {path}");
+}

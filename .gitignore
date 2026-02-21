@@ -27,6 +27,7 @@ __pycache__/
 *.pyo
 
 # ── Simulation artifacts ──
+causal_set.toml
 *.checkpoint.bin
 *.checkpoint.bin.bak*
 .checkpoint.bin*

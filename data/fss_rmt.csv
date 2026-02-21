@@ -1,0 +1,5 @@
+# BD Effective Hamiltonian FSS + Jacobson Tensor
+# M = 1 realisations per N, seed = 42
+# BD weights = [+1, -9, +16, -8]
+N,r_mean,r_se,total_evals,total_spacings,elapsed_s,lorentz_frac,n_lorentz,n_valid,G_mean,G_se,G_cv,ev0,ev1,ev2,ev3,bulk_n,bulk_n_lorentz,bulk_lorentz_frac,bulk_ev0,bulk_ev1,bulk_ev2,bulk_ev3,bulk_G_mean,bulk_G_se,bulk_G_cv
+10000000,0.60265478,NaN,1112,1110,420.3,0.651310,721,1107,3154.73576088,622.16921509,6.561745,-438670.984407,263068.459728,504764.036734,919997.136840,110,85,0.772727,-1750.122848,584440.692440,913577.210226,1332710.177678,0.06165740,0.00513355,0.767613

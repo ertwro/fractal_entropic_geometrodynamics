@@ -58,7 +58,9 @@
 pub mod anim_export;
 pub mod checkpoint;
 pub mod diamond;
+pub mod jacobson;
 pub mod memory;
 pub mod output;
+pub mod rmt;
 pub mod skyrmion;
 pub mod spectral;
