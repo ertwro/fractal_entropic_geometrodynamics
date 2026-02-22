@@ -103,6 +103,7 @@ fractal_entropic_geometrodynamic/
 │   │   ├── diamond.rs          Poisson sprinkling in 4D causal diamond
 │   │   ├── skyrmion.rs         Causal Prism detection and K5 contraction
 │   │   ├── spectral.rs         Spectral dimension via random walk
+│   │   ├── measurement.rs      Observer modules (cover-time mass, half-life, etc.)
 │   │   ├── output.rs           CSV serialisation
 │   │   ├── memory.rs           RAM-aware mode selection
 │   │   ├── checkpoint.rs       Per-realisation checkpointing
@@ -220,6 +221,7 @@ the Kuratowski Calculus. Four phases:
 1. **Sprinkling** -- Poisson-sprinkle N events into a 4D causal diamond
 2. **Prism detection** -- Find K_{2,n} bipartite defects via 2-hop search; K5 absorption
 3. **Spectral dimension** -- Monte Carlo random walkers with strict integer arithmetic
+3.5. **Measurements** -- Cover-time mass, half-life census, modulo path integral, vacuum polarization (optional, `--measure-all`)
 4. **Output** -- Ensemble-averaged CSV with error bars
 
 Bounded Hasse degree (D <= 15) makes every operation O(N).
