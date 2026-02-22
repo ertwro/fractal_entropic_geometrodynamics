@@ -8,6 +8,8 @@
 
 Two axioms. Zero free parameters. O(N) on a laptop.
 
+PhilArchive has an old version of the paper. Please use: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18733424.svg)](https://doi.org/10.5281/zenodo.18733424)
+
 ---
 
 ## What This Is
@@ -400,8 +402,8 @@ All booklets are in `pedagogic_booklets/` with LaTeX source and compiled PDFs.
                Three Particle Generations from Discrete Topological Constraints},
   year      = {2026},
   publisher = {Zenodo},
-  doi       = {10.5281/zenodo.18719775},
-  url       = {https://doi.org/10.5281/zenodo.18719775}
+  doi       = {10.5281/zenodo.18733424},
+  url       = {https://doi.org/10.5281/zenodo.18733424}
 }
 ```
 
