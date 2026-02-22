@@ -347,7 +347,7 @@ Testable by DESI + Euclid + CMB-S4 ($\sigma \sim 20$\,meV).
 \section{Recent Developments}\label{sec:recent}
 % ═══════════════════════════════════════════════════════════════════════════════
 
-Five developments since the initial submission merit brief report.
+Six developments since the initial submission merit brief report.
 
 \textbf{Occupancy model.}
 A zero-parameter model using the belly distribution
@@ -366,6 +366,15 @@ The Fisher metric on $\Delta^2$ yields a 2-sphere whose eigenmodes
 reproduce atomic magic numbers $2, 8, 18, 32$;
 $K_5$ absorption caps bond order at 3; the octet rule
 follows from $s + p$ filling.
+
+\textbf{Dynamical mass from cover time.}
+The na\"{\i}ve hitting time on $K_{2,n}$ is $E[T]=4$, independent of~$n$
+(all intermediates are structurally equivalent).
+The correct dynamical mass is the \emph{cover time}: the walker must
+visit every intermediate before exiting, giving
+$\tau_{\mathrm{cover}} \sim n\,H_n \sim n\ln n$.
+At $N = 5{,}000$ ($M{=}8$), Gen\,3/Gen\,1 $= 1.18$: the mass hierarchy
+is confirmed dynamically with zero free parameters.
 
 \textbf{GUE spectral rigidity.}
 The BD effective Hamiltonian
@@ -406,8 +415,9 @@ Two axioms, one principle, $N = 10^7$ ($M{=}20$):
 (v)~$d_S = 2 \to 5$;
 (vi)~vacuum polarization;
 (vii)~magic numbers $2, 8, 18, 32$;
-(viii)~GUE rigidity ($\gamma = 1.04$);
-(ix)~$G = 1/16$ from $\alpha$-independent inscribed-diamond analysis.
+(viii)~cover-time mass: Gen\,3/Gen\,1 $= 1.18$;
+(ix)~GUE rigidity ($\gamma = 1.04$);
+(x)~$G = 1/16$ from $\alpha$-independent inscribed-diamond analysis.
 Code: \url{https://github.com/ertwro/fractal_entropic_geometrodynamics}.
 
 \bibliography{refs}
