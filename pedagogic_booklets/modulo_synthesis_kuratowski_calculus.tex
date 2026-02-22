@@ -567,7 +567,7 @@ $\mathcal{P}(u,v,W)$ & Prisma Causal &
   intermediarios $W$ &
   Def.~\ref{def:topological-resistance} \\[3pt]
 $N$ & Masa topol\'ogica &
-  N\'umero de intermediarios---inercia $\propto N$ &
+  N\'umero de intermediarios---masa est\'atica $= N$, din\'amica $\sim N H_N$ &
   Ley~\ref{law:topological-mass} \\
 \bottomrule
 \end{tabular}
@@ -5781,8 +5781,12 @@ intermedios:
   \in \mathbb{N},\quad N \geq 3.
   \label{eq:law-mass}
 \end{equation}
-La masa no es un par\'ametro continuo; es un n\'umero natural.
+La masa est\'atica no es un par\'ametro continuo; es un n\'umero natural.
 No existe ``medio intermedio''.
+La masa \emph{din\'amica} incorpora la penalidad del tiempo de cobertura
+(coupon collector): $M_{\mathrm{din}} = \kappa\,N\,H_N$, donde
+$H_N = \sum_{k=1}^{N} 1/k$ es el n\'umero arm\'onico
+(v\'ease Demo~III, Paso~6).
 
 \medskip\noindent
 \texttt{skyrmion.rs}: \texttt{mass\_gen1 = total / ps.len()}

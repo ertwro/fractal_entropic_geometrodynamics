@@ -2132,12 +2132,18 @@ $N$ parallel channels---is the \emph{maximal} permitted structure
 
 \section{Topological Mass and Inertia}
 
-The mass of a prism is not a continuous charge assigned to a field. It is
-the integer count $M = N$ of parallel causal paths through the defect
+The \emph{static} mass of a prism is the integer count $M_{\mathrm{static}} = N$ of parallel causal paths through the defect
 \KC{Law~L2}. This has a direct physical meaning through
 Theorem~\ref{thm:time-dilation}: each intermediate $w_i$ contributes one
 unit of geodesic delay. A prism with $N = 10$ intermediates absorbs 9
 more links of proper time than one with $N = 1$.
+
+The \emph{dynamical} mass incorporates a superlogarithmic correction:
+$M_{\mathrm{dyn}} = \kappa\,N\,H_N$, where $H_N$ is the harmonic number.
+This arises from the cover time of a random walker confined to the prism---the
+walker must visit every intermediate before exiting coherently (the
+coupon-collector penalty). The full derivation appears in
+Volume~II, Chapter~10.
 
 \begin{definition}[Inertia Tensor \KC{Def.~5.1}]\label{def:inertia}
 For a Causal Prism with poles $(u, v)$ and intermediates
