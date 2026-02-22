@@ -485,17 +485,23 @@ Both vanish for $N \to \infty$, but at any finite $N$ the Sorkin noise dominates
 3. She adds a 5th rope. Very hard to push. \textbf{Tau}: $N=5$, heavy.
 4. She tries to add a 6th rope. The hammock still holds---in fact, more ropes make it \emph{harder} to tear apart (stability grows as $\sim e^{-N}$). But now the ropes vibrate in so many directions that their combined sound cancels out: the hammock becomes \emph{invisible} to light while still weighing something (see Dark Matter, below). This is the electromagnetic opacity threshold, not a structural collapse.
 
-\textbf{The Insight:} Mass is not a number you assign---it's the \emph{count of ropes} in the causal hammock. You can't have 3.7 ropes. Mass must be an integer: $m = N$.
+\textbf{The Insight:} Mass is not a number you assign---it's the \emph{count of ropes} in the causal hammock. You can't have 3.7 ropes. The static mass is an integer: $m = N$.
 
 \textbf{Important caveat:} The rope count $N$ determines \emph{mass} (topological inertia), but it is not the rigorous definition of \emph{generation}. The precise definition (from Volume~I) is \textbf{phase complexity}: how many distinct causal phase classes ($\{-, 0, +\}$) are represented among the intermediate nodes. A hammock with all ropes vibrating the same way ($g = 1$) is Generation~1, regardless of whether it has 3, 4, or 5 ropes. The correlation between rope count and generation holds approximately---small $N$ tends to produce low phase complexity---but they are distinct concepts. Think of $N$ as how \emph{heavy} the hammock is, and $g$ as how \emph{diverse} its vibrations are.
 
 More ropes beyond $N = 5$ threaten $K_5$ formation $\to$ absorbed by the strong force (Kuratowski contraction).
 
-\textbf{Why ``Inertia''?} Think of the hammock as a road that a random walker must cross. The walker enters at one pole (tree) and exits at the other. With 3 ropes, the walker has 3 parallel paths and crosses quickly---low residence time. With 5 ropes, the walker has 5 parallel paths and the structure is deeper---higher residence time. Mass is literally \emph{how long the universe takes to process a particle}. A heavy particle is a deep hammock: more intermediate paths, more time spent inside. A light particle is a shallow hammock: few paths, quick crossing. The formula is $m \propto \tau_{\text{residence}}(K_{2,N})$---the mean first-passage time on the complete bipartite graph. This is not a metaphor. It is the definition.
+\textbf{Why ``Inertia''?} Think of the hammock as a road that a random walker must cross. The walker enters at one pole (tree) and exits at the other. Here is a surprising fact: the time to simply \emph{cross} the hammock (reach the other tree) is the same whether the hammock has 3 ropes or 300. This is because all ropes lead equally to both trees---the walker's chance of reaching the exit on any given step is always 50/50, no matter how many ropes exist. This is the $K_{2,N}$ hitting-time theorem: $E[T] = 4$ steps, independent of $N$.
+
+But a particle is not just crossing---it must \emph{check every rope} before exiting. Think of a postman who must deliver a letter to every house on the street before going home. With 3 houses: easy. With 20 houses: much harder, because the last few houses are hard to find (the postman keeps visiting houses he has already delivered to). This is the \textbf{coupon-collector problem}, and the time grows as $N \ln N$---not just $N$, but $N$ times a growing penalty.
+
+Mass is literally \emph{how long the universe takes to fully process a particle}---the time to visit every rope, not just to cross the hammock. The formula is $m \propto \tau_{\text{cover}}(K_{2,N}) = N \cdot H_N \approx N \ln N$, where $H_N$ is the harmonic number ($1 + \tfrac{1}{2} + \tfrac{1}{3} + \cdots + \tfrac{1}{N}$). This is the \textbf{cover time}, not the crossing time. A heavy particle is a deep hammock: more ropes to check, more time spent inside. A light particle is a shallow hammock: few ropes, quick coverage.
+
+The simulation confirms this: at $N = 5{,}000$, Generation~3 particles (the heaviest) take 18\% longer to achieve full coverage than Generation~1 particles (the lightest). The mass hierarchy of the Standard Model emerges from a postman's route on a bipartite graph.
 
 \textbf{CPT Reversal:} Flipping the hammock upside-down (swapping which tree is ``past'' and which is ``future'') gives you antimatter (positron, antimuon, antitau) with the same mass but opposite charge.
 
-\textbf{The Lesson:} Mass is topological inertia. Heavier particles aren't ``heavier stuff''---they have more parallel causal paths connecting their poles, and the universe takes longer to traverse them.
+\textbf{The Lesson:} Mass is topological inertia. Heavier particles aren't ``heavier stuff''---they have more ropes that the universe must check before letting the particle move on. The last rope is always the hardest to find.
 \end{thoughtexp}
 
 \begin{figure}[ht]
@@ -656,7 +662,7 @@ The universe runs in $O(N)$---linear time---because \emph{physics is local}. Eve
 
 \textbf{1. The Geometry of Order} (Why space works): Take a random pile of events. Remove every redundant connection (Transitive Reduction). What remains is not chaos---it is a perfect 4D vacuum with Lorentz invariance built in. Empty space is the skeleton that survives redundancy removal.
 
-\textbf{2. The Geometry of Matter} (Why stuff exists): In that skeleton, the only structure that can form without breaking the rules is the Causal Prism---two poles connected by $N$ parallel paths. That is a particle. The number $N$ is its mass. An electron has 3 ropes. A muon has 4. A tau has 5. Mass is counting.
+\textbf{2. The Geometry of Matter} (Why stuff exists): In that skeleton, the only structure that can form without breaking the rules is the Causal Prism---two poles connected by $N$ parallel paths. That is a particle. The number $N$ is its static mass. The dynamical mass---how long the universe takes to fully process the particle---grows as $N \ln N$ (the cover time). An electron has 3 ropes. A muon has 4. A tau has 5. Mass is counting.
 
 \textbf{3. The Geometry of Logic} (Why it all fits together): The universe processes $10^{80}$ particles in real time because each event only talks to $\sim$10 neighbours. This is not a coincidence---it is because Hasse links have bounded range ($\tau \le 8$). If the universe were non-local, it could not exist at this scale. Locality is not just a feature of physics; it is the \emph{reason physics is computable}.
 
