@@ -32,6 +32,9 @@
 //! | `Flux_Attr_std` | Std dev of flux attraction | probability |
 //! | `Flux_Repu_std` | Std dev of flux repulsion | probability |
 
+use crate::measurement::{
+    HalfLifeResult, ModuloPathResult, TraversalMassResult, VacuumPolResult,
+};
 use crate::skyrmion::TopologySummary;
 use crate::spectral::SpectralResult;
 use std::io::Write;
@@ -201,6 +204,163 @@ pub fn export_mass_spectrum(
     let _ = writeln!(file, "intermediates_N,frequency");
     for &(n, freq) in histogram {
         let _ = writeln!(file, "{n},{freq}");
+    }
+    println!("  Saved {path}");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Measurement CSV Writers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Export traversal mass ratios (M1).
+pub fn write_traversal_mass_csv(path: &str, result: &TraversalMassResult, metadata: &str) {
+    let mut file = match std::fs::File::create(path) {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("  Failed to create {path}: {e}");
+            return;
+        }
+    };
+
+    for line in metadata.lines() {
+        let _ = writeln!(file, "# {line}");
+    }
+
+    let _ = writeln!(file, "generation,mean_traversal,n_traversals,ratio_to_gen1");
+    for g in 0..3 {
+        let ratio = if g == 0 {
+            1.0
+        } else if result.mean_traversal[0] > 0.0 {
+            result.mean_traversal[g] / result.mean_traversal[0]
+        } else {
+            0.0
+        };
+        let _ = writeln!(
+            file,
+            "{},{:.4},{},{:.4}",
+            g + 1,
+            result.mean_traversal[g],
+            result.n_traversals[g],
+            ratio
+        );
+    }
+    println!("  Saved {path}");
+}
+
+/// Export half-life census (M2).
+pub fn write_half_life_csv(path: &str, result: &HalfLifeResult, metadata: &str) {
+    let mut file = match std::fs::File::create(path) {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("  Failed to create {path}: {e}");
+            return;
+        }
+    };
+
+    for line in metadata.lines() {
+        let _ = writeln!(file, "# {line}");
+    }
+    let _ = writeln!(
+        file,
+        "# stability_ratio_gen2: {:.6}",
+        result.stability_ratio_gen2
+    );
+    let _ = writeln!(
+        file,
+        "# stability_ratio_gen3: {:.6}",
+        result.stability_ratio_gen3
+    );
+    let _ = writeln!(
+        file,
+        "# gen_counts: gen1={} gen2={} gen3={} anti1={}",
+        result.gen_counts[0], result.gen_counts[1], result.gen_counts[2], result.gen_counts[3]
+    );
+
+    let _ = writeln!(file, "belly_size,p_gen1,p_gen2,p_gen3");
+    for &(belly, probs) in &result.occupancy_by_belly {
+        let _ = writeln!(file, "{},{:.6},{:.6},{:.6}", belly, probs[0], probs[1], probs[2]);
+    }
+    println!("  Saved {path}");
+}
+
+/// Export modulo path integral interference data (M3).
+pub fn write_modulo_interference_csv(path: &str, result: &ModuloPathResult, metadata: &str) {
+    let mut file = match std::fs::File::create(path) {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("  Failed to create {path}: {e}");
+            return;
+        }
+    };
+
+    for line in metadata.lines() {
+        let _ = writeln!(file, "# {line}");
+    }
+    let _ = writeln!(file, "# p={} g={}", result.prime, result.root);
+    let _ = writeln!(
+        file,
+        "# total_walkers={} mean_intensity={:.6} max_intensity={:.6}",
+        result.total_walkers, result.mean_intensity, result.max_intensity
+    );
+    let _ = writeln!(
+        file,
+        "# constructive={} destructive={}",
+        result.constructive_count, result.destructive_count
+    );
+
+    let _ = writeln!(file, "node_id,n_arrivals,phase_sum,intensity,qt,qx,qy,qz");
+    for nd in &result.nodes {
+        let _ = writeln!(
+            file,
+            "{},{},{},{:.6},{:.4},{:.4},{:.4},{:.4}",
+            nd.node_id,
+            nd.n_arrivals,
+            nd.phase_sum,
+            nd.intensity,
+            nd.coords[0],
+            nd.coords[1],
+            nd.coords[2],
+            nd.coords[3]
+        );
+    }
+    println!("  Saved {path}");
+}
+
+/// Export vacuum polarization screening data (M4).
+pub fn write_vacuum_polarization_csv(path: &str, result: &VacuumPolResult, metadata: &str) {
+    let mut file = match std::fs::File::create(path) {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("  Failed to create {path}: {e}");
+            return;
+        }
+    };
+
+    for line in metadata.lines() {
+        let _ = writeln!(file, "# {line}");
+    }
+    let _ = writeln!(
+        file,
+        "# total_attempted: {}  total_rejected: {}  total_accepted: {}",
+        result.total_attempted, result.total_rejected, result.total_accepted
+    );
+    let _ = writeln!(
+        file,
+        "# mean_screening: {:.6}  bare_alpha: {:.8}  screened_alpha: {:.8}",
+        result.mean_screening, result.bare_alpha, result.screened_alpha
+    );
+
+    let _ = writeln!(
+        file,
+        "prism_idx,generation,n_attempted,n_rejected,n_accepted,local_screening"
+    );
+    for p in &result.per_prism {
+        let _ = writeln!(
+            file,
+            "{},{},{},{},{},{:.6}",
+            p.prism_idx, p.generation, p.n_attempted, p.n_rejected_k33, p.n_accepted,
+            p.local_screening
+        );
     }
     println!("  Saved {path}");
 }

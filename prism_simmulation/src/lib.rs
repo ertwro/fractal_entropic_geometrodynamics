@@ -58,6 +58,7 @@
 pub mod anim_export;
 pub mod checkpoint;
 pub mod diamond;
+pub mod measurement;
 pub mod memory;
 pub mod output;
 pub mod skyrmion;
