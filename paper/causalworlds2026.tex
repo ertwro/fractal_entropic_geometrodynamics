@@ -14,20 +14,33 @@
 \usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
 \usepackage{enumitem}
 
-\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
-\setlength{\intextsep}{6pt plus 2pt minus 2pt}
-\setlength{\abovecaptionskip}{4pt}
+\setlength{\textfloatsep}{6pt plus 1pt minus 2pt}
+\setlength{\intextsep}{4pt plus 1pt minus 2pt}
+\setlength{\abovecaptionskip}{3pt}
 \setlength{\belowcaptionskip}{0pt}
 \renewcommand{\topfraction}{0.9}
-\renewcommand{\textfraction}{0.08}
+\renewcommand{\textfraction}{0.06}
 \renewcommand{\floatpagefraction}{0.7}
 
 \AtBeginDocument{%
-  \abovedisplayskip=6pt plus 2pt minus 3pt
-  \belowdisplayskip=6pt plus 2pt minus 3pt
-  \abovedisplayshortskip=3pt plus 1pt minus 1pt
-  \belowdisplayshortskip=4pt plus 2pt minus 2pt
+  \abovedisplayskip=4pt plus 2pt minus 3pt
+  \belowdisplayskip=4pt plus 2pt minus 3pt
+  \abovedisplayshortskip=2pt plus 1pt minus 1pt
+  \belowdisplayshortskip=3pt plus 1pt minus 2pt
+  \setlength{\parskip}{0pt plus 0.5pt}
+  \setlength{\abovedisplayskip}{4pt plus 2pt minus 3pt}
+  \setlength{\belowdisplayskip}{4pt plus 2pt minus 3pt}
+  \setlength{\floatsep}{5pt plus 1pt minus 2pt}
+  \setlength{\dblfloatsep}{5pt plus 1pt minus 2pt}
 }
+
+% Squeeze two extra lines: shrink before/after section heads
+\makeatletter
+\def\sec@upcase#1{\uppercase{#1}}
+\renewcommand\section{\@startsection{section}{1}{\z@}%
+  {-2.0ex \@plus -0.5ex \@minus -.2ex}{0.6ex \@plus .1ex}%
+  {\normalfont\small\bfseries\centering\sec@upcase}}
+\makeatother
 
 \begin{document}
 
