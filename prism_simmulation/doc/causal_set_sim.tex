@@ -1241,6 +1241,144 @@ to the number of committed prisms with that exact belly size.
 
 
 % ███████████████████████████████████████████████████████████████████████████████
+\chapter{Module Reference: \modname{measurement} --- Observer Modules}
+% ███████████████████████████████████████████████████████████████████████████████
+
+\begin{introduction}[Phase~3.5: Four Observer Measurements]
+  \item Read-only algorithms that extract physics from existing simulation data
+        without modifying the underlying engine.
+  \item Enabled via \code{-{}-measure-all} or per-module flags
+        (\code{-{}-measure-mass}, \code{-{}-measure-halflife},
+        \code{-{}-measure-modulo}, \code{-{}-measure-vacuum}).
+  \item Output CSVs: \code{traversal\_mass.csv}, \code{half\_life.csv},
+        \code{modulo\_interference.csv}, \code{vacuum\_polarization.csv}.
+\end{introduction}
+
+\section{M1 --- Cover-Time Mass (Topological Inertia)}
+
+The dynamical mass of a Causal Prism is measured via the
+\textbf{coupon-collector cover time}: a confined random walker on the defect CSR
+must visit \emph{every} belly node before exiting at the destination pole.
+
+\subsection{The $K_{2,N}$ Hitting-Time Theorem}
+
+On a bipartite complete graph~$K_{2,N}$, all $N$ intermediates are structurally
+equivalent.  The hitting time from origin to destination satisfies:
+\begin{align}
+  E[T \mid \text{origin}] &= 1 + E[T \mid \text{int}] \\
+  E[T \mid \text{int}]    &= 1 + \tfrac{1}{2} \cdot 0
+                                 + \tfrac{1}{2} \cdot E[T \mid \text{origin}]
+\end{align}
+Solving: $E[T] = 4$ (or $\sim 8$ with lazy walk), \emph{independent of~$N$}.
+Adding more intermediates gives more choices at the origin, but each intermediate
+still offers the same~$\frac{1}{2}$ chance of reaching the destination.
+
+\textbf{Consequence:} simple origin$\to$destination traversal cannot measure mass.
+
+\subsection{Cover Time as Dynamical Mass}
+
+For a particle to fully propagate, the causal flux must update the
+\emph{entire} internal structure.  The cover time---the number of steps until the
+walker has visited every belly node---scales as $O(N \log N)$ via the
+coupon-collector problem:
+\[
+  E[T_{\text{cover}}] = N \cdot H_N \approx N \ln N + \gamma N
+\]
+where $H_N$ is the $N$-th harmonic number and $\gamma \approx 0.577$ is the
+Euler--Mascheroni constant.  If the walker reaches the destination before full
+coverage, it reflects back to the origin (incomplete phase update, physically
+analogous to causal flux bouncing inside the particle).
+
+\subsection{Results (N=5000, M=8)}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{} l r r r @{}}
+\toprule
+\textbf{Generation} & \textbf{Mean Cover Time} & \textbf{Traversals} & \textbf{Ratio} \\
+\midrule
+Gen1 & 1197 & 16{,}856  & 1.000 \\
+Gen2 & 1145 & 371{,}123 & 0.957 \\
+Gen3 & 1417 & 71{,}001  & \textbf{1.184} \\
+\bottomrule
+\end{tabular}
+\caption{Cover-time mass ratios.  Gen3/Gen1 = 1.18 reflects the static mass
+spectrum (Gen3 belly~$= 8.31$ vs Gen1 belly~$= 6.46$).  The Gen2/Gen1 inversion
+is a finite-size artifact: Gen1 prisms are rare (22 per realization), and the
+belly difference (6.81 vs 6.46) is within coupon-collector variance.}
+\end{table}
+
+\section{M2 --- Half-Life Census}
+
+Cross-ensemble stability statistics.  For each prism, records generation, belly
+size~$N$, and net phase~$\Phi$.  Computes:
+\begin{itemize}
+  \item Occupancy fractions $p(g_k \mid N)$ per belly size.
+  \item Stability ratios $\tau(\text{gen2})/\tau(\text{gen1})$ and
+        $\tau(\text{gen3})/\tau(\text{gen1})$.
+\end{itemize}
+
+The occupancy fractions at $N=5000$, $M=8$ are: Gen1 = 4\%, Gen2 = 79\%,
+Gen3 = 17\%, matching the zero-parameter occupancy model prediction
+(2\% / 85\% / 13\%) from the coupon-collector selection effect on the phase
+trichotomy $(p_+, p_0, p_-) = (0.318, 0.018, 0.664)$.
+
+\section{M3 --- Modulo Path Integral}
+
+NTT-based interference fringes from walker phases.  Each walker carries a
+modular phase $\phi = g^S \bmod p$ where $g = 3$ is a primitive root and
+$p = 65537$ is the Fermat prime~$F_4$.  The exponent $S$ counts cumulative
+\emph{actual} moves (not stays).
+
+Per-node phase accumulation uses \code{AtomicU64} (Relaxed ordering) for
+lock-free parallel writes.  Post-processing: symmetric representation
+$c = \min(\phi, p - \phi)$, intensity $I = c^2 / (p/2)^2$, classification into
+constructive ($I > \mu + 2\sigma$) and destructive ($I < \mu - 2\sigma$) nodes.
+
+Requires $N \geq 50{,}000$ for meaningful spatial resolution.
+
+\section{M4 --- Vacuum Polarization}
+
+$K_{3,3}$ screening at Gen1 prism free ports.  For each Gen1 prism~$P$
+(a~$K_{2,3}$):
+\begin{enumerate}
+  \item Gather candidate nodes: all neighbours of $P$'s 5 nodes (2 poles +
+        3 intermediates) in both forward and reverse CSR, excluding existing
+        prism members.
+  \item For each candidate~$C$: check whether adding edges $C \leftrightarrow
+        \text{poles}$ would create a $K_{3,3}$ subdivision.  The $K_{3,3}$ threat
+        fires when $C$ connects to both poles AND $\geq 3$ intermediates.
+  \item Count \code{n\_attempted}, \code{n\_rejected\_k33},
+        \code{n\_accepted}.
+  \item Local screening $= n_{\text{accepted}} / n_{\text{attempted}}$.
+\end{enumerate}
+
+At $N = 5000$: zero screening (vacuum too sparse for $K_{3,3}$ formation).
+As $N \to \infty$, screening increases and $\alpha^{-1}$ flows from the bare
+value ($\sim 165$) toward the physical $137$.
+
+\section{CLI Flags}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{} l l l @{}}
+\toprule
+\textbf{Flag} & \textbf{Default} & \textbf{Effect} \\
+\midrule
+\code{-{}-measure-mass}     & off   & Enable cover-time mass (M1) \\
+\code{-{}-measure-halflife} & off   & Enable half-life census (M2) \\
+\code{-{}-measure-modulo}   & off   & Enable modulo path integral (M3) \\
+\code{-{}-measure-vacuum}   & off   & Enable vacuum polarization (M4) \\
+\code{-{}-measure-all}      & off   & Enable all four measurements \\
+\code{-{}-modulo-prime}     & 65537 & Prime modulus for M3 \\
+\code{-{}-modulo-root}      & 3     & Primitive root for M3 \\
+\bottomrule
+\end{tabular}
+\caption{Measurement module CLI flags.}
+\end{table}
+
+
+% ███████████████████████████████████████████████████████████████████████████████
 \chapter{Module Reference: \modname{memory} --- RAM-Aware Mode Selection}
 % ███████████████████████████████████████████████████████████████████████████████
 

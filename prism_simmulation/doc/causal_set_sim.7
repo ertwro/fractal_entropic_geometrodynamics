@@ -27,6 +27,13 @@ causal_set_sim \- Kuratowski Calculus engine for Fractal Entropic Geometrodynami
 .RB [ "\-\-batch\-size " usize ]
 .RB [ \-\-resume ]
 .RB [ "\-\-export\-slice " PATH ]
+.RB [ \-\-measure\-mass ]
+.RB [ \-\-measure\-halflife ]
+.RB [ \-\-measure\-modulo ]
+.RB [ \-\-measure\-vacuum ]
+.RB [ \-\-measure\-all ]
+.RB [ "\-\-modulo\-prime " u64 ]
+.RB [ "\-\-modulo\-root " u64 ]
 .RB [ \-\-help ]
 .\" ─────────────────────────────────────────────────────────────────────
 .SH DESCRIPTION
@@ -594,6 +601,66 @@ Flux_Attr_std|Std dev of flux attraction|probability
 Flux_Repu_std|Std dev of flux repulsion|probability
 .TE
 .\" ─────────────────────────────────────────────────────────────────────
+.SS "measurement \(em Phase 3.5: Observer Modules"
+Four read-only measurement algorithms that extract physics from
+existing simulation data.  All measurements are optional and
+activated via CLI flags (\fB\-\-measure\-all\fR or per-module flags).
+.TP
+.B "M1 \(em Cover-Time Mass (Topological Inertia)"
+Measures the dynamical mass of each Causal Prism via coupon-collector
+cover time on the defect CSR.  A confined random walker must visit
+\fBevery\fR belly node before exiting at the destination pole.  Cover
+time scales as O(N\~log\~N) \(em heavier generations (larger bellies)
+require more causal ticks for full internal phase coherence.  If the
+walker reaches the destination before full coverage, it reflects back
+to the origin (incomplete phase update).  The K\d2,N\u hitting-time
+theorem proves that simple origin\(->\~destination traversal is O(1)
+regardless of N; cover time is the correct dynamical mass observable.
+.TP
+.B "M2 \(em Half-Life Census"
+Cross-ensemble stability statistics.  For each prism, records
+generation, belly size, and net phase.  Computes occupancy fractions
+p(gen\dk\u\~|\~N) per belly size and stability ratios
+\(*t(gen2)/\(*t(gen1), \(*t(gen3)/\(*t(gen1).  At N=5000, M=8:
+occupancy fractions 4%/79%/17% match the zero-parameter occupancy
+model prediction (2%/85%/13%).
+.TP
+.B "M3 \(em Modulo Path Integral"
+NTT-based interference fringes from walker phases.  Walkers carry a
+modular phase g\uS\d\~mod\~p (default: g=3, p=65537) where S counts
+cumulative moves.  Per-node phase accumulation via AtomicU64.
+Post-processing computes intensity (squared centred phase), classifies
+constructive/destructive nodes.  Requires N\~\(>=\~50k for spatial
+resolution.
+.TP
+.B "M4 \(em Vacuum Polarization"
+K\d3,3\u screening at Gen1 prism free ports.  For each Gen1 prism,
+counts candidate nodes that could extend it to K\d3,3\u (connecting to
+both poles AND \(>=\~3 intermediates).  Screening factor =
+n\daccepted\u\~/\~n\dattempted\u.  At N=5000: zero screening (vacuum
+too sparse for K\d3,3\u), which is the correct finite-size behaviour.
+.PP
+.B MeasurementResult
+aggregate struct:
+.B traversal
+(Option<TraversalMassResult>),
+.B half_life
+(Option<HalfLifeResult>),
+.B modulo
+(Option<ModuloPathResult>),
+.B vacuum_pol
+(Option<VacuumPolResult>).
+.PP
+Output files (when enabled):
+.B traversal_mass.csv
+(cover-time mass ratios per generation),
+.B half_life.csv
+(occupancy fractions and stability ratios),
+.B modulo_interference.csv
+(per-node phase accumulation),
+.B vacuum_polarization.csv
+(per-prism screening factors).
+.\" ─────────────────────────────────────────────────────────────────────
 .SS "memory \(em RAM-Aware Mode Selection"
 Detects available system RAM, estimates memory requirements, and
 recommends in-memory or streaming mode.
@@ -709,6 +776,27 @@ walkers, no ensemble averaging).  The output contains 4D coordinates,
 directed Hasse edges (past\~\(->\~future), and Causal Prism definitions.
 Intended for feeding pre-computed topology data to external renderers
 such as CausalAnim.
+.TP
+.B \-\-measure\-mass
+Enable cover-time mass ratios (M1).
+.TP
+.B \-\-measure\-halflife
+Enable half-life census (M2).
+.TP
+.B \-\-measure\-modulo
+Enable modulo path integral (M3).
+.TP
+.B \-\-measure\-vacuum
+Enable vacuum polarization (M4).
+.TP
+.B \-\-measure\-all
+Enable all four measurement modules.
+.TP
+.BI "\-\-modulo\-prime " u64
+Prime modulus for M3 (Fermat number).  Default: 65537 (F\d4\u).
+.TP
+.BI "\-\-modulo\-root " u64
+Primitive root for M3.  Default: 3.
 .TP
 .B \-\-help
 Show usage information and exit.

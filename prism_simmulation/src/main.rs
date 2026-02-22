@@ -14,6 +14,7 @@
 
 use causal_set_sim::checkpoint;
 use causal_set_sim::diamond;
+use causal_set_sim::measurement;
 use causal_set_sim::memory::{self, ExecMode};
 use causal_set_sim::output;
 use causal_set_sim::skyrmion;
@@ -51,6 +52,24 @@ const DEFAULT_BATCH_SIZE: usize = 4;
 const DEFAULT_MIN_ENSEMBLE: usize = 8;
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Measurement flags
+// ─────────────────────────────────────────────────────────────────────────────
+
+struct MeasureFlags {
+    mass: bool,
+    halflife: bool,
+    modulo: bool,
+    vacuum: bool,
+    modulo_config: measurement::ModuloConfig,
+}
+
+impl MeasureFlags {
+    fn any_active(&self) -> bool {
+        self.mass || self.halflife || self.modulo || self.vacuum
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Single realisation
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -68,7 +87,9 @@ fn run_realization(
     steps: &[u32],
     walkers: usize,
     eigen_cutoff: usize,
-) -> (SpectralResult, SpectralResult, skyrmion::TopologySummary) {
+    measure: &MeasureFlags,
+) -> (SpectralResult, SpectralResult, skyrmion::TopologySummary,
+      Option<measurement::MeasurementResult>) {
     let mut rng = StdRng::seed_from_u64(seed);
 
     // Phase 1
@@ -81,7 +102,22 @@ fn run_realization(
 
     // Phase 2 — Kuratowski contraction + particle classification
     println!("  [In-Memory] Phase 1 CSR: {} edges", vac_data.len());
-    let (mut defect, topology, _prisms) = skyrmion::apply_defect(n_points, vac_head, vac_data, momentum);
+    let momentum_clone = if measure.halflife { momentum.clone() } else { vec![] };
+    let (mut defect, topology, prisms) = skyrmion::apply_defect(n_points, vac_head, vac_data, momentum);
+
+    // ── Measurements M2 + M4 (need defect.vac_head/vac_data, before drop) ──
+    let half_life_result = if measure.halflife {
+        println!("  [M2] Half-life census...");
+        Some(measurement::measure_half_life_census(&prisms, &defect, &momentum_clone))
+    } else {
+        None
+    };
+    let vacuum_pol_result = if measure.vacuum {
+        println!("  [M4] Vacuum polarization...");
+        Some(measurement::measure_vacuum_polarization(n_points, &defect, &prisms, topology.alpha_em))
+    } else {
+        None
+    };
 
     // Phase 3a — vacuum + defect spectral dimensions
     //
@@ -172,6 +208,27 @@ fn run_realization(
             )
         };
         (vac, def)
+    };
+
+    // ── Measurements M1 (defect CSR, prism-confined) + M3 (symmetric vac CSR) ──
+    let traversal_result = if measure.mass {
+        println!("  [M1] Traversal mass ratios (prism-confined)...");
+        Some(measurement::measure_traversal_mass(
+            n_points, &defect.def_head, &defect.def_data, &defect, &prisms,
+            walkers, *steps.last().unwrap(), seed.wrapping_add(700),
+        ))
+    } else {
+        None
+    };
+    let modulo_result = if measure.modulo {
+        println!("  [M3] Modulo path integral...");
+        Some(measurement::measure_modulo_interference(
+            n_points, &sym_vac_head, &sym_vac_data, &pts,
+            walkers, *steps.last().unwrap(), seed.wrapping_add(800),
+            &defect.merge_into, &measure.modulo_config,
+        ))
+    } else {
+        None
     };
 
     // Free symmetric vacuum CSR — no longer needed after spectral computation.
@@ -290,7 +347,18 @@ fn run_realization(
     def.mass_gen3 = defect.mass_gen3;
     def.mass_anti1 = defect.mass_anti1;
 
-    (vac, def, topology)
+    let measurement = if measure.any_active() {
+        Some(measurement::MeasurementResult {
+            traversal: traversal_result,
+            half_life: half_life_result,
+            modulo: modulo_result,
+            vacuum_pol: vacuum_pol_result,
+        })
+    } else {
+        None
+    };
+
+    (vac, def, topology, measurement)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -570,7 +638,13 @@ fn print_usage() {
     eprintln!("  --target-error <F>   Relative SE target for convergence (default: 0.01)");
     eprintln!("  --resume             Resume from last checkpoint (skips completed batches)");
     eprintln!("  --export-slice <PATH>  Export topology slice (single realization, no ensemble)");
-    eprintln!("  --export-lightcone <PATH>  Export 4-layer BFS light cone CSV for BD/RMT analysis");
+    eprintln!("  --measure-mass       Enable traversal mass ratios (M1)");
+    eprintln!("  --measure-halflife   Enable half-life census (M2)");
+    eprintln!("  --measure-modulo     Enable modulo path integral (M3)");
+    eprintln!("  --measure-vacuum     Enable vacuum polarization (M4)");
+    eprintln!("  --measure-all        Enable all 4 measurements");
+    eprintln!("  --modulo-prime <u64> Prime modulus for M3 (default: 65537)");
+    eprintln!("  --modulo-root <u64>  Primitive root for M3 (default: 3)");
     eprintln!("  --help               Show this help message");
     eprintln!();
     eprintln!("Convergence: runs batches until rel. standard error on mass_gen1 drops");
@@ -609,7 +683,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut parsed_min_ensemble: Option<usize> = None;
     let mut parsed_target_error: Option<f64> = None;
     let mut export_slice_path: Option<String> = None;
-    let mut export_lightcone_path: Option<String> = None;
+    let mut parsed_modulo_prime: Option<u64> = None;
+    let mut parsed_modulo_root: Option<u64> = None;
     for pair in args.windows(2) {
         if pair[0] == "--epsilon" {
             if let Ok(v) = pair[1].parse::<f64>() { epsilon = v; }
@@ -641,8 +716,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if pair[0] == "--export-slice" {
             export_slice_path = Some(pair[1].clone());
         }
-        if pair[0] == "--export-lightcone" {
-            export_lightcone_path = Some(pair[1].clone());
+        if pair[0] == "--modulo-prime" {
+            if let Ok(v) = pair[1].parse::<u64>() { parsed_modulo_prime = Some(v); }
+        }
+        if pair[0] == "--modulo-root" {
+            if let Ok(v) = pair[1].parse::<u64>() { parsed_modulo_root = Some(v); }
         }
     }
 
@@ -650,7 +728,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let value_flags: std::collections::HashSet<&str> =
         ["--epsilon", "--tmax", "--seed", "--threads", "--eigen-cutoff", "--batch-size",
          "--max-ensemble", "--min-ensemble", "--target-error", "--export-slice",
-         "--export-lightcone"]
+         "--modulo-prime", "--modulo-root"]
         .iter().copied().collect();
 
     // Parse positional args (skip flags and their values)
@@ -681,6 +759,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ── Seed + Eigen cutoff ──────────────────────────────────────────
     let seed_base: u64 = parsed_seed.unwrap_or_else(default_seed);
     let eigen_cutoff: usize = parsed_eigen_cutoff.unwrap_or(DEFAULT_EIGEN_CUTOFF);
+
+    // ── Measurement flags ──────────────────────────────────────────────
+    let measure_all = args.iter().any(|a| a == "--measure-all");
+    let measure = MeasureFlags {
+        mass: measure_all || args.iter().any(|a| a == "--measure-mass"),
+        halflife: measure_all || args.iter().any(|a| a == "--measure-halflife"),
+        modulo: measure_all || args.iter().any(|a| a == "--measure-modulo"),
+        vacuum: measure_all || args.iter().any(|a| a == "--measure-vacuum"),
+        modulo_config: measurement::ModuloConfig {
+            prime: parsed_modulo_prime.unwrap_or(65537),
+            root: parsed_modulo_root.unwrap_or(3),
+        },
+    };
+
+    if measure.any_active() {
+        let active: Vec<&str> = [
+            if measure.mass { Some("M1:mass") } else { None },
+            if measure.halflife { Some("M2:halflife") } else { None },
+            if measure.modulo { Some("M3:modulo") } else { None },
+            if measure.vacuum { Some("M4:vacuum") } else { None },
+        ].iter().filter_map(|&x| x).collect();
+        println!("  measurements: {}", active.join(", "));
+        if measure.modulo {
+            println!("  modulo config: p={}, g={}", measure.modulo_config.prime, measure.modulo_config.root);
+        }
+    }
 
     println!("  seed: {seed_base}{}",
         if parsed_seed.is_some() { " (deterministic)" } else { " (system clock)" });
@@ -847,16 +951,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build()
         .unwrap();
 
-    let run_one = |i: usize| -> (SpectralResult, SpectralResult, skyrmion::TopologySummary) {
+    let run_one = |i: usize| -> (SpectralResult, SpectralResult, skyrmion::TopologySummary,
+                                   Option<measurement::MeasurementResult>) {
         let seed = seed_base + i as u64;
 
         let result = if exec_mode == ExecMode::Streaming {
             // Sparse scan: no disk I/O, HashMap grid instead of dense arrays
             let chunk_size = 1_000_000;
-            skyrmion::process_streaming(n_points, chunk_size, seed, &steps, walkers)
-                .expect("Sparse streaming failed")
+            let (v, d, t) = skyrmion::process_streaming(n_points, chunk_size, seed, &steps, walkers)
+                .expect("Sparse streaming failed");
+            (v, d, t, None) // measurements not supported in streaming mode
         } else {
-            run_realization(n_points, seed, &steps, walkers, eigen_cutoff)
+            run_realization(n_points, seed, &steps, walkers, eigen_cutoff, &measure)
         };
 
         let completed = done.fetch_add(1, Ordering::Relaxed) + 1;
@@ -894,6 +1000,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut spectral_pairs: Vec<(SpectralResult, SpectralResult)> =
         Vec::with_capacity(max_ensemble);
     let mut topo_vec: Vec<skyrmion::TopologySummary> =
+        Vec::with_capacity(max_ensemble);
+    let mut measure_vec: Vec<measurement::MeasurementResult> =
         Vec::with_capacity(max_ensemble);
     let mut welford_mean: f64 = 0.0;
     let mut welford_m2: f64 = 0.0;
@@ -942,7 +1050,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("  \u{2500}\u{2500} Batch (realizations {}-{}/{}) \u{2500}\u{2500}",
             current + 1, batch_end, max_ensemble);
 
-        let batch_results: Vec<(SpectralResult, SpectralResult, skyrmion::TopologySummary)> =
+        let batch_results: Vec<(SpectralResult, SpectralResult, skyrmion::TopologySummary,
+                                Option<measurement::MeasurementResult>)> =
             pool.install(|| {
                 chunk.par_iter()
                     .with_max_len(1)
@@ -965,10 +1074,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         // Drain batch: Welford update + checkpoint after EACH realization
-        for (vac, def, topo) in batch_results {
+        for (vac, def, topo, meas) in batch_results {
             let x = def.mass_gen1;
             spectral_pairs.push((vac, def));
             topo_vec.push(topo);
+            if let Some(m) = meas {
+                measure_vec.push(m);
+            }
 
             // Welford online update
             let count = spectral_pairs.len();
@@ -1053,6 +1165,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 &format!("{output_dir}/mass_spectrum_M{count:02}.csv"),
                 &snap_topo.prism_histogram, &snap_meta,
             );
+            // Measurement snapshots
+            if !measure_vec.is_empty() {
+                let meas_agg = measurement::aggregate_measurements(&measure_vec);
+                if let Some(ref t) = meas_agg.traversal {
+                    output::write_traversal_mass_csv(
+                        &format!("{output_dir}/traversal_mass_M{count:02}.csv"), t, &snap_meta);
+                }
+                if let Some(ref h) = meas_agg.half_life {
+                    output::write_half_life_csv(
+                        &format!("{output_dir}/half_life_M{count:02}.csv"), h, &snap_meta);
+                }
+                if let Some(ref m) = meas_agg.modulo {
+                    output::write_modulo_interference_csv(
+                        &format!("{output_dir}/modulo_interference_M{count:02}.csv"), m, &snap_meta);
+                }
+                if let Some(ref v) = meas_agg.vacuum_pol {
+                    output::write_vacuum_polarization_csv(
+                        &format!("{output_dir}/vacuum_polarization_M{count:02}.csv"), v, &snap_meta);
+                }
+            }
             println!("  [snapshot] wrote *_M{count:02}.csv ({count} realizations, {elapsed}s)");
         }
 
@@ -1068,6 +1200,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (vac_avg, def_avg) = average_ensemble(&spectral_pairs, &steps);
     drop(spectral_pairs); // free accumulator before Phase 4 output
     let topo_agg = aggregate_topology(&topo_vec);
+    let meas_agg = if !measure_vec.is_empty() {
+        Some(measurement::aggregate_measurements(&measure_vec))
+    } else {
+        None
+    };
+    drop(measure_vec);
 
     // ── Phase 4 ─────────────────────────────────────────────────────────
     println!("\n[Phase 4] Output …");
@@ -1127,6 +1265,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         &format!("{output_dir}/mass_spectrum.csv"), &topo_agg.prism_histogram, &metadata,
     );
 
+    // ── Measurement CSV output ──────────────────────────────────────────
+    if let Some(ref meas) = meas_agg {
+        if let Some(ref t) = meas.traversal {
+            output::write_traversal_mass_csv(
+                &format!("{output_dir}/traversal_mass.csv"), t, &metadata);
+        }
+        if let Some(ref h) = meas.half_life {
+            output::write_half_life_csv(
+                &format!("{output_dir}/half_life.csv"), h, &metadata);
+        }
+        if let Some(ref m) = meas.modulo {
+            output::write_modulo_interference_csv(
+                &format!("{output_dir}/modulo_interference.csv"), m, &metadata);
+        }
+        if let Some(ref v) = meas.vacuum_pol {
+            output::write_vacuum_polarization_csv(
+                &format!("{output_dir}/vacuum_polarization.csv"), v, &metadata);
+        }
+    }
+
     // Keep checkpoint for --resume accumulation across runs.
     // CSV and checkpoint coexist; checkpoint is never deleted.
 
@@ -1163,6 +1321,36 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "  Gen1 = {:.2}, Gen2 = {:.2}, Gen3 = {:.2}, Anti1 = {:.2}",
         def_avg.mass_gen1, def_avg.mass_gen2, def_avg.mass_gen3, def_avg.mass_anti1
     );
+    if let Some(ref meas) = meas_agg {
+        if let Some(ref t) = meas.traversal {
+            println!("  ── Traversal Mass Ratios ──");
+            println!("  Gen1: {:.2} ({} traversals), Gen2: {:.2} ({} traversals), Gen3: {:.2} ({} traversals)",
+                t.mean_traversal[0], t.n_traversals[0],
+                t.mean_traversal[1], t.n_traversals[1],
+                t.mean_traversal[2], t.n_traversals[2]);
+            println!("  ratio gen2/gen1 = {:.4}, gen3/gen1 = {:.4}",
+                t.ratio_gen2_gen1, t.ratio_gen3_gen1);
+        }
+        if let Some(ref h) = meas.half_life {
+            println!("  ── Half-Life Census ──");
+            println!("  Prisms: gen1={}, gen2={}, gen3={}, anti1={}",
+                h.gen_counts[0], h.gen_counts[1], h.gen_counts[2], h.gen_counts[3]);
+            println!("  stability gen2/gen1 = {:.4}, gen3/gen1 = {:.4}",
+                h.stability_ratio_gen2, h.stability_ratio_gen3);
+        }
+        if let Some(ref m) = meas.modulo {
+            println!("  ── Modulo Path Integral (p={}, g={}) ──", m.prime, m.root);
+            println!("  mean_intensity = {:.6}, max = {:.6}, constructive = {}, destructive = {}",
+                m.mean_intensity, m.max_intensity, m.constructive_count, m.destructive_count);
+        }
+        if let Some(ref v) = meas.vacuum_pol {
+            println!("  ── Vacuum Polarization ──");
+            println!("  screening = {:.6}, bare_alpha = {:.8}, screened_alpha = {:.8}",
+                v.mean_screening, v.bare_alpha, v.screened_alpha);
+            println!("  attempted = {}, rejected = {}, accepted = {}",
+                v.total_attempted, v.total_rejected, v.total_accepted);
+        }
+    }
     println!("  Total time: {}", fmt_duration(elapsed));
     println!("────────────────────────────────────────────────────");
     Ok(())

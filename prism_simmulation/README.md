@@ -68,6 +68,10 @@ Electromagnetism = directed transmission probability. **Directed walkers** follo
 | Emergent Einstein eqs | `jacobson.rs` | Clausius flux, Fisher metric, alpha sweep |
 | Locality (O(N)) | `skyrmion.rs` | 2-hop traversal, bounded degree D ≤ 15 |
 | Topology export | `anim_export.rs` | `TopologySlice` → bincode `.slice` file |
+| Cover-time mass | `measurement.rs` | Coupon collector traversal on K₂,ₙ subgraph |
+| Half-life census | `measurement.rs` | Cross-ensemble generation occupancy |
+| Modulo path integral | `measurement.rs` | NTT phases g^S mod p via `AtomicU64` |
+| Vacuum polarization | `measurement.rs` | K₃,₃ screening at Gen1 free ports |
 
 ---
 
@@ -110,17 +114,21 @@ Electromagnetism = directed transmission probability. **Directed walkers** follo
                       │ SpectralResult (P, d_S, flux per category)
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    Phase 4: rmt.rs + jacobson.rs              │
-│  BD effective Hamiltonian → GUE spacing ratio, form factor   │
-│  Clausius flux → G_thermo; Bekenstein bits → G_BH            │
-│  Alpha sweep → G_BH/G_thermo = 4 (Bekenstein-Hawking)       │
-│  Fisher metric → metric signature (-,+,+,+)                  │
+│               Phase 3.5: measurement.rs                      │
+│  M1: Cover-time mass (coupon collector on K₂,ₙ belly)       │
+│  M2: Half-life census (generation occupancy by belly size)   │
+│  M3: Modulo path integral (NTT phases g^S mod p)            │
+│  M4: Vacuum polarization (K₃,₃ screening at Gen1 ports)     │
+│                                                             │
+│  Optional — enabled via --measure-all or per-module flags    │
 └─────────────────────┬───────────────────────────────────────┘
-                      │ RmtResult, JacobsonResult
+                      │ MeasurementResult (4 optional measurement structs)
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    Phase 5: output.rs                        │
-│  write_csv() → results.csv (26 columns per diffusion step)  │
+│                    Phase 4: output.rs                        │
+│  write_csv() → results.csv (32 columns per diffusion step)  │
+│  + traversal_mass.csv, half_life.csv,                       │
+│    modulo_interference.csv, vacuum_polarization.csv          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -180,7 +188,16 @@ Random walk return probability measurement.
 - **`compute_monte_carlo()`** / **`compute_monte_carlo_csr()`**: Monte Carlo P(t) from random walkers. The CSR variant avoids rebuilding adjacency when it is already available from Phase 2.
 - **`make_symmetric()`**: Converts a directed CSR (forward-only Hasse DAG) into an undirected adjacency list. Used to symmetrize the vacuum CSR before running spectral walkers, since the Hasse diagram stores only forward (past→future) edges but random walkers need to step in both directions.
 
-### `rmt.rs` — Phase 4a: Random Matrix Theory (GUE)
+### `measurement.rs` — Phase 3.5: Observer Modules
+
+Four read-only measurement algorithms that extract physics from existing simulation data without modifying the underlying engine. All measurements are optional and activated via CLI flags.
+
+- **M1 — Cover-Time Mass (Topological Inertia)**: Measures the dynamical mass of each Causal Prism via coupon-collector cover time. A confined random walker on the defect CSR must visit **every** belly node before exiting at the destination pole. Cover time scales as O(N log N) — heavier generations (larger bellies) require more causal ticks to achieve full internal phase coherence. If the walker reaches the destination before full coverage, it reflects back to the origin (incomplete phase update). At N=5000, M=8: Gen3/Gen1 ratio = 1.18, consistent with the static mass hierarchy (8.31/6.46 = 1.29). The K₂,ₙ hitting-time theorem proves that simple origin→destination traversal is O(1) regardless of N — the cover-time observable is the correct dynamical mass measurement.
+- **M2 — Half-Life Census**: Cross-ensemble stability statistics. For each prism, records generation, belly size, and net phase. Computes occupancy fractions p(gen_k | N) per belly size and stability ratios τ(gen2)/τ(gen1), τ(gen3)/τ(gen1). At N=5000, M=8: fractions 4%/79%/17% match the zero-parameter occupancy model prediction of 2%/85%/13%.
+- **M3 — Modulo Path Integral**: NTT-based interference fringes from walker phases. Walkers carry a modular phase g^S mod p (default: g=3, p=65537) where S counts cumulative moves. Per-node phase accumulation via `AtomicU64`. Post-processing computes intensity (squared centered phase), classifies constructive/destructive nodes. Requires N ≥ 50k for spatial resolution.
+- **M4 — Vacuum Polarization**: K₃,₃ screening at Gen1 prism free ports. For each Gen1 prism, counts candidate nodes that could extend it to K₃,₃ (connecting to both poles AND ≥ 3 intermediates). Screening factor = n_accepted / n_attempted. At N=5000: zero screening (vacuum too sparse for K₃,₃), which is the correct finite-size behaviour.
+
+### `output.rs` — Phase 4: CSV Serialisation
 
 Constructs the Benincasa-Dowker effective Hamiltonian from the directed Hasse diagram and computes GUE spectral statistics.
 
@@ -283,6 +300,18 @@ cargo run --release -- 10000000 20 --inmemory --threads 16
 cargo run --release -- 5000 10 --inmemory --eigen-cutoff 5000
 ```
 
+### Run with all measurements enabled
+
+```bash
+cargo run --release --bin causal_set_sim -- 50000 10 --inmemory --measure-all
+```
+
+Produces additional CSVs: `traversal_mass.csv`, `half_life.csv`, `modulo_interference.csv`, `vacuum_polarization.csv`. For quick exploratory runs, combine with `--epsilon 0.1`:
+
+```bash
+cargo run --release --bin causal_set_sim -- 5000 8 --inmemory --measure-all --epsilon 0.1 --seed 42
+```
+
 ### Export topology slice for CausalAnim
 
 ```bash
@@ -314,6 +343,13 @@ cargo run --release -- 50000 10 /path/to/output
 | `--batch-size <usize>` | usize | auto | Realisations per parallel batch |
 | `--resume` | flag | — | Resume from checkpoint (reads `checkpoint.bin` in output dir) |
 | `--export-slice <PATH>` | string | — | Export topology slice (single realization, no ensemble) |
+| `--measure-mass` | flag | — | Enable cover-time mass ratios (M1) |
+| `--measure-halflife` | flag | — | Enable half-life census (M2) |
+| `--measure-modulo` | flag | — | Enable modulo path integral (M3) |
+| `--measure-vacuum` | flag | — | Enable vacuum polarization (M4) |
+| `--measure-all` | flag | — | Enable all 4 measurements |
+| `--modulo-prime <u64>` | u64 | 65537 | Prime modulus for M3 |
+| `--modulo-root <u64>` | u64 | 3 | Primitive root for M3 |
 
 ---
 

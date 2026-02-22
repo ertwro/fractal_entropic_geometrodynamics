@@ -194,6 +194,59 @@ Belly-size histogram of all Causal Prisms.
 | `intermediates_N` | Belly size n (number of intermediates, 3 to n_max) |
 | `frequency` | Number of prisms with this belly size |
 
+### `traversal_mass.csv` (when `--measure-mass` is enabled)
+
+Cover-time mass ratios per generation.
+
+| Column | Description |
+|--------|-------------|
+| `generation` | Generation number (1, 2, or 3) |
+| `mean_traversal` | Mean cover time (ticks to visit all belly nodes + reach destination) |
+| `n_traversals` | Number of completed traversals (statistical sample) |
+| `ratio_to_gen1` | Cover-time ratio relative to Generation 1 |
+
+### `half_life.csv` (when `--measure-halflife` is enabled)
+
+Cross-ensemble generation occupancy by belly size.
+
+| Column | Description |
+|--------|-------------|
+| `belly_size` | Number of intermediate nodes N |
+| `p_gen1` | Fraction of prisms with belly N classified as Gen1 |
+| `p_gen2` | Fraction classified as Gen2 |
+| `p_gen3` | Fraction classified as Gen3 |
+
+Header comments include `stability_ratio_gen2`, `stability_ratio_gen3`, and `gen_counts`.
+
+### `modulo_interference.csv` (when `--measure-modulo` is enabled)
+
+Per-node NTT phase accumulation.
+
+| Column | Description |
+|--------|-------------|
+| `node_id` | Node index |
+| `n_arrivals` | Number of walker arrivals at this node |
+| `phase_sum` | Accumulated modular phase (g^S mod p) |
+| `intensity` | Normalized squared centered phase |
+| `qt`, `qx`, `qy`, `qz` | 4D coordinates of the node |
+
+Header comments include prime, root, total walkers, mean/max intensity, constructive/destructive counts.
+
+### `vacuum_polarization.csv` (when `--measure-vacuum` is enabled)
+
+K₃,₃ screening at Gen1 prism free ports.
+
+| Column | Description |
+|--------|-------------|
+| `prism_idx` | Prism index |
+| `generation` | Generation number (always 1 for this measurement) |
+| `n_attempted` | Number of candidate nodes tested |
+| `n_rejected` | Number rejected as K₃,₃ threats |
+| `n_accepted` | Number accepted (no K₃,₃ threat) |
+| `local_screening` | n_accepted / n_attempted |
+
+Header comments include total counts, mean screening, bare and screened alpha.
+
 ---
 
 ## Vacuum Polarization & Running Coupling

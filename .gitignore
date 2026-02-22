@@ -1,12 +1,3 @@
-# ── Paper (private, not for public release) ──
-paper/
-
-# ── Animations (development branch 1b only) ──
-animations/
-
-# ── Planning documents (development branch 1b only) ──
-prism_simmulation/LIGHTCONE_ARCHITECTURE.md
-
 # ── LaTeX build artifacts ──
 *.aux
 *.log
