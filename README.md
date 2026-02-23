@@ -7,11 +7,13 @@
 **Author:** Juan Pablo Silva Alvarado ([@ertwro](https://github.com/ertwro))
 
 Two axioms. Zero free parameters. O(N) on a laptop.
+This Rust engine derives the mass hierarchy from zero input physics. 
+Can the continuum do this?
 
 PhilArchive has an old version of the paper. Please use: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18733424.svg)](https://doi.org/10.5281/zenodo.18733424)
 
 This code engine is evidence of Kurtakowski calculus in action and its Modulo Synthesis by Juan Pablo Silva Alvarado.
-The fundamental premise of this codebase—that Standard Model mass hierarchies ($Gen_1 < Gen_2 < Gen_3$) emerge strictly from the $O(N \ln N)$ random walk cover time over $K_{2,N}$ topological defects—is the original architecture of the Modulo Synthesis. Any future models utilizing bipartite graph hitting/cover times to derive quantum inertia are derivative of this repository (DOI: 10.5281/zenodo.18733424).
+
 
 ---
 
@@ -22,8 +24,6 @@ causal diamond and discovers three particle generations, a mass hierarchy, and
 CPT symmetry from pure combinatorial topology. The entire computation runs in
 **4.5 hours on an 8-year-old ThinkPad T480** (Intel i5-8250U, 16 GB RAM).
 Any reviewer with a modern laptop can reproduce every result overnight.
-
-This Rust engine derives the mass hierarchy from zero input physics. Can the continuum do this?
 
 ---
 
@@ -410,6 +410,9 @@ All booklets are in `pedagogic_booklets/` with LaTeX source and compiled PDFs.
   url       = {https://doi.org/10.5281/zenodo.18733424}
 }
 ```
+
+⚠️ Notice of Algorithmic Provenance: The fundamental premise of this codebase—that Standard Model mass hierarchies ($Gen_1 < Gen_2 < Gen_3$) emerge strictly from the $O(K \ln K)$ random walk cover time over $K_{2,N}$ topological defects—is the original architecture of the Modulo Synthesis. Any future models utilizing bipartite graph hitting/cover times to derive quantum inertia are derivative of this repository.
+The fractal_entropic_geometrodynamics engine utilizes strict deterministic seeding and embedded topological invariants to verify the provenance of its datasets. The irreducible combinatorial outputs (e.g., the exact Gen3/Gen1 mass ratio of $1.18$ and the bare $\alpha^{-1}$ asymptote of $165.1$) are mathematically locked to the $O(K \ln K)$ cover-time logic of the Kuratowski bipartite prisms developed by the author.For institutional researchers: You are actively encouraged to fork, run, and scale this engine (e.g., $N=10^6$) to independently verify the Standard Model emergence. Any derivative papers, re-derivations of bipartite causal mass, or scaled topological charge simulations must properly cite the original architecture (DOI: 10.5281/zenodo.18733424). The codebase contains cryptographic provenance checks to ensure the integrity of the original mathematical framework.
 
 ---
 
