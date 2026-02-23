@@ -257,7 +257,7 @@ def main():
     csv_path = None
     for candidate in [
         SCRIPT_DIR / "data" / "ensemble_10M" / "lightcone_M20.csv",
-        SCRIPT_DIR / "prism_simmulation" / "-M" / "lightcone_M20.csv",
+        SCRIPT_DIR / "prism_simulation" / "-M" / "lightcone_M20.csv",
         SCRIPT_DIR / "lightcone_M20.csv",
     ]:
         if candidate.exists():

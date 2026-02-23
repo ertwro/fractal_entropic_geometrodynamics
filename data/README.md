@@ -92,7 +92,7 @@ pip install numpy pandas matplotlib scipy
 ### Build the simulation
 
 ```bash
-cd prism_simmulation
+cd prism_simulation
 cargo build --release --bin causal_set_sim
 ```
 
@@ -396,7 +396,7 @@ This independently confirms complex quantum mechanics (the imaginary unit *i*).
 ### Reproducing the RMT analysis
 
 ```bash
-cd prism_simmulation
+cd prism_simulation
 
 # Build the RMT binary
 cargo build --release --bin fss_rmt

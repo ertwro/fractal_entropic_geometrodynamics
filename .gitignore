@@ -22,9 +22,9 @@ causal_set.toml
 *.checkpoint.bin
 *.checkpoint.bin.bak*
 .checkpoint.bin*
-prism_simmulation/simulation.log
-prism_simmulation/test_*.log
-prism_simmulation/-M/
+prism_simulation/simulation.log
+prism_simulation/test_*.log
+prism_simulation/-M/
 
 # ── OS ──
 .DS_Store
