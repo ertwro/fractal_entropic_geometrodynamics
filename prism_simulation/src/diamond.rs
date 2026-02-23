@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Juan Pablo Silva Alvarado
-// Fractal Entropic Geometrodynamics — DOI: 10.5281/zenodo.18733424
+// Fractal Entropic Geometrodynamics — DOI: 10.5281/zenodo.18746995
 
 //! Phase 1 — Vacuum Generation
 //!

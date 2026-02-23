@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Juan Pablo Silva Alvarado
-// Fractal Entropic Geometrodynamics — DOI: 10.5281/zenodo.18733424
+// Fractal Entropic Geometrodynamics — DOI: 10.5281/zenodo.18746995
 
 //! Phase 2 — Causal Prism Topological Defect (Pure Integer Bipartite Calculus)
 //!
@@ -9,7 +9,7 @@
 //! force realised as K₅ threat contraction preserving planarity.  This is the
 //! core of *Fractal Entropic Geometrodynamics* (FEG) by J. P. Silva Alvarado.
 //!
-//! Zenodo: <https://doi.org/10.5281/zenodo.18733424>
+//! Zenodo: <https://doi.org/10.5281/zenodo.18746995>
 //!
 //! Key theorems implemented below:
 //!   - Vol II, Thm 4.2: Uniqueness of Bifurcation-Convergence (MIN_PRISM_SHARED ≥ 3)
@@ -93,7 +93,7 @@ const CORE_DEN: usize = 10;
 /// in a K₃-free Hasse graph.  K_{2,2} yields only S₂ → U(1); the SU(3) gauge
 /// structure demands S₃, hence N ≥ 3 (Vol II, Sole Principle of Interaction).
 ///
-/// DOI: 10.5281/zenodo.18733424
+/// DOI: 10.5281/zenodo.18746995
 const MIN_PRISM_SHARED: usize = 3;
 
 /// K₅ threat threshold: external node connected to both poles AND ≥ 2
@@ -104,7 +104,7 @@ const MIN_PRISM_SHARED: usize = 3;
 /// no K₅ or K₃,₃ minor.  Absorption into the nearest pole is the minimal
 /// planarity-preserving contraction — the discrete analogue of colour confinement.
 ///
-/// DOI: 10.5281/zenodo.18733424
+/// DOI: 10.5281/zenodo.18746995
 const PRISM_THREAT: usize = 2;
 
 // ─── Data Structures ─────────────────────────────────────────────────────────

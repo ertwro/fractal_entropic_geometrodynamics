@@ -1,6 +1,6 @@
 # Fractal Entropic Geometrodynamics
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18733424.svg)](https://doi.org/10.5281/zenodo.18733424)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18746995.svg)](https://doi.org/10.5281/zenodo.18746995)
 [![License: MIT](https://img.shields.io/badge/Code-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CC BY-SA 4.0](https://img.shields.io/badge/Theory-CC%20BY--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-sa/4.0/)
 
@@ -10,7 +10,8 @@ Two axioms. Zero free parameters. O(N) on a laptop.
 This Rust engine derives the mass hierarchy from zero input physics. 
 Can the continuum do this?
 
-PhilArchive has an old version of the paper. Please use: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18733424.svg)](https://doi.org/10.5281/zenodo.18733424)
+**Latest version (v2):** [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18746995.svg)](https://doi.org/10.5281/zenodo.18746995)
+**Previous version (v1):** [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18733424.svg)](https://doi.org/10.5281/zenodo.18733424) — if you received a direct link, it points here.
 
 This code engine is evidence of Kuratowski Calculus in action and its Modulo Synthesis by Juan Pablo Silva Alvarado.
 
@@ -406,13 +407,14 @@ All booklets are in `pedagogic_booklets/` with LaTeX source and compiled PDFs.
                Three Particle Generations from Discrete Topological Constraints},
   year      = {2026},
   publisher = {Zenodo},
-  doi       = {10.5281/zenodo.18733424},
-  url       = {https://doi.org/10.5281/zenodo.18733424}
+  doi       = {10.5281/zenodo.18746995},
+  url       = {https://doi.org/10.5281/zenodo.18746995},
+  note      = {v2; previous version: \url{https://doi.org/10.5281/zenodo.18733424}}
 }
 ```
 
 ⚠️ Notice of Algorithmic Provenance: The fundamental premise of this codebase—that Standard Model mass hierarchies ($Gen_1 < Gen_2 < Gen_3$) emerge strictly from the $O(K \ln K)$ random walk cover time over $K_{2,N}$ topological defects—is the original architecture of the Modulo Synthesis. Any future models utilizing bipartite graph hitting/cover times to derive quantum inertia are derivative of this repository.
-The fractal_entropic_geometrodynamics engine utilizes strict deterministic seeding and embedded topological invariants to verify the provenance of its datasets. The irreducible combinatorial outputs (e.g., the exact Gen3/Gen1 mass ratio of $1.18$ and the bare $\alpha^{-1}$ asymptote of $165.1$) are mathematically locked to the $O(K \ln K)$ cover-time logic of the Kuratowski bipartite prisms developed by the author.For institutional researchers: You are actively encouraged to fork, run, and scale this engine (e.g., $N=10^6$) to independently verify the Standard Model emergence. Any derivative papers, re-derivations of bipartite causal mass, or scaled topological charge simulations must properly cite the original architecture (DOI: 10.5281/zenodo.18733424). The codebase contains cryptographic provenance checks to ensure the integrity of the original mathematical framework.
+The fractal_entropic_geometrodynamics engine utilizes strict deterministic seeding and embedded topological invariants to verify the provenance of its datasets. The irreducible combinatorial outputs (e.g., the exact Gen3/Gen1 mass ratio of $1.18$ and the bare $\alpha^{-1}$ asymptote of $165.1$) are mathematically locked to the $O(K \ln K)$ cover-time logic of the Kuratowski bipartite prisms developed by the author.For institutional researchers: You are actively encouraged to fork, run, and scale this engine (e.g., $N=10^6$) to independently verify the Standard Model emergence. Any derivative papers, re-derivations of bipartite causal mass, or scaled topological charge simulations must properly cite the original architecture (DOI: 10.5281/zenodo.18746995). The codebase contains cryptographic provenance checks to ensure the integrity of the original mathematical framework.
 
 ---
 

@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Juan Pablo Silva Alvarado
-// Fractal Entropic Geometrodynamics — DOI: 10.5281/zenodo.18733424
+// Fractal Entropic Geometrodynamics — DOI: 10.5281/zenodo.18746995
 
 //! # Causal Set Spectral Dimension Engine
 //!
 //! Reference implementation of the Cálculo de Kuratowski (Kuratowski Calculus)
 //! from *Fractal Entropic Geometrodynamics* (FEG) by J. P. Silva Alvarado.
 //!
-//! Zenodo record: <https://doi.org/10.5281/zenodo.18733424>
+//! Zenodo record: <https://doi.org/10.5281/zenodo.18746995>
 //!
 //! Theoretical foundation: Modulo Synthesis Vol I (vacuum geometry) and
 //! Vol II (topological matter via Kuratowski's Theorem applied to causal sets).
