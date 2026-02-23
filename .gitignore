@@ -25,6 +25,9 @@ prism_simulation/simulation.log
 prism_simulation/test_*.log
 prism_simulation/-M/
 
+# ── Stray config ──
+/causal_set.toml
+
 # ── OS ──
 .DS_Store
 Thumbs.db
