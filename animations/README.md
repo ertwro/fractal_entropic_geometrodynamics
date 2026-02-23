@@ -59,7 +59,7 @@ module alongside the pure-Python `causal_anim` package.
 ### Run the example scene
 
 ```bash
-python scenes/prism_simmulation/electron_genesis.py
+python scenes/prism_simulation/electron_genesis.py
 ```
 
 Produces `electron_genesis.mp4` — a ~55-second animation of an electron
@@ -313,7 +313,7 @@ scene.play(Annotate(
 
 ## Example: Electron Genesis
 
-The reference scene (`scenes/prism_simmulation/electron_genesis.py`)
+The reference scene (`scenes/prism_simulation/electron_genesis.py`)
 tells the story of an electron crystallising from the quantum vacuum
 in four acts:
 
@@ -369,7 +369,7 @@ animations/
 │   └── annotate.py                         ← Text / LaTeX overlays
 │
 ├── scenes/                                 ← Scene scripts
-│   └── prism_simmulation/
+│   └── prism_simulation/
 │       └── electron_genesis.py             ← Reference scene
 │
 └── renders/                                ← Video output (gitignored)

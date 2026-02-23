@@ -77,7 +77,7 @@ pip install numpy pandas matplotlib scipy
 ### Build the simulation
 
 ```bash
-cd prism_simmulation
+cd prism_simulation
 cargo build --release --bin causal_set_sim
 ```
 

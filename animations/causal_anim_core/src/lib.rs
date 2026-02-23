@@ -202,6 +202,78 @@ impl SceneEngine {
         PyBytes::new(py, &png)
     }
 
+    // ─── New bridge methods for Phase 4 animations ────────────────────────
+
+    /// Simulate cover time on a single prism subgraph.
+    ///
+    /// Returns the number of lazy-walk ticks to visit all belly nodes.
+    fn prism_cover_time(&self, origin: usize, belly: Vec<usize>, dest: usize, seed: u64) -> u32 {
+        let graph = self.graph.as_ref().expect("call build_universe first");
+        graph.prism_cover_time(origin, &belly, dest, seed)
+    }
+
+    /// Simulate cover time on a prism subgraph, returning the full trajectory.
+    ///
+    /// Returns the sequence of visited node indices (one per tick).
+    fn prism_cover_trajectory(&self, origin: usize, belly: Vec<usize>, dest: usize, seed: u64) -> Vec<usize> {
+        let graph = self.graph.as_ref().expect("call build_universe first");
+        graph.prism_cover_trajectory(origin, &belly, dest, seed)
+    }
+
+    /// K₃,₃ probe: for a prism, identify which external neighbour edges
+    /// are blocked by K₃,₃ vs accepted.
+    ///
+    /// Returns (accepted_node_indices, rejected_node_indices).
+    fn k33_probe(&self, origin: usize, dest: usize, belly: Vec<usize>) -> (Vec<usize>, Vec<usize>) {
+        let graph = self.graph.as_ref().expect("call build_universe first");
+        graph.k33_probe(origin, dest, &belly)
+    }
+
+    /// Modulo interference: run walkers accumulating g^S mod p phase.
+    ///
+    /// Returns per-node (node_index, arrivals, phase_sum, intensity).
+    fn modulo_interference(
+        &self,
+        n_walkers: usize,
+        steps: usize,
+        prime: u64,
+        root: u64,
+        seed: u64,
+    ) -> Vec<(usize, u64, u64, f64)> {
+        let graph = self.graph.as_ref().expect("call build_universe first");
+        graph.modulo_interference(n_walkers, steps, prime, root, seed)
+    }
+
+    /// Causal slice: cut at given depth.
+    ///
+    /// Returns (nodes_below, nodes_above, severed_edges).
+    fn causal_slice(&self, depth: u32) -> (Vec<usize>, Vec<usize>, Vec<(u32, u32)>) {
+        let graph = self.graph.as_ref().expect("call build_universe first");
+        let layout = self.layout.as_ref().expect("layout not initialised");
+        // Build depth array from layout.
+        let n = graph.n;
+        let depths: Vec<u32> = (0..n).map(|i| layout.depth(i)).collect();
+        graph.causal_slice(&depths, depth)
+    }
+
+    /// Get all detected prisms: returns list of (origin, dest, belly, generation).
+    fn get_prisms(&self) -> Vec<(usize, usize, Vec<usize>, i32)> {
+        self.defect
+            .as_ref()
+            .map(|d| {
+                d.prism_list()
+                    .into_iter()
+                    .map(|p| (p.origin, p.destination, p.belly, p.generation))
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    /// Get node depth (causal layer) for a specific node.
+    fn node_depth(&self, node: usize) -> u32 {
+        self.layout.as_ref().map(|l| l.depth(node)).unwrap_or(0)
+    }
+
     // ─── Timeline pass-through ───────────────────────────────────────────
 
     fn timeline_rush(&mut self, ticks: u64, duration_secs: f64) {

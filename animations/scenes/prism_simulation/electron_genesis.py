@@ -16,7 +16,7 @@ Narrativa:
 Uso:
   cd animations
   maturin develop --release
-  python scenes/prism_simmulation/electron_genesis.py
+  python scenes/prism_simulation/electron_genesis.py
 """
 
 from causal_anim import (

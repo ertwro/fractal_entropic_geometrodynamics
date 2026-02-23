@@ -2,13 +2,18 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18733424.svg)](https://doi.org/10.5281/zenodo.18733424)
 [![License: MIT](https://img.shields.io/badge/Code-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![CC BY-NC-ND 4.0](https://img.shields.io/badge/Theory-CC%20BY--NC--ND%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
+[![CC BY-SA 4.0](https://img.shields.io/badge/Theory-CC%20BY--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-sa/4.0/)
 
 **Author:** Juan Pablo Silva Alvarado ([@ertwro](https://github.com/ertwro))
 
 Two axioms. Zero free parameters. O(N) on a laptop.
+This Rust engine derives the mass hierarchy from zero input physics.
+Can the continuum do this?
 
 PhilArchive has an old version of the paper. Please use: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18733424.svg)](https://doi.org/10.5281/zenodo.18733424)
+
+This code engine is evidence of Kuratowski Calculus in action and its Modulo Synthesis by Juan Pablo Silva Alvarado.
+
 
 ---
 
@@ -202,7 +207,7 @@ to local causal horizons:
   one time dimension and three space dimensions are **derived**, not assumed
 - Bulk fluctuations of ~25% are quantum foam at the mesoscopic scale
 
-See `prism_simmulation/src/jacobson.rs` for the implementation and
+See `prism_simulation/src/jacobson.rs` for the implementation and
 `data/scripts/jacobson_einstein.py` for the analysis.
 
 ---
@@ -211,7 +216,7 @@ See `prism_simmulation/src/jacobson.rs` for the implementation and
 
 ```
 fractal_entropic_geometrodynamic/
-├── prism_simmulation/          Rust simulation engine (Kuratowski Calculus)
+├── prism_simulation/          Rust simulation engine (Kuratowski Calculus)
 │   ├── src/
 │   │   ├── main.rs             Orchestration and Monte Carlo ensemble averaging
 │   │   ├── diamond.rs          Poisson sprinkling in 4D causal diamond
@@ -248,7 +253,7 @@ fractal_entropic_geometrodynamic/
 │   ├── modulo_synthesis_vol_II Volume II: The Geometry of Matter
 │   ├── modulo_synthesis_kuratowski_calculus  Kuratowski Calculus (Spanish)
 │   └── emma_thought_experiments  Emma's Thought Experiments
-├── LICENSE                     Dual: MIT (code) + CC BY-NC-ND 4.0 (theory)
+├── LICENSE                     Dual: MIT (code) + CC BY-SA 4.0 (theory/docs)
 └── README.md                   This file
 ```
 
@@ -276,7 +281,7 @@ The N=10^7 production ensemble takes ~4.5 hours; the full FSS suite
 ### Build
 
 ```bash
-cd prism_simmulation
+cd prism_simulation
 cargo build --release --bin causal_set_sim
 ```
 
@@ -289,7 +294,7 @@ cargo run --release --bin causal_set_sim -- 50000 10 --inmemory
 ### View the man page
 
 ```bash
-man prism_simmulation/doc/causal_set_sim.7
+man prism_simulation/doc/causal_set_sim.7
 ```
 
 ---
@@ -299,7 +304,7 @@ man prism_simmulation/doc/causal_set_sim.7
 ### Step 1: Run each lattice size
 
 ```bash
-cd prism_simmulation
+cd prism_simulation
 
 # FSS suite (smallest to largest)
 cargo run --release --bin causal_set_sim -- 100000  10 --inmemory --seed 42   # ~2 min
@@ -354,7 +359,7 @@ See [`data/README.md`](data/README.md) for complete documentation.
 
 ## The Simulation Engine
 
-The `prism_simmulation/` directory contains the O(N) Rust implementation of
+The `prism_simulation/` directory contains the O(N) Rust implementation of
 the Kuratowski Calculus. Four phases:
 
 1. **Sprinkling** -- Poisson-sprinkle N events into a 4D causal diamond
@@ -364,16 +369,16 @@ the Kuratowski Calculus. Four phases:
 4. **Output** -- Ensemble-averaged CSV with error bars
 
 Bounded Hasse degree (D <= 15) makes every operation O(N).
-See [`prism_simmulation/README.md`](prism_simmulation/README.md) for the physics
+See [`prism_simulation/README.md`](prism_simulation/README.md) for the physics
 primer, architecture, and full flag reference.
 
 ---
 
 ## Documentation
 
-- **Man page:** `man prism_simmulation/doc/causal_set_sim.7`
-- **LaTeX manual:** [`prism_simmulation/doc/causal_set_sim.pdf`](prism_simmulation/doc/causal_set_sim.pdf)
-- **Simulation README:** [`prism_simmulation/README.md`](prism_simmulation/README.md)
+- **Man page:** `man prism_simulation/doc/causal_set_sim.7`
+- **LaTeX manual:** [`prism_simulation/doc/causal_set_sim.pdf`](prism_simulation/doc/causal_set_sim.pdf)
+- **Simulation README:** [`prism_simulation/README.md`](prism_simulation/README.md)
 
 ---
 
@@ -406,14 +411,17 @@ All booklets are in `pedagogic_booklets/` with LaTeX source and compiled PDFs.
 }
 ```
 
+⚠️ Notice of Algorithmic Provenance: The fundamental premise of this codebase—that Standard Model mass hierarchies ($Gen_1 < Gen_2 < Gen_3$) emerge strictly from the $O(K \ln K)$ random walk cover time over $K_{2,N}$ topological defects—is the original architecture of the Modulo Synthesis. Any future models utilizing bipartite graph hitting/cover times to derive quantum inertia are derivative of this repository.
+The fractal_entropic_geometrodynamics engine utilizes strict deterministic seeding and embedded topological invariants to verify the provenance of its datasets. The irreducible combinatorial outputs (e.g., the exact Gen3/Gen1 mass ratio of $1.18$ and the bare $\alpha^{-1}$ asymptote of $165.1$) are mathematically locked to the $O(K \ln K)$ cover-time logic of the Kuratowski bipartite prisms developed by the author.For institutional researchers: You are actively encouraged to fork, run, and scale this engine (e.g., $N=10^6$) to independently verify the Standard Model emergence. Any derivative papers, re-derivations of bipartite causal mass, or scaled topological charge simulations must properly cite the original architecture (DOI: 10.5281/zenodo.18733424). The codebase contains cryptographic provenance checks to ensure the integrity of the original mathematical framework.
+
 ---
 
 ## License
 
 This project is dual-licensed:
 
-- **Software** (`prism_simmulation/`, `data/scripts/`): [MIT License](https://opensource.org/licenses/MIT)
-- **Theory and pedagogic material** (`pedagogic_booklets/`): [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)
+- **Software** (`prism_simulation/`, `data/scripts/`): [MIT License](https://opensource.org/licenses/MIT)
+- **Theory, pedagogic material & documentation** (`pedagogic_booklets/`, `paper/`, `prism_simulation/doc/`): [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
 
 See the [LICENSE](LICENSE) file for the full legal text.
 

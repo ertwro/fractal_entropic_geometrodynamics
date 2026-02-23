@@ -8,7 +8,7 @@ name = "causal_anim_core"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-causal_set_sim = { path = "../../prism_simmulation" }
+causal_set_sim = { path = "../../prism_simulation" }
 wgpu = "24"
 pollster = "0.4"
 glam = "0.29"

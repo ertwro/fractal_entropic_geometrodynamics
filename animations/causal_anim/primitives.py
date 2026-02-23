@@ -127,6 +127,78 @@ class Highlight:
     duration: float = 1.0
 
 
+# ═══════════════════════════════════════════════════════════════════════
+# Phase 4 — Advanced Visualization Primitives
+# ═══════════════════════════════════════════════════════════════════════
+
+@dataclass
+class TraversePrism:
+    """Walker pulse traversing a specific prism, counting cover time.
+
+    A lazy random walker starts at the origin pole and must visit every
+    belly node before reaching the destination.  The number of ticks
+    required is the topological mass proxy (coupon-collector delay).
+    """
+    prism: DetectPrism
+    n_pulses: int = 5
+    # Filled after execution
+    _cover_times: List[int] = field(default_factory=list)
+
+
+@dataclass
+class TimerOverlay:
+    """Dynamic on-screen tick counter bound to a TraversePrism."""
+    traversal: TraversePrism
+    position: str = "top-right"  # "top-left" | "top-right" | etc.
+    label: str = "ticks"
+
+
+@dataclass
+class ProbeVacuumEdge:
+    """Animate attempted edges from vacuum nodes to a prism.
+
+    Accepted edges glow blue; K₃,₃-blocked edges flash white and shatter.
+    Visualises the structural impossibility of charge screening.
+    """
+    prism: DetectPrism
+    n_probes: int = 8
+
+
+@dataclass
+class ModuloPhaseWalk:
+    """Walkers carrying visible g^S mod p phase counters.
+
+    Each walker accumulates a multiplicative phase g^S mod p as it
+    traverses the Hasse skeleton.  The result is a discrete analogue
+    of quantum interference — without complex numbers.
+    """
+    n_walkers: int = 30
+    origins: str | List[int] = "uniform"
+    steps: int = 40
+    prime: int = 65537
+    root: int = 3
+
+
+@dataclass
+class InterferenceField:
+    """Color all nodes by NTT interference intensity.
+
+    Hot (orange/white) = constructive, cold (deep blue) = destructive.
+    """
+    walk: ModuloPhaseWalk
+
+
+@dataclass
+class CausalSlice:
+    """2D plane cutting through the Hasse diagram at a given causal depth.
+
+    Counts and displays severed links vs slice area, revealing the
+    holographic relationship between bulk gravity and boundary entropy.
+    """
+    depth_fraction: float = 0.5  # 0.0=bottom, 1.0=top
+    display_count: bool = True
+
+
 # Type alias for anything playable.
 Animation = (
     Sprinkle
@@ -139,4 +211,10 @@ Animation = (
     | DirectedFlux
     | ShowSpectralDimension
     | Highlight
+    | TraversePrism
+    | TimerOverlay
+    | ProbeVacuumEdge
+    | ModuloPhaseWalk
+    | InterferenceField
+    | CausalSlice
 )

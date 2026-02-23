@@ -15,15 +15,21 @@ from .annotate import Annotate
 from .camera import Camera, CameraAction, CameraState
 from .primitives import (
     BuildCausalClosure,
+    CausalSlice,
     ContractK5,
     DetectPrism,
     DetectThreat,
     DiffuseWalkers,
     DirectedFlux,
     Highlight,
+    InterferenceField,
+    ModuloPhaseWalk,
+    ProbeVacuumEdge,
     ReduceHasse,
     ShowSpectralDimension,
     Sprinkle,
+    TimerOverlay,
+    TraversePrism,
 )
 from .scene import Scene
 from .timeline import Timeline
@@ -43,6 +49,12 @@ __all__ = [
     "DirectedFlux",
     "ShowSpectralDimension",
     "Highlight",
+    "TraversePrism",
+    "TimerOverlay",
+    "ProbeVacuumEdge",
+    "ModuloPhaseWalk",
+    "InterferenceField",
+    "CausalSlice",
     # Camera
     "Camera",
     "CameraAction",

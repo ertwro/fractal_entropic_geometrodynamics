@@ -3,7 +3,7 @@
 **Estado:** Propuesta
 **Autor:** Arquitectura de Modulo Synthesis
 **Fecha:** 2026-02-17
-**Componentes afectados:** `animations/`, `prism_simmulation/`
+**Componentes afectados:** `animations/`, `prism_simulation/`
 
 ---
 
@@ -466,7 +466,7 @@ fieles a la simulación.
 **Rust (causal_anim_core/Cargo.toml):**
 ```toml
 [dependencies]
-causal_set_sim = { path = "../prism_simmulation" }  # Colisionador
+causal_set_sim = { path = "../prism_simulation" }  # Colisionador
 wgpu = "24"                    # GPU rendering (Vulkan/Metal/DX12)
 winit = "0.30"                 # Windowing (preview mode)
 glam = "0.29"                  # Vectores/matrices GPU-friendly
@@ -722,7 +722,7 @@ animations/
 │   └── timeline.py                     ← Timeline Python wrapper
 ├── pyproject.toml                      ← Build config (maturin)
 ├── scenes/                             ← Scripts de escenas
-│   ├── prism_simmulation/              ← Escenas del colisionador
+│   ├── prism_simulation/              ← Escenas del colisionador
 │   ├── modulo_synthesis_vol_I/         ← Escenas de Vol. I
 │   ├── modulo_synthesis_vol_II/        ← Escenas de Vol. II
 │   └── modulo_synthesis_kuratowski_calculus/
