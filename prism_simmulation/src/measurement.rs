@@ -1,14 +1,21 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Juan Pablo Silva Alvarado
+// Fractal Entropic Geometrodynamics — DOI: 10.5281/zenodo.18733424
+
 //! Observer modules — physical measurements extracted from the causal set.
 //!
 //! Four read-only measurement algorithms that extract physics from existing
-//! simulation data without modifying the underlying engine:
+//! simulation data without modifying the underlying engine.  Each algorithm
+//! derives from the Cálculo de Kuratowski (Kuratowski Calculus) of FEG:
 //!
-//! | Module | Physics |
-//! |--------|---------|
-//! | M1 | Traversal mass ratios (walker traversal time through prisms) |
-//! | M2 | Half-life census (cross-ensemble stability statistics) |
-//! | M3 | Modulo path integral (NTT-based interference fringes) |
-//! | M4 | Vacuum polarization (K_{3,3} screening of bare α) |
+//! | Module | Physics | FEG Reference |
+//! |--------|---------|---------------|
+//! | M1 | Traversal mass ratios (walker traversal time through prisms) | Vol II, Def 3.1 (topological mass = N) |
+//! | M2 | Half-life census (cross-ensemble stability statistics) | Vol II, Thm 5.1 (generation persistence) |
+//! | M3 | Modulo path integral (NTT-based interference fringes) | Vol I, §6 (modular arithmetic on causal paths) |
+//! | M4 | Vacuum polarization (K_{3,3} screening of bare α) | Vol II, Thm 6.3 (Kuratowski K₃,₃ obstruction as charge screening) |
+//!
+//! Zenodo: <https://doi.org/10.5281/zenodo.18733424>
 
 use crate::skyrmion::{CausalPrism, DefectResult};
 use crate::spectral::distribute_walkers;
@@ -50,6 +57,11 @@ pub struct HalfLifeResult {
 }
 
 // ── M3: Modulo Path Integral ──
+//
+// Cálculo de Kuratowski, Vol I §6 (Silva Alvarado): causal path counts are
+// reduced modulo a Fermat prime, turning discrete geometry into number-theoretic
+// interference.  The NTT root of unity replaces e^{iθ} with a finite-field
+// analogue — no floating-point until final normalisation.
 
 pub struct ModuloConfig {
     pub prime: u64,
@@ -58,6 +70,9 @@ pub struct ModuloConfig {
 
 impl Default for ModuloConfig {
     fn default() -> Self {
+        // Fermat prime F₄ = 2¹⁶ + 1; primitive root g = 3.
+        // Choice dictated by Vol I §6.2: NTT length must divide (p−1) = 2¹⁶,
+        // giving power-of-two FFT compatibility on causal path counts.
         Self { prime: 65537, root: 3 }
     }
 }

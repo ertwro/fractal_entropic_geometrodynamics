@@ -1,4 +1,21 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Juan Pablo Silva Alvarado
+// Fractal Entropic Geometrodynamics — DOI: 10.5281/zenodo.18733424
+
 //! Phase 2 — Causal Prism Topological Defect (Pure Integer Bipartite Calculus)
+//!
+//! Implements the Cálculo de Kuratowski: matter emerges as K₂,ₙ bipartite
+//! obstructions (Causal Prisms) in a triangle-free Hasse DAG, with the strong
+//! force realised as K₅ threat contraction preserving planarity.  This is the
+//! core of *Fractal Entropic Geometrodynamics* (FEG) by J. P. Silva Alvarado.
+//!
+//! Zenodo: <https://doi.org/10.5281/zenodo.18733424>
+//!
+//! Key theorems implemented below:
+//!   - Vol II, Thm 4.2: Uniqueness of Bifurcation-Convergence (MIN_PRISM_SHARED ≥ 3)
+//!   - Vol II, Sole Principle of Interaction: K₅ minor ↔ confinement
+//!   - Vol II, Def 3.1: Topological mass M = |belly|
+//!   - Vol II, §5: Generation classification by bulk-momentum signature
 //!
 //! THE THREE GEOMETRIES — implemented in code:
 //!
@@ -71,16 +88,23 @@ const CORE_DEN: usize = 10;
 
 /// Minimum shared intermediates to qualify as a Causal Prism (K_{2,N}, N ≥ 3).
 ///
-/// Derived: Uniqueness of Bifurcation-Convergence (Vol II, Thm 4.2) requires
-/// ≥ 3 independent length-2 paths in a K₃-free graph.  K_{2,2} gives S₂ → U(1)
-/// only; SU(3) gauge structure requires S₃, i.e. N ≥ 3 (Vol II, Sole Principle of Interaction).
+/// Cálculo de Kuratowski derivation (Silva Alvarado, FEG Vol II, Thm 4.2):
+/// Uniqueness of Bifurcation-Convergence requires ≥ 3 independent length-2 paths
+/// in a K₃-free Hasse graph.  K_{2,2} yields only S₂ → U(1); the SU(3) gauge
+/// structure demands S₃, hence N ≥ 3 (Vol II, Sole Principle of Interaction).
+///
+/// DOI: 10.5281/zenodo.18733424
 const MIN_PRISM_SHARED: usize = 3;
 
 /// K₅ threat threshold: external node connected to both poles AND ≥ 2
 /// intermediates → 5 mutually reachable vertices → K₅ minor.
 ///
-/// Derived: Kuratowski's Theorem (Kuratowski Calculus, Axiom §1.4).
-/// Absorption into nearest pole is the minimal planarity-preserving operation.
+/// Cálculo de Kuratowski derivation (Silva Alvarado, FEG Vol II, Axiom §1.4):
+/// Kuratowski's Theorem guarantees that a finite graph is planar iff it contains
+/// no K₅ or K₃,₃ minor.  Absorption into the nearest pole is the minimal
+/// planarity-preserving contraction — the discrete analogue of colour confinement.
+///
+/// DOI: 10.5281/zenodo.18733424
 const PRISM_THREAT: usize = 2;
 
 // ─── Data Structures ─────────────────────────────────────────────────────────

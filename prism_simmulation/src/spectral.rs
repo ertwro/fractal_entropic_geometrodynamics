@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Juan Pablo Silva Alvarado
+// Fractal Entropic Geometrodynamics — DOI: 10.5281/zenodo.18733424
+
 //! Phase 3 — Random Walk & Spectral Dimension
 //!
 //! Two tiers:

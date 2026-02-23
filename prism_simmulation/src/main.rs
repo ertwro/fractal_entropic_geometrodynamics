@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Juan Pablo Silva Alvarado
+// Fractal Entropic Geometrodynamics — DOI: 10.5281/zenodo.18733424
+
 //! Orchestration layer for the Kuratowski Calculus engine.
 //!
 //! Runs an ensemble of independent Poisson sprinklings (Monte Carlo universes),
