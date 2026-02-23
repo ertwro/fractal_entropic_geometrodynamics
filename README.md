@@ -12,7 +12,7 @@ Can the continuum do this?
 
 PhilArchive has an old version of the paper. Please use: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18733424.svg)](https://doi.org/10.5281/zenodo.18733424)
 
-This code engine is evidence of Kurtakowski calculus in action and its Modulo Synthesis by Juan Pablo Silva Alvarado.
+This code engine is evidence of Kuratowski Calculus in action and its Modulo Synthesis by Juan Pablo Silva Alvarado.
 
 
 ---
