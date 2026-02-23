@@ -407,8 +407,6 @@ The precision of the topological mass measurement is limited by the Monte Carlo 
 - For massive ensembles ($N > 10^8$), the structural signal becomes very fine.
 - **Guideline:** Walker count is now governed by the Causal Resolution Theorem: $W = \lceil (t_{max} / \varepsilon)^2 \rceil$. The default ε = 0.01 yields W = 2,250,000, sufficient for fine mass splitting at any N. For exploratory runs, `--epsilon 0.1` reduces W to 22,500.
 
-For a detailed history of numerical accuracy improvements (integer accumulation, strict finitism, ensemble error bars), see [`PRECISION_IMPROVEMENTS.md`](PRECISION_IMPROVEMENTS.md).
-
 ### Causal Flux
 
 Directed walker transmission probabilities measure electromagnetic-like interactions:
