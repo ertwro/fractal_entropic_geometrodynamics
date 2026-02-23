@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Juan Pablo Silva Alvarado
-// Fractal Entropic Geometrodynamics — DOI: 10.5281/zenodo.18733424
+// Fractal Entropic Geometrodynamics — DOI: 10.5281/zenodo.18746995
 
 //! Observer modules — physical measurements extracted from the causal set.
 //!
@@ -15,7 +15,7 @@
 //! | M3 | Modulo path integral (NTT-based interference fringes) | Vol I, §6 (modular arithmetic on causal paths) |
 //! | M4 | Vacuum polarization (K_{3,3} screening of bare α) | Vol II, Thm 6.3 (Kuratowski K₃,₃ obstruction as charge screening) |
 //!
-//! Zenodo: <https://doi.org/10.5281/zenodo.18733424>
+//! Zenodo: <https://doi.org/10.5281/zenodo.18746995>
 
 use crate::skyrmion::{CausalPrism, DefectResult};
 use crate::spectral::distribute_walkers;
