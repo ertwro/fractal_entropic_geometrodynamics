@@ -374,7 +374,6 @@ primer, architecture, and full flag reference.
 - **Man page:** `man prism_simmulation/doc/causal_set_sim.7`
 - **LaTeX manual:** [`prism_simmulation/doc/causal_set_sim.pdf`](prism_simmulation/doc/causal_set_sim.pdf)
 - **Simulation README:** [`prism_simmulation/README.md`](prism_simmulation/README.md)
-- **Precision improvements:** [`prism_simmulation/PRECISION_IMPROVEMENTS.md`](prism_simmulation/PRECISION_IMPROVEMENTS.md)
 
 ---
 
