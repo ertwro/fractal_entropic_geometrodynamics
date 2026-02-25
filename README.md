@@ -436,6 +436,16 @@ of the original mathematical framework.
 
 ---
 
+## Continuum Mapping & Formalization
+
+The Modulo Synthesis provides the discrete, topological mechanisms for the Standard Model. Ongoing work focuses on mapping these discrete graph dynamics directly to the legacy continuous equations of 20th-century physics:
+
+* **Mass Dressing & The Higgs:** The framework replaces the continuous Higgs scalar field with **vacuum polarization drag**. The bare topological mass (belly size $n$) is dressed by the thermodynamic friction of the causal network. Formalizing the exact scaling limit to recover the legacy 125 GeV resonance is underway.
+* **Neutrino PMNS Matrix:** Neutrinos are modeled as open Kuratowski paths ($K_{2,1}$). Their flavor oscillation is established as a macroscopic **spacelike aliasing artifact** (a topological Moiré pattern). Future numerical runs will extract the exact PMNS mixing angles from the graph's sampling limits.
+* **The Full Dirac Lagrangian:** The macroscopic Einstein-Hilbert action ($G \approx 1/16\pi$) has been successfully derived via the discrete Benincasa-Dowker operator. The next step is extracting the full continuous $SU(3) \times SU(2) \times U(1)$ Dirac Lagrangian from the continuum limit of the discrete graph Laplacian.
+
+---
+
 ## License
 
 Dual-licensed:
