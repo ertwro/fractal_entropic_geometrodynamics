@@ -1,0 +1,1215 @@
+\chapter{Particle Decay: Graph Rewriting and Genus Change}
+\label{ch:decay}
+% ═══════════════════════════════════════════════════════════════════════════════
+% CENTRAL CORRESPONDENCE:
+%   Discrete: Edge elimination in K_{2,N}  →  K_{2,N-1} + K_{2,1}
+%   Continuous: Topological surgery (cobordism) that reduces genus
+%   The decay mechanism IS graph rewriting
+
+\begin{introduction}
+  \item The previous chapter showed that genus encodes the
+        generation. But particles decay \emph{between}
+        generations. This chapter shows how.
+  \item The Cobordism Barrier: in continuous topology, genus
+        is an invariant---changing it requires surgery.
+  \item The Edge Snap: in the discrete Kuratowski framework,
+        genus change is simply edge elimination.
+  \item The neutrino as topological residue: the Open Prism $K_{2,1}$
+        separated during decay.
+\end{introduction}
+
+Module~\ref{ch:dessins} established a rigorous correspondence:
+each particle generation lives on a Riemann surface whose
+genus is $g = g_{\mathrm{gen}} - 1$. Electron on the sphere, muon on
+the torus, tau on the double torus. The mass hierarchy is a genus
+ladder.
+
+But particles decay. The muon decays to the electron; the tau
+decays to the muon. In the language of dessins, this means that the
+\textbf{genus must change}. How does a torus surface
+($g = 1$) become a sphere ($g = 0$)? In continuous topology, this is
+impossible without surgery. In the discrete framework, it turns out to be trivial.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{The Cobordism Barrier}
+\label{sec:barrera-cobordismo}
+% ─────────────────────────────────────────────────────────────────────────────
+
+In differential topology, the genus of a compact oriented surface
+is a \textbf{topological invariant}: it is preserved under homeomorphisms and
+continuous deformations. A torus cannot continuously become
+a sphere.
+
+\begin{theorem}[Cobordism Barrier]
+\label{thm:barrera-cobordismo}
+Let $\Sigma_g$ be a compact oriented surface of genus~$g$ and
+$\Sigma_{g'}$ one of genus $g' \neq g$. There exists no
+diffeomorphism $\Sigma_g \to \Sigma_{g'}$. Passing from one to the other
+requires a \textbf{topological surgery}: cutting a handle and resewing the
+boundaries. In terms of Morse theory, the Morse function must
+possess a critical point of index that changes the topology---an
+operation with no intrinsic physical mechanism in smooth geometry.
+\end{theorem}
+
+The physical consequence is immediate: if a particle's generation
+is its genus (Theorem~\ref{thm:gen-genero}), then \textbf{generation
+change is impossible} in any theory that operates on
+continuous surfaces. The decay $\mu \to e$ would require tearing the
+torus and resewing it into a sphere, but smooth dynamics has no
+scalpel at its disposal.
+
+However, particles \textbf{do} decay. The muon decays
+to the electron with a half-life of $2.2\;\mu\text{s}$. Therefore,
+continuous geometry cannot be the fundamental level---the decay
+mechanism must reside in the underlying discrete structure.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{The Kuratowski Relaxation}
+\label{sec:relajacion}
+% ─────────────────────────────────────────────────────────────────────────────
+
+In the Kuratowski framework, a Causal Prism is a finite bipartite graph
+$K_{2,N}$. Unlike a continuous surface, a graph can
+lose edges without any notion of ``surgery'': they are simply
+removed from the edge set. The operation is purely
+combinatorial.
+
+\begin{definition}[Kuratowski Relaxation]
+\label{def:relajacion}
+Let $\mathcal{P}$ be a Causal Prism $K_{2,N}$ with poles $u, v$ and
+intermediaries $\{w_1, \ldots, w_N\}$. A \textbf{Kuratowski
+relaxation} of $\mathcal{P}$ is the elimination of an intermediary $w_i$
+together with its two incident edges $(u, w_i)$ and $(v, w_i)$,
+producing:
+\[
+  K_{2,N} \;\longrightarrow\; K_{2,N-1} \;+\; K_{2,1}^{\mathrm{abierto}},
+\]
+where $K_{2,N-1}$ operates on the remaining intermediaries
+$\{w_1, \ldots, w_N\} \setminus \{w_i\}$ and
+$K_{2,1}^{\mathrm{abierto}}$ is the Open Prism
+(Definition~\ref{def:open-prism}) formed by $w_i$ and its two separated
+edges. Note that if $N - 1 < 3$, the product $K_{2,N-1}$
+is also an Open Prism: the relaxation of a $K_{2,3}$
+(electron) is not permitted, since it would produce two Open
+Prisms with no residual bound particle---consistent with the
+absolute stability of the electron.
+\end{definition}
+
+The key observation: if the eliminated intermediary $w_i$ was precisely
+the one causing the \textbf{Kuratowski twist} (the permutation of $e_i$
+with $e_j$ in $\sigma_0$ at the future pole), then its elimination
+\emph{undoes the twist}. The cyclic order at $v$ reverts to the
+natural antipodal reversal. The faces merged by the entanglement
+separate. The genus drops.
+
+\begin{result}[title={Cobordism is an artifact of the continuum}]
+The Cobordism Barrier is a limitation of continuous topology, not
+of physics. In the discrete causal set, genus change is
+simply the elimination of edges from a finite graph---a
+combinatorial operation with no need for surgery, cutting, or regluing.
+\end{result}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{The Edge Snap: Muon Decay}
+\label{sec:chasquido}
+% ─────────────────────────────────────────────────────────────────────────────
+
+We now demonstrate the complete mechanism with the most important example:
+the decay of the muon into an electron and a neutrino.
+
+\subsection{Before the snap: the muon as $K_{2,4}$ ($g = 1$)}
+
+Recall from Module~\ref{ch:dessins} (\S\ref{sec:gen2-toro}) the
+muon configuration. Four intermediaries $\{w_1, w_2, w_3, w_4\}$,
+eight edges:
+\[
+  \sigma_1 = (1\;5)(2\;6)(3\;7)(4\;8).
+\]
+The Kuratowski anti-correlation forces a twist at the future pole $v$:
+edges $e_6$ and $e_7$ (going to $w_2$ and $w_3$) swap
+positions in the cyclic order. The polar permutation is:
+\[
+  \sigma_0 = (1\;2\;3\;4)(8\;6\;7\;5).
+\]
+
+The composition $\sigma_0 \circ \sigma_1$ produces $F = 2$ faces and genus
+$g = 1$: a torus.
+
+The twist---the swap $e_6 \leftrightarrow e_7$---is the
+\textbf{source} of the genus. Without it, $\sigma_0(v)$ would be
+$(8\;7\;6\;5)$ and we would obtain $F = 4$, $g = 0$.
+
+\subsection{The edge snap and the topological verdict}
+\label{subsec:edge-snap}
+
+The Kuratowski Relaxation (Def.~\ref{def:relajacion}) eliminates
+intermediary $w_2$---precisely the element whose swap with $w_3$
+at the future pole created the entanglement. Edges
+$e_2 = (u, w_2)$ and $e_6 = (v, w_2)$ are eliminated, and the graph splits into two
+components:
+\begin{itemize}
+  \item $K_{2,3}$ on the remaining intermediaries $\{w_1, w_3, w_4\}$
+        (the electron).
+  \item $K_{2,1}$ on the separated intermediary $\{w_2\}$ (the neutrino).
+\end{itemize}
+
+Upon eliminating the entangled intermediary, the cyclic order at the future
+pole reverts to the natural antipodal reversal: \textbf{the twist
+vanishes}. The resulting rotation system
+$\sigma_0 = (1\;2\;3)(4\;6\;5)$ is exactly the canonical one of
+Generation~1, with $F = 3$ faces:
+\[
+  V - E + F = 5 - 6 + 3 = 2 = 2 - 2g
+  \quad\Longrightarrow\quad \boxed{g = 0}\text{ (sphere).}
+\]
+
+The complete derivation---edge relabeling, contraction of
+$\sigma_0$ at both poles, and explicit step-by-step verification of the face
+calculation---is presented in
+\textbf{Worked Proof~II}
+(p.~\pageref{sec:demo-muon}).
+
+\begin{result}[title={Muon decay}]
+The muon (torus, $g = 1$) has decayed to the electron (sphere, $g = 0$).
+The mechanism: elimination of the entangled intermediary undoes the twist
+in $\sigma_0$, restoring the natural antipodal reversal. The faces
+jump from $F = 2$ to $F = 3$; the genus drops from $g = 1$ to $g = 0$. There
+was no surgery, no cobordism---only the elimination of two
+edges from a finite graph.
+\end{result}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Where Does the Edge Go? The Neutrino}
+\label{sec:neutrino}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The Kuratowski relaxation does not destroy intermediary $w_2$. It
+\textbf{separates} it from the main prism. The result is a bipartite
+subgraph $K_{2,1}$: a single intermediary $w_2$ connected to the
+source pole~$u$ and the destination pole~$v$ by two edges.
+
+\begin{definition}[Open Prism]
+\label{def:open-prism}
+An \textbf{Open Prism} is a bipartite subgraph $K_{2,N}$ with
+$N < 3$ intermediaries. Unlike a closed Causal Prism
+(Theorem~\ref{thm:bipartite-matter}, which requires $N \geq 3$), an
+Open Prism \textbf{cannot} close as a bound particle: it lacks the
+minimum $S_3$ symmetry required for topological confinement.
+\end{definition}
+
+The subgraph $K_{2,1}$ resulting from the relaxation is an Open
+Prism. Let us compute its topological properties. $K_{2,1}$ has
+two edges: $e_1 = (u, w_2)$ and $e_2 = (v, w_2)$. The permutations:
+\[
+  \sigma_0 = (1)(2), \qquad \sigma_1 = (1\;2).
+\]
+Each pole has a single edge (two 1-cycles in $\sigma_0$); the sole
+intermediary swaps its two edges ($\sigma_1$). The composition:
+\[
+  1 \xrightarrow{\;\sigma_1\;} 2 \xrightarrow{\;\sigma_0\;} 2,
+  \qquad
+  2 \xrightarrow{\;\sigma_1\;} 1 \xrightarrow{\;\sigma_0\;} 1.
+\]
+$\sigma_0 \circ \sigma_1 = (1\;2)$---a single 2-cycle, hence
+$F = 1$ face.
+
+\[
+  V - E + F = 3 - 2 + 1 = 2 = 2 - 2g
+  \quad\Longrightarrow\quad g = 0 \text{ (sphere).}
+\]
+
+The neutrino is spherical---genus~0. It possesses no twist, no
+phase entanglement. But crucially, \textbf{it is not a
+Causal Prism} in the sense of Theorem~\ref{thm:bipartite-matter}:
+with $N = 1 < 3$ intermediaries, it does not satisfy the minimum
+belly bound. It is an \textbf{Open Prism}---a frustrated causal
+geodesic that cannot close as a bound particle.
+
+\begin{theorem}[Zero mass of the Open Prism]
+\label{thm:neutrino-massless}
+An Open Prism $K_{2,1}$ has zero topological mass in the
+dynamical sense: its coupon-collector time is $E[T_{\mathrm{cob}}]
+= 1 \cdot H_1 = 1$, which is trivial. Without a closed
+destination pole (the condition $N \geq 3$ fails), the causal
+wavefront requires no internal phase coherence---it propagates
+without inertia. Furthermore,
+$K_{2,1}$ does not admit the $S_3$ symmetry group required for
+confinement: the sole intermediary supports no
+nontrivial color permutation. The Open Prism is, therefore,
+a free topological excitation that propagates at the maximum
+causal velocity.
+\end{theorem}
+
+\begin{proof}
+Theorem~\ref{thm:bipartite-matter} requires $N \geq 3$ for a closed
+Causal Prism. With $N = 1$, $S_1 = \{e\}$ is the trivial group:
+no nontrivial permutation of intermediaries exists, hence
+the topological inertia (Mass Law, L2) is $M = N_{\mathrm{eff}}
+= 0$---there is no internal structure to update. The coupon-collector
+time with $N = 1$ coupon is $E[T] = 1 \cdot
+H_1 = 1$ step, versus $O(N \ln N)$ for $N \geq 3$. The causal
+wavefront does not need to ``visit'' internal nodes to propagate,
+since there are no nodes that would confer inertia. This is consistent with
+the observed zero mass of neutrinos
+(ignoring sub-eV Dirac masses, which would correspond to
+higher-order corrections from vacuum interaction).
+\end{proof}
+
+\begin{result}[title={The neutrino is the topological scar}]
+Muon decay in the language of graphs:
+\[
+  K_{2,4} \;\longrightarrow\; K_{2,3} \;+\; K_{2,1}^{\mathrm{abierto}}
+  \qquad\Longleftrightarrow\qquad
+  \mu \;\longrightarrow\; e \;+\; \nu.
+\]
+The neutrino ($K_{2,1}^{\mathrm{abierto}}$, $g = 0$) is the Open
+Prism that the closed prism emits upon undoing its topological twist.
+It is not a particle ``added'' by the theory: it is an
+inevitable consequence of the conservation of the number of intermediaries
+in the Kuratowski relaxation. By violating the $N \geq 3$ bound of
+Theorem~\ref{thm:bipartite-matter}, it cannot exist as a bound
+particle: it propagates freely as an open causal geodesic, consistent
+with its zero mass and absence of confinement.
+\end{result}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  pole/.style={circle, draw=structure, fill=structure, minimum size=6pt,
+               inner sep=0pt},
+  belly/.style={circle, draw=main, fill=main!20, minimum size=6pt,
+                inner sep=0pt},
+  dead/.style={circle, draw=third, fill=third!20, minimum size=6pt,
+               inner sep=0pt},
+  edge/.style={thick, structure!70},
+  snap/.style={very thick, third, densely dashed},
+  >=Stealth
+]
+% ======= PANEL A: Before (muon K_{2,4}) =======
+\begin{scope}[shift={(-4,0)}]
+  \node[font=\small\bfseries, color=structure] at (0,4.6)
+    {\textsc{Before}: Muon $K_{2,4}$ ($g=1$)};
+
+  \node[pole, label={[color=structure, font=\scriptsize]below:$u$}]
+    (u1) at (0,0) {};
+  \node[pole, label={[color=structure, font=\scriptsize]above:$v$}]
+    (v1) at (0,4) {};
+
+  \node[belly, label={[color=main, font=\scriptsize]left:$w_1$}]
+    (a1) at (-1.8,2) {};
+  \node[dead,  label={[color=third, font=\scriptsize]left:$w_2$}]
+    (a2) at (-0.6,2) {};
+  \node[belly, label={[color=main, font=\scriptsize]right:$w_3$}]
+    (a3) at ( 0.6,2) {};
+  \node[belly, label={[color=main, font=\scriptsize]right:$w_4$}]
+    (a4) at ( 1.8,2) {};
+
+  % Normal edges
+  \draw[edge] (u1) -- (a1);
+  \draw[edge] (u1) -- (a3);
+  \draw[edge] (u1) -- (a4);
+  \draw[edge] (a1) -- (v1);
+  \draw[edge] (a3) -- (v1);
+  \draw[edge] (a4) -- (v1);
+
+  % Stressed edges (will snap)
+  \draw[snap] (u1) -- (a2)
+    node[midway, left, font=\scriptsize, color=third] {$e_2$};
+  \draw[snap] (a2) -- (v1)
+    node[midway, left, font=\scriptsize, color=third] {$e_6$};
+
+  % Crossing marker
+  \node[font=\bfseries\scriptsize, color=third!80!black] at (0.05,3.1)
+    {$\times$};
+
+  % Tension annotation
+  \draw[->, third!60, thick] (a2) -- ++(0,-0.7)
+    node[below, font=\scriptsize, color=third!70, text width=1.8cm,
+         align=center] {stressed\\edge};
+\end{scope}
+
+% ======= ARROW =======
+\draw[->, ultra thick, main, line width=2pt] (-0.8,2) -- (0.8,2)
+  node[midway, above, font=\small\bfseries, color=main] {snap!};
+
+% ======= PANEL B: After (electron + neutrino) =======
+\begin{scope}[shift={(4,0)}]
+  \node[font=\small\bfseries, color=structure] at (0,4.6)
+    {\textsc{After}: $e^- + \nu$};
+
+  % --- Electron K_{2,3} ---
+  \node[pole, label={[color=structure, font=\scriptsize]below:$u$}]
+    (u2) at (0,0) {};
+  \node[pole, label={[color=structure, font=\scriptsize]above:$v$}]
+    (v2) at (0,4) {};
+
+  \node[belly, label={[color=main, font=\scriptsize]left:$w_1$}]
+    (b1) at (-1.4,2) {};
+  \node[belly, label={[color=main, font=\scriptsize]below:$w_3$}]
+    (b3) at ( 0,2) {};
+  \node[belly, label={[color=main, font=\scriptsize]right:$w_4$}]
+    (b4) at ( 1.4,2) {};
+
+  \draw[edge] (u2) -- (b1);  \draw[edge] (b1) -- (v2);
+  \draw[edge] (u2) -- (b3);  \draw[edge] (b3) -- (v2);
+  \draw[edge] (u2) -- (b4);  \draw[edge] (b4) -- (v2);
+
+  % Electron label
+  \node[font=\scriptsize, fourth!80!black, fill=fourthlight,
+        rounded corners=2pt, inner sep=2pt] at (0,-0.6)
+    {$K_{2,3}$: electron ($g=0$)};
+
+  % --- Neutrino K_{2,1} ---
+  \node[pole, label={[color=structure, font=\scriptsize]below:$u'$}]
+    (un) at (3.2,0.8) {};
+  \node[pole, label={[color=structure, font=\scriptsize]above:$v'$}]
+    (vn) at (3.2,3.2) {};
+  \node[dead, label={[color=third, font=\scriptsize]right:$w_2$}]
+    (bn) at (3.2,2) {};
+
+  \draw[thick, third!70] (un) -- (bn);
+  \draw[thick, third!70] (bn) -- (vn);
+
+  % Neutrino label
+  \node[font=\scriptsize, third!80!black, fill=thirdlight,
+        rounded corners=2pt, inner sep=2pt] at (3.2,0.2)
+    {$K_{2,1}$: neutrino};
+
+  % Separation line
+  \draw[densely dotted, structure!30, thick] (2.1,-0.3) -- (2.1,4.3);
+\end{scope}
+\end{tikzpicture}
+\caption{Muon decay as an edge snap.
+\textbf{Panel~A:} the muon $K_{2,4}$ with stressed edges $e_2$,
+$e_6$ (red dashed lines) that cause the Kuratowski twist.
+\textbf{Panel~B:} after the snap, the graph separates into an electron
+$K_{2,3}$ (sphere, $g=0$) and a neutrino $K_{2,1}$ --- the topological
+scar. There is no continuous surgery: only combinatorial elimination
+of edges.}
+\label{fig:decay-snap}
+\end{figure}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Half-Life as Markov Hitting Time}
+\label{sec:vida-media}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The edge snap does not occur deterministically. In the dynamics
+of classical sequential growth~\cite{rideout2000}, each Poisson
+sprinkling event adds a new node to the causal set. Each new
+node is a ``step'' of the Markov chain. With some probability~$p$,
+the new causal relations create an alternative path that renders
+the twisted edge redundant, enabling a valid relaxation.
+
+\begin{definition}[Hitting time]
+\label{def:hitting-time}
+The \textbf{half-life} $\tau_{1/2}$ of a Causal Prism is the expected
+number of sprinkling events before the Markov chain
+reaches a configuration where a valid Kuratowski relaxation
+exists---that is, where the elimination of an entangled intermediary
+produces a residual prism with strictly lower genus.
+\end{definition}
+
+The probability~$p$ per step depends on the \textbf{torsion degree} of
+the rotation system:
+
+\begin{itemize}
+  \item A simple twist (Generation~2 $\to$ 1): a single pair of edges
+        permuted in $\sigma_0$. The relaxation requires finding an
+        alternative path that bypasses a single crossing. The probability
+        per step is relatively high.
+  \item A double twist (Generation~3 $\to$ 2): two pairs permuted in
+        $\sigma_0$. Undoing one of the two twists requires that the
+        new alternative path not interfere with the other crossing.
+        The probability per step is lower.
+\end{itemize}
+
+This generates a competition between two effects:
+\begin{enumerate}
+  \item \textbf{Topological complexity}: more twists $=$ harder
+        to untangle $=$ longer half-life.
+  \item \textbf{Topological tension}: more twists $=$ more deformation
+        of the rotation system $=$ higher probability that a new
+        node generates the liberating path.
+\end{enumerate}
+
+\begin{result}[title={Mass hierarchy and topological stability}]
+The mass hierarchy correlates with topological stability:
+more twists mean greater topological inertia (mass) but also
+greater tension in the embedding. The competition between these effects
+determines the observed ordering of half-lives. The electron
+($g = 0$) is absolutely stable because \textbf{it has no twist to
+undo}.
+\end{result}
+
+\noindent\textit{Numerical verification: half-life census.}\enspace
+The occupation fractions $p(g_k \mid N)$ by belly size
+are verified across multiple realizations.
+At $N = 5000$, $M = 8$:
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{lcc}
+\toprule
+& \textbf{Prediction} & \textbf{Simulation} \\
+\midrule
+Gen1 & 2\% & 4\% \\
+Gen2 & 85\% & 79\% \\
+Gen3 & 13\% & 17\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+The stability ratios $\tau_2/\tau_1 = 9{.}95$ and
+$\tau_3/\tau_1 = 1{.}80$ confirm that Generation~2 dominates
+entropically: mixing two of three phases is combinatorially
+favored.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{The Complete Decay Chain}
+\label{sec:cadena-completa}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The Kuratowski relaxation mechanism applies recursively to the entire
+generation hierarchy:
+
+\medskip
+\noindent
+\textbf{Step 1:} Generation~3 $\to$ Generation~2.
+\[
+  K_{2,6}(g = 2) \;\longrightarrow\; K_{2,4}(g = 1) \;+\; K_{2,1}^{\mathrm{abierto}}
+  \qquad\Longleftrightarrow\qquad
+  \tau \;\longrightarrow\; \mu \;+\; \nu_\tau.
+\]
+The $K_{2,6}$ of the tau possesses two independent Kuratowski twists
+(\S\ref{sec:gen3-doble-toro}). The relaxation eliminates one of the
+entangled intermediaries, undoing one of the two twists. The genus
+drops from~2 to~1.
+
+\medskip
+\noindent
+\textbf{Step 2:} Generation~2 $\to$ Generation~1.
+\[
+  K_{2,4}(g = 1) \;\longrightarrow\; K_{2,3}(g = 0) \;+\; K_{2,1}^{\mathrm{abierto}}
+  \qquad\Longleftrightarrow\qquad
+  \mu \;\longrightarrow\; e \;+\; \nu_\mu.
+\]
+The remaining twist is undone as demonstrated in
+\S\ref{sec:chasquido}. The genus drops from~1 to~0.
+
+\medskip
+\noindent
+\textbf{Complete cascade:}
+\[
+  K_{2,6}(g = 2) \;\longrightarrow\;
+  K_{2,3}(g = 0) \;+\; 2 \times K_{2,1}^{\mathrm{abierto}}.
+\]
+Two neutrinos emitted $=$ two genus-reduction steps. The
+electron ($K_{2,3}$, $g = 0$) is the \textbf{fixed point} of the
+cascade: it has no twist, admits no relaxation, cannot decay further.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{cccccc}
+\toprule
+Step & Before & After & $g$ & Neutrino & Process \\
+\midrule
+1 & $K_{2,6}$ ($g{=}2$) & $K_{2,4}$ ($g{=}1$) & $2 \to 1$
+  & $\nu_\tau$ & $\tau \to \mu + \nu_\tau$ \\
+2 & $K_{2,4}$ ($g{=}1$) & $K_{2,3}$ ($g{=}0$) & $1 \to 0$
+  & $\nu_\mu$ & $\mu \to e + \nu_\mu$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{result}[title={The electron is the topological ground state}]
+The generation hierarchy is a decay cascade that
+descends the genus ladder: $g = 2 \to 1 \to 0$. Each step
+emits a neutrino ($K_{2,1}^{\mathrm{abierto}}$). The electron ($K_{2,3}$, $g = 0$) is
+the \textbf{topological ground state}---minimum genus, maximum
+stability. There is no twist to undo, no edge to snap, no
+decay possible. The stability of the electron is not an
+experimental datum: it is a \textbf{topological theorem}.
+\end{result}
+
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{Parity Violation: The Holomorphic Veto}
+\label{sec:parity-violation}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+% CENTRAL CORRESPONDENCE:
+%   Discrete: Chirality of the Kuratowski crossing (over/under)
+%   Continuous: Holomorphy vs anti-holomorphy of the Belyi function
+%   The projection (1-γ⁵) IS the holomorphic projection
+
+In the preceding sections, we treated the Kuratowski twist
+(\S\ref{subsec:giro-kuratowski}) as a \emph{permutation}:
+$e_6 \leftrightarrow e_7$ in $\sigma_0(v)$. And the edge snap
+(\S\ref{sec:chasquido}) as the operation that undoes it. But there is a
+property of the twist that we have not yet exploited: on a surface, a
+crossing has \textbf{chirality}.
+
+\subsection{The Geometry of a Crossing --- Braids}
+
+When two edges cross in an abstract graph, the transposition
+$e_6 \leftrightarrow e_7$ is the same regardless of
+convention. But in the Dessin d'Enfant embedded on a surface
+(Theorem~\ref{thm:belyi}), the crossing acquires three-dimensional
+structure: edge~6 passes \textbf{over} or
+\textbf{under} edge~7. This is exactly the distinction
+between the two elementary generators of the braid group $B_2$:
+$\sigma$ and $\sigma^{-1}$.
+
+\begin{definition}[Twist Chirality]
+\label{def:twist-chirality}
+Let $\Pi = (u, v, \{w_1, \ldots, w_N\})$ be a Prism with a Kuratowski
+twist at the pole~$v$. The acyclic DAG establishes a global
+time direction: $u \prec v$.
+\begin{itemize}
+  \item \textbf{Left-handed twist} (\emph{left-handed}): the crossing
+    aligns with the temporal orientation induced by $u \to v$
+    (the edge with lower temporal index passes over).
+  \item \textbf{Right-handed twist} (\emph{right-handed}): the crossing
+    opposes the temporal orientation (the edge with higher temporal
+    index passes over).
+\end{itemize}
+\end{definition}
+
+In the abstract graph, both twists produce the same transposition.
+But on the surface, they produce dessins with \emph{distinct complex
+structure}.
+
+\subsection{Both Twists Are Orientable}
+
+A crucial point from Grothendieck's theory: any pair of
+permutations $(\sigma_0, \sigma_1)$ acting on a finite
+set of edges \textbf{always} generates an orientable surface.
+One cannot construct a M\"obius strip or a Klein bottle from
+cycles of $\sigma_0 \circ \sigma_1$. Both twists---left-handed
+and right-handed---produce valid tori ($g = 1$) for $K_{2,4}$.
+
+The asymmetry resides not in the \emph{topology} of the surface,
+but in its \emph{complex structure}---that is, in the relationship
+between the twist and the temporal arrow of the DAG.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+  strand/.style={thick},
+  >=Stealth
+]
+% Panel 1: Spin-0 (no twist)
+\begin{scope}[shift={(-4,0)}]
+  \node[font=\small\bfseries, structure] at (0,3.5) {Spin-0};
+  \draw[strand, main] (-.3,0) -- (-.3,3);
+  \draw[strand, main] (.3,0) -- (.3,3);
+  \node[font=\scriptsize, second] at (0,-0.5) {0 inversions};
+  \node[font=\scriptsize, second] at (0,-1) {$\chi = +1$ (boson)};
+\end{scope}
+% Panel 2: Spin-1/2 (half twist)
+\begin{scope}[shift={(0,0)}]
+  \node[font=\small\bfseries, third] at (0,3.5) {Spin-$\frac{1}{2}$};
+  \draw[strand, main] (-.3,0) -- (.3,1.5) -- (-.3,3);
+  \draw[strand, main] (.3,0) -- (-.1,0.6);
+  \draw[strand, main, white, line width=3pt] (-.3,0) -- (.1,0.6);
+  \draw[strand, main] (.1,0.9) -- (-.3,1.5) -- (.3,3);
+  \node[font=\scriptsize, second] at (0,-0.5) {1 inversion};
+  \node[font=\scriptsize, second] at (0,-1) {$\chi = -1$ (fermion)};
+\end{scope}
+% Panel 3: Spin-1 (full twist)
+\begin{scope}[shift={(4,0)}]
+  \node[font=\small\bfseries, structure] at (0,3.5) {Spin-1};
+  \draw[strand, main] (-.3,0) -- (.3,1) -- (-.3,2) -- (.3,3);
+  \draw[strand, main] (.3,0) -- (-.1,0.4);
+  \draw[strand, main, white, line width=3pt] (-.3,0) -- (.1,0.4);
+  \draw[strand, main] (.1,0.6) -- (-.3,1) -- (.1,1.4);
+  \draw[strand, main, white, line width=3pt] (.3,1) -- (-.1,1.4);
+  \draw[strand, main] (-.1,1.6) -- (.3,2) -- (-.3,3);
+  \node[font=\scriptsize, second] at (0,-0.5) {2 inversions};
+  \node[font=\scriptsize, second] at (0,-1) {$\chi = +1$ (boson)};
+\end{scope}
+\end{tikzpicture}
+\caption{Spin as inferential braid. Two causal chains through
+a prism form a braid. No crossings: spin-0
+(boson). One crossing (half twist): spin-$\frac{1}{2}$ (fermion).
+Two crossings (full twist): spin-1 (boson). The chirality
+$\chi = (-1)^{2s}$ recovers the spin-statistics theorem.}
+\label{fig:trenza-inferencial}
+\end{figure}
+
+\subsection{The Holomorphic Restriction}
+
+The Belyi Theorem~(\ref{thm:belyi}) maps the discrete bipartite graph
+to a \textbf{Riemann surface}---a complex manifold
+of dimension~1. The Belyi function $\beta \colon X \to
+\mathbb{P}^1$ is, by definition, a
+\textbf{holomorphic} map: it preserves angles and orientation.
+This is the key restriction:
+
+\begin{quote}
+\itshape
+A Riemann surface is a one-dimensional complex manifold.
+The maps between Riemann surfaces admitted by the
+Belyi Theorem are strictly \textbf{holomorphic}: analytic,
+conformal, and compatible with temporal orientation.
+\end{quote}
+
+The acyclicity of the DAG ($u \prec v$ with no cycles) establishes a
+\textbf{global temporal arrow}. This arrow induces a
+\textbf{canonical orientation} on the Belyi surface: the
+direction in which the function $\beta$ maps the dessin to the
+continuum.
+
+Now consider the two twists. The Belyi
+Theorem~\cite{belyi1979} guarantees that \textbf{both} produce
+holomorphic Belyi functions---this is a consequence of the theorem, not a
+choice. The distinction lies in \emph{on which surface}
+each one lives:
+
+\begin{itemize}
+  \item A \textbf{left-handed twist} aligns with the temporal arrow.
+    The Belyi function $\beta \colon X \to \mathbb{P}^1$ is holomorphic
+    on the \textbf{canonical} Riemann surface~$X$, which inherits
+    the orientation from the acyclic DAG via $u \prec v$.
+  \item A \textbf{right-handed twist} opposes the temporal arrow.
+    Inverting the cyclic order in the polar permutation is equivalent to
+    taking the \textbf{mirror image} of the dessin. By the Belyi
+    Theorem, this mirror image determines a Belyi function
+    $\bar{\beta} \colon \bar{X} \to \mathbb{P}^1$ that is perfectly
+    holomorphic---but lives on the \textbf{Galois conjugate
+    surface}~$\bar{X}$, not on~$X$.
+\end{itemize}
+
+\noindent
+Both tori \emph{exist} as valid Riemann surfaces with
+holomorphic Belyi functions. But they live on distinct surfaces:
+the left-handed twist on~$X$ (the canonical surface) and the
+right-handed on~$\bar{X}$ (its Galois conjugate).
+
+\subsection{The Holomorphic Veto}
+
+\begin{theorem}[Parity Veto]
+\label{thm:parity-veto}
+A right-handed Kuratowski twist in a matter Prism produces a
+dessin whose Belyi function lives on the Galois conjugate
+surface~$\bar{X}$, not on the canonical surface~$X$. Since the
+Kuratowski relaxation (edge snap) is an endomorphism
+strictly bound to~$X$---the surface defined by the canonical
+temporal arrow $u \prec v$---it cannot act on states that
+live on~$\bar{X}$. The weak force is topologically
+\textbf{blind} to right-handed chirality.
+\end{theorem}
+
+\begin{proof}
+Let $\Pi$ be a Prism with a twist at the future pole~$v$, and let
+$(\sigma_0, \sigma_1)$ be the permutations of its dessin. The pair
+$(\sigma_0, \sigma_1)$ generates a transitive subgroup of $S_{2N}$
+and, by the Belyi Theorem, determines a unique Riemann
+surface~$X$ with a holomorphic Belyi function
+$\beta \colon X \to \mathbb{P}^1$.
+
+The \textbf{mirror image} of the dessin is obtained by inverting the
+cyclic order of $\sigma_0$, that is, replacing $\sigma_0$ with
+$\sigma_0^{-1}$. The new pair $(\sigma_0^{-1}, \sigma_1)$ determines,
+again by Belyi, a surface $\bar{X}$ with its own Belyi
+function $\bar{\beta} \colon \bar{X} \to \mathbb{P}^1$, also
+holomorphic. The surface $\bar{X}$ is the \textbf{Galois conjugate}
+of~$X$: it is obtained by applying complex conjugation to the
+coefficients of the algebraic equation that defines~$X$ over
+$\overline{\mathbb{Q}}$~\cite{grothendieck1984,lando2004}.
+
+In general, $X \not\cong \bar{X}$ as Riemann surfaces (a
+dessin and its mirror image may be non-isomorphic). The left-handed
+twist produces the pair $(\sigma_0, \sigma_1)$ aligned with the
+temporal arrow $u \prec v$, which lives on~$X$. The right-handed twist
+produces the pair $(\sigma_0^{-1}, \sigma_1)$, which lives on~$\bar{X}$.
+
+The edge snap (weak decay) modifies the
+relations $u \covers w_i \covers v$ in the canonical causal
+direction. It is, therefore, an \textbf{endomorphism of~$X$}: it acts
+on the sections of $\beta$ over~$X$, not on those of $\bar{\beta}$
+over~$\bar{X}$. The decay operator is topologically
+blind to states that live on the conjugate surface~$\bar{X}$.
+\end{proof}
+
+\smallskip\noindent\textbf{Corollary.}
+The Kuratowski relaxation (edge snap = weak
+decay) can only undo \textbf{left-handed twists} in matter
+Prisms. Right-handed twists exist as valid states on
+the conjugate surface~$\bar{X}$, but are invisible to the
+decay operator, which is an endomorphism of~$X$.
+\smallskip
+
+This is the $P_L = \tfrac{1}{2}(1-\gamma^5)$ projection of the Standard
+Model: the weak force (graph rewriting) only operates on
+states that live on the canonical surface~$X$. The operator $P_L$
+is not inserted by hand---it is the \textbf{projection onto~$X$} that the
+Grothendieck--Belyi correspondence imposes on causal
+operators.
+
+\subsection{Antimatter and CPT}
+
+The CPT transformation of the Standard Model (Law~L6,
+\S\ref{law:cpt-conjugation}; Theorem~\ref{thm:antimatter-tollens})
+admits a complete decomposition in the language of the causal DAG.
+We define each operator separately:
+
+\begin{description}
+  \item[Parity ($P$):] \textbf{Galois conjugation} of the Belyi
+    map. The canonical Riemann surface~$X$ is sent to its
+    conjugate~$\bar{X}$, inverting the orientation of the
+    chiral embedding of the dessin d'enfant. A left-handed twist
+    on~$X$ becomes right-handed on~$\bar{X}$.
+  \item[Time reversal ($T$):] \textbf{Reversal of the directed edges}
+    of the causal poset: $\prec$ is replaced by~$\succ$.
+    The DAG is traversed ``toward the past''; the temporal arrow of the
+    Prism is inverted.
+  \item[Charge conjugation ($C$):] \textbf{Pole interchange}
+    $u \leftrightarrow v$ in the prism $K_{2,N}$. The source pole
+    (causal past) becomes the sink pole (causal future) and
+    vice versa. This interchange inverts the flow of baryon number
+    and internal charges.
+\end{description}
+
+The three operations are \textbf{independent}: $P$ acts on the
+surface structure, $T$ on the direction of the poset, and $C$
+on the identity of the poles. Their composition CPT amounts to:
+inverting the poles ($C$), inverting the edges ($T$), and inverting the
+chirality of the surface ($P$). The full composition is a
+symmetry of the discrete Lagrangian (CPT
+Theorem~\cite{luders1954,pauli1955}).
+
+\medskip
+With the CPT composition applied, the \textbf{canonical
+surface is interchanged}: what was $X$ becomes $\bar{X}$, and vice versa.
+\begin{itemize}
+  \item Right-handed twists now align with the temporal arrow
+    (inverted by~$T$)---their dessin lives on the new
+    canonical surface (conjugated by~$P$), visible to the
+    decay operator.
+  \item Left-handed twists now oppose the temporal arrow
+    ---their dessin lives on the new conjugate surface, invisible
+    to the operator.
+\end{itemize}
+
+\textbf{Result}: weak decay acts on left-handed matter
+and right-handed antimatter---exactly what is observed
+experimentally by Wu~et~al.~\cite{wu1957}, confirming the
+theoretical prediction of Lee and
+Yang~\cite{leeyang1956}.
+
+\begin{result}[title={Parity violation is a theorem of algebraic geometry}]
+\phantomsection\label{res:parity-orientability}
+The operator $P_L = \tfrac{1}{2}(1-\gamma^5)$ of the Standard Model is
+not an empirical datum without justification---it is a \textbf{theorem
+of the Grothendieck--Belyi correspondence}. Parity~($P$) is the
+Galois conjugation $X \mapsto \bar{X}$; time reversal
+($T$) is the inversion ${\prec} \mapsto {\succ}$ of the DAG; charge
+conjugation~($C$) is the pole interchange
+$u \leftrightarrow v$. The opposite chirality lives on~$\bar{X}$;
+the decay operator is an endomorphism of~$X$ and cannot act
+on~$\bar{X}$. The universe is left-handed (for matter) because
+the \textbf{weak force is an endomorphism of the canonical
+surface}.
+\end{result}
+
+\stoneref{Decay is \textbf{proof simplification}. The twisted rotation
+system is a proof with a detour---a non-constructive step that forces
+the deductive path to traverse an entangled orbit. The edge snap
+\emph{eliminates the detour}, producing a shorter proof
+on a simpler surface. The neutrino carries the eliminated lemma.
+Genus~0 (the electron) is the
+\textbf{fully constructive proof}---no detours, no
+possible simplification. The electron is the \textbf{normal form} of
+the prism's proof algebra.
+\smallskip\\
+Parity violation is \textbf{algebraic consistency of
+inference}. $P$ (Galois) swaps the orientation of the deduction;
+$T$ inverts its direction; $C$ swaps premises and conclusions.
+A left-handed twist is a non-constructive detour that lives on~$X$---a
+valid lemma, accessible to the simplification operator. A right-handed
+twist lives on~$\bar{X}$: the simplification operator,
+bound to~$X$, cannot access it. For antimatter
+(contrapositive, Nugget~III), the three inversions ($C$, $P$, $T$)
+swap the surfaces and with them the accessible chirality.}
+
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\section{The Electromagnetic Coupling: Safe Ports of the $K_{2,3}$}
+\label{sec:em-coupling}
+% ═══════════════════════════════════════════════════════════════════════════════
+
+% CENTRAL CORRESPONDENCE:
+%   Discrete: Fraction of polar ports of the K_{2,3} = 4/21
+%   Continuous: Bare fine-structure constant α₀ = 1/(42π)
+%   The projection P_L filters twists; ports filter EM vertices
+
+The previous chapter showed how the weak force changes the
+genus of a Prism (graph rewriting) and how holomorphy
+restricts the accessible chirality. The complementary question remains:
+how does a photon---an external causal link---interact with an
+electron $K_{2,3}$ \textbf{without destroying it}?
+
+The answer reveals the exact combinatorial origin of the fine-structure
+constant.
+
+The answer is articulated through two filters. \textbf{First filter} (weak
+veto): if the photon connects to an intermediary~$w_i$, the valence
+of~$w_i$ increases and the belly becomes unbalanced, forcing a Kuratowski
+twist that raises the genus---the particle changes
+generation. That is a weak interaction, not electromagnetism.
+The 39 free ports of the three intermediaries are forbidden.
+\textbf{Second filter} (safe ports): to preserve $g = 0$, the
+photon must connect to a pole, where 12 ports are available.
+
+The total combinatorial space of the $K_{2,3}$ has 63 free ports
+(12 + 12 polar $+$ 39 intermediary). The
+electromagnetically active fraction is:
+\begin{equation}
+  \mathcal{Q}_{\mathrm{topo}}
+  \;=\; \frac{12}{63}
+  \;=\; \frac{4}{21},
+  \label{eq:qtopo-analytical}
+\end{equation}
+and the \textbf{bare} fine-structure constant, normalized over
+the double light cone ($8\pi = 2\,\mathrm{Vol}(S^2)$ steradians,
+Lemma~\ref{lem:angular-averaging}):
+\begin{equation}
+  \alpha_0
+  \;=\; \frac{\mathcal{Q}_{\mathrm{topo}}}{8\pi}
+  \;=\; \frac{4/21}{8\pi}
+  \;=\; \boxed{\;\frac{1}{42\pi}\;}
+  \;\approx\; \frac{1}{131{.}95}.
+  \label{eq:alpha-bare}
+\end{equation}
+The detailed port accounting---node by node, filter by
+filter---is presented in \textbf{Worked Proof~I}
+(p.~\pageref{sec:demo-alpha}).
+
+\subsection{The Bridge to $1/137$: Discrete Vacuum Polarization}
+\label{subsec:vacuum-polarization}
+
+The value $\alpha_0^{-1} \approx 132$ is not the value measured in the
+laboratory ($\alpha^{-1} = 137{.}036$). The difference
+$\Delta\alpha^{-1} \approx 5$ has the same sign and order of magnitude
+as the effect predicted by quantum electrodynamics (QED):
+\textbf{vacuum polarization}.
+
+In the Standard Model, virtual pairs $e^+e^-$ appear and
+disappear in the vacuum, screening the bare charge at
+long distances. The measured coupling $\alpha$ is weaker than the
+bare coupling $\alpha_0$ because the polarization layers
+reduce the effective charge seen by a distant probe.
+
+\medskip\noindent
+In the Kuratowski Calculus, the screening mechanism has
+a concrete topological realization, derivable from the combinatorics
+of the Hasse diagram:
+
+\begin{enumerate}
+  \item \textbf{Mass = counting observable.} The question ``how many
+    distinct phases appear among the~$N$ intermediaries?'' is a
+    \emph{coupon collector} problem: if the phases
+    $\varphi(w_i) \in \{-1, 0, +1\}$ were independent, the mean
+    mass of each generation would be $E[N \mid g = k]$. The
+    i.i.d.\ model reproduces the analytical mass relations with error
+    $< 2\%$ (\S\ref{sec:mass-hierarchy}).
+    \textbf{Success}: mass is insensitive to correlations.
+
+  \item \textbf{Charge = summation observable.} The question ``how much
+    do the phases cancel?'' involves $|\Phi(P)| = |\sum \varphi(w_i)|$.
+    The i.i.d.\ model predicts
+    $\mathcal{Q}_{\mathrm{pred}} = 4/21 \approx 0{.}190$
+    (Result~\ref{res:fine-structure}).
+    However, planarity correlations force
+    $\mathcal{Q}_{\mathrm{obs}} < \mathcal{Q}_{\mathrm{pred}}$
+    (Theorem~\ref{thm:planarity-screening}).
+    \textbf{Charge \emph{does} depend on correlations.}
+
+  \item \textbf{Mechanism.} At small belly sizes
+    ($N \leq 4$), the $K_{3,3}$-free and
+    $K_5$-free planarity constraints of the Hasse diagram force
+    \textbf{degree anti-correlation} among the intermediaries. A node
+    with phase $+1$ (high out-degree) suppresses the appearance of
+    other $+1$ nodes in the same belly. The net phase is
+    screened---the discrete analogue of virtual $e^+e^-$ pair
+    production in QED.
+
+  \item \textbf{Running coupling.}
+    The Kuratowski planarity constraints produce a
+    topological coupling $\mathcal{Q}_{\mathrm{topo}}(N)$ that
+    \textbf{decreases monotonically with~$N$}: as the graph
+    grows, the degree anti-correlations imposed by planarity
+    involve more belly layers, progressively screening
+    the charge. The fine-structure constant \emph{runs natively}
+    from graph topology, without any loop expansion or
+    renormalization prescription.
+\end{enumerate}
+
+\begin{theorem}[Planarity screening]
+\label{thm:planarity-screening}
+Let $\mathcal{Q}_{\mathrm{pred}}$ be the topological charge computed under
+the i.i.d.\ hypothesis, and $\mathcal{Q}_{\mathrm{obs}}$ the charge in a
+$K_{3,3}$-free and $K_5$-free Hasse diagram. Then
+$\mathcal{Q}_{\mathrm{obs}} < \mathcal{Q}_{\mathrm{pred}}$.
+\end{theorem}
+
+\begin{proof}
+In the i.i.d.\ model, the phases $\varphi(w_i)$ are independent.
+In the actual Hasse diagram, the $K_{3,3}$-free constraint imposes
+that no set of three intermediaries can be connected
+to the same three external nodes. For small bellies ($N \leq 4$),
+this limits the degree of each intermediary. If an intermediary~$w_1$
+has high out-degree ($\varphi = +1$), the output ports
+it occupies at the future nodes \emph{reduce} the ports available
+for other intermediaries, biasing their phases toward~$-1$ or~$0$.
+This forced anti-correlation produces $|\sum \varphi_i| <
+|\sum \varphi_i^{\mathrm{iid}}|$ in expectation, that is,
+$\mathcal{Q}_{\mathrm{obs}} < \mathcal{Q}_{\mathrm{pred}}$.
+\end{proof}
+
+\noindent\textit{Numerical observation.}\enspace
+The simulation confirms the monotone decrease:
+$\mathcal{Q}_{\mathrm{topo}}$ decreases from $0{.}271$ ($N = 10^5$)
+to $0{.}191$ ($N = 10^7$). The finite-size scaling extrapolation
+$O(N) = O_\infty + a\,N^{-1/4}$ yields
+$\mathcal{Q}_\infty = 0{.}152$, i.e.,
+$\alpha_0^{-1} = 165{.}1 \pm 1{.}0$ at the UV cutoff
+($R^2 = 0{.}9996$).
+
+The virtual pairs $K_{2,3} + \bar{K}_{2,3}$ that populate the
+causal vacuum, and the baryonic sector $K_{3,3}$ (not yet implemented in
+the simulation), contribute to the topological vacuum
+polarization. The residual $\alpha_0 \to \alpha_{\text{lab}}$ quantifies
+exactly the contribution of these sectors:
+\[
+  \frac{1}{\alpha_{\text{lab}}} - \frac{1}{\alpha_0}
+  \;\approx\; 137{.}04 - 131{.}95
+  \;\approx\; 5{.}1\,.
+\]
+This $\Delta(\alpha^{-1}) \approx 5$ is the signature of topological
+vacuum polarization, and constitutes a testable prediction
+when the $K_{3,3}$ sector is incorporated.
+
+\begin{result}[title={Vacuum polarization is a consequence of planarity}]
+\label{res:vacuum-polarization}
+The same i.i.d.\ occupation model that \textbf{succeeds} for
+mass (counting observable) \textbf{fails} for charge
+(summation observable) (Theorem~\ref{thm:planarity-screening}). This
+failure \emph{is} the vacuum polarization: the Kuratowski planarity
+constraints force UV-scale phase anti-correlations that screen the
+topological charge, analogously to how virtual pairs screen the
+electric charge in QED. The coupling
+runs from $\alpha_0^{-1} = 42\pi \approx 132$ (analytical, an
+isolated Prism) to higher values (collective) by pure
+graph topology.
+\end{result}
+
+\begin{result}[title={The fine-structure constant is a topological
+fraction}]
+\phantomsection\label{res:fine-structure}
+The bare fine-structure constant
+$\alpha_0 = 1/(42\pi)$ is derived from three combinatorial data:
+\begin{enumerate}
+  \item The electron is a graph $K_{2,3}$ (Generation~1, $g = 0$).
+  \item The valence limit $\mathcal{V}_{\max} = 15$
+    (Theorem~\ref{thm:valence-limit}), with uncertainty $\pm 1$.
+  \item The electromagnetic vertex preserves genus (Filter~1).
+\end{enumerate}
+The ratio $\mathcal{Q}_{\mathrm{topo}} = (\mathcal{V}_{\max} - 3)/
+(5\mathcal{V}_{\max} - 12)$ gives $4/21$ for $\mathcal{V}_{\max} = 15$;
+varying $\mathcal{V}_{\max} \in \{14, 15, 16\}$, the result is
+$\alpha_0^{-1} = 132 \pm 1$. With the double light cone normalization
+($8\pi = 2\,\mathrm{Vol}(S^2)$), one obtains $\alpha_0 = 1/(42\pi)$.
+The universe is slightly transparent to radiation because only
+$4$ out of every $21$ ports of the electron are accessible to a photon.
+\end{result}
+
+\stoneref{The electromagnetic coupling is the \textbf{proportion
+of accessible deductive space}. The electron, read as a deductive
+system, has 63 free logical ports (possible extensions of its
+proof chain). But only 12 produce extensions that preserve the
+\emph{normal form} of the system (genus~0 = fully
+constructive proof). The other 39 ports generate detours
+that change the logical complexity of the system (genus~$> 0$), which
+constitutes a \emph{distinct operation} (the weak force). The
+constant $\alpha_0 = 1/(42\pi)$ measures the fraction of logical
+space in which the system can extend itself without changing its
+deductive identity. Electric charge is not an intrinsic property: it is
+the \textbf{combinatorial accessibility} of the normal form.}
+
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Mass Hierarchy: The Occupation Model}
+\label{sec:mass-hierarchy}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The preceding sections derived the \textbf{fine-structure
+constant} from the combinatorics of the $K_{2,3}$ and demonstrated that
+\textbf{vacuum polarization} emerges from graph planarity.
+A fundamental problem has remained open since the beginning of this
+volume: why $m_1 < m_2 < m_3$? Can the mass hierarchy
+be derived quantitatively without free parameters?
+
+The answer is affirmative. The mechanism is a \textbf{coupon-collector
+selection effect} on the belly-size distribution.
+
+\subsection{Phase fractions and occupation}
+
+Each intermediary $w_i$ of a Prism $K_{2,N}$ possesses a causal phase
+$\varphi(w_i) = \mathrm{sgn}(\mathrm{out}(w_i) - \mathrm{in}(w_i))
+\in \{-1, 0, +1\}$ (Law~L5). The global phase fractions
+$(p_+, p_0, p_-)$ are determined by the geometry of the
+Poisson \emph{sprinkling} on the causal diamond.
+
+\begin{theorem}[Phase fractions from Poisson sprinkling]
+\label{thm:phase-fractions}
+Let $\mathcal{C}$ be a causal set obtained by Poisson \emph{sprinkling}
+at density~$\rho$ on a causal diamond of height~$T$
+in $d = 4$ dimensions. A node located at temporal fraction
+$\tau \in [0,1]$ has expected out-degree proportional to the
+future volume $\propto (1-\tau)^4$ and in-degree proportional
+to the past volume $\propto \tau^4$. Then:
+\begin{enumerate}
+  \item $p_- > p_+ > p_0$: the temporal asymmetry of the diamond makes
+        nodes with more past than future (phase~$-1$) dominant;
+  \item $p_0 \ll p_\pm$: the null phase requires exact equality
+        $\mathrm{out} = \mathrm{in}$, which is a measure-zero event
+        in the continuum limit and rare at finite density;
+  \item The fractions are computed as integrals over the temporal
+        profile:
+        \begin{align}
+          p_- &= \int_0^1 \Pr(\mathrm{out} < \mathrm{in} \mid \tau)
+                \,\varrho(\tau)\,d\tau, \notag\\
+          p_+ &= \int_0^1 \Pr(\mathrm{out} > \mathrm{in} \mid \tau)
+                \,\varrho(\tau)\,d\tau, \label{eq:phase-fractions}\\
+          p_0 &= 1 - p_+ - p_-, \notag
+        \end{align}
+        where $\varrho(\tau)$ is the normalized density of nodes
+        at temporal fraction~$\tau$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+The volume of the future cone of a point at temporal fraction~$\tau$ in
+a 4-dimensional diamond is $V_+(\tau) \propto (1-\tau)^4$, and that of the
+past cone is $V_-(\tau) \propto \tau^4$. The Hasse out-degree
+and in-degree are Poisson random variables with means $\lambda_{\mathrm{out}}
+\propto V_+(\tau)$ and $\lambda_{\mathrm{in}} \propto V_-(\tau)$
+respectively. For $\tau > 1/2$, $\lambda_{\mathrm{in}} >
+\lambda_{\mathrm{out}}$, hence $\Pr(\mathrm{out} < \mathrm{in}) > 1/2$.
+Since the density $\varrho(\tau) \propto [\tau(1-\tau)]^3$ of the
+diamond is symmetric in~$\tau$ but the phase is \emph{not} symmetric
+(the future is exhausted before the past for nodes near the future pole
+of a finite diamond), one obtains $p_- > p_+$.
+The equality $\mathrm{out} = \mathrm{in}$ requires two independent Poisson
+variables to coincide exactly, which has probability
+$\sum_k e^{-\lambda_+}\lambda_+^k/k!\cdot e^{-\lambda_-}\lambda_-^k/k!
+= e^{-(\lambda_++\lambda_-)}I_0(2\sqrt{\lambda_+\lambda_-})$, which decreases
+with $\lambda_\pm$. Integrating over~$\tau$, one obtains $p_0 \ll p_\pm$.
+\end{proof}
+
+\noindent\textit{Numerical observation.}\enspace
+At $N = 10^7$, the simulation measures
+$(p_+, p_0, p_-) = (0{.}318,\; 0{.}018,\; 0{.}664)$,
+consistent with the analytical prediction of
+Theorem~\ref{thm:phase-fractions}.
+
+\medskip
+If the phases were \textbf{independent} (i.i.d.\ model), the
+probability that a Prism of size~$N$ belongs to
+Generation~$g$ would depend only on how many of the three
+categories remain \emph{occupied} by the $N$ draws---a classic
+occupation (coupon collector) problem.
+
+\subsection{Explicit formulas}
+
+Let $p_{\max} = \max(p_+, p_0, p_-)$. The generational
+probabilities for a Prism of size~$N$ are:
+\begin{align}
+  P(g=1 \mid N) &= p_+^N + p_0^N + p_-^N, \\
+  P(g=3 \mid N) &= 1 - (1-p_+)^N - (1-p_0)^N - (1-p_-)^N + p_+^N + p_0^N + p_-^N, \\
+  P(g=2 \mid N) &= 1 - P(g=1 \mid N) - P(g=3 \mid N).
+\end{align}
+
+Since $P(g=1 \mid N) \sim p_{\max}^N$ decays exponentially with~$N$,
+Generation~1 is \textbf{biased toward small bellies}
+(low mass). Generation~3 requires all three phases to be
+represented, which demands large bellies (high mass). The mean
+mass of each generation is:
+\begin{equation}
+  \langle N \rangle_g \;=\; \frac{\sum_N N\,f(N)\,P(g \mid N)}
+                                  {\sum_N f(N)\,P(g \mid N)},
+  \label{eq:mass-occupancy}
+\end{equation}
+where $f(N)$ is the belly-size distribution determined
+by the geometry of the causal diamond.
+
+\subsection{Quantitative results}
+
+Using the phase fractions from
+Theorem~\ref{thm:phase-fractions} and the distribution $f(N)$ from
+Proposition~\ref{prop:belly-exponential}, the occupation model
+predicts the belly-size ratios:
+
+\medskip
+\begin{center}
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Ratio} & \textbf{i.i.d.\ prediction}
+  & \textbf{Simulation ($N\!=\!10^7$)}
+  & \textbf{Error} & \textbf{Nature} \\
+\midrule
+$\langle N\rangle_2 / \langle N\rangle_1$
+  & 1{.}409 & 1{.}434 & 1{.}8\% & --- \\
+$\langle N\rangle_3 / \langle N\rangle_1$
+  & 1{.}674 & 1{.}698 & 1{.}4\% & --- \\
+\bottomrule
+\end{tabular}
+\end{center}
+\medskip
+
+\noindent\textit{Important note.}\enspace
+The quantities $\langle N\rangle_g$ are \textbf{mean belly
+sizes} (number of intermediaries), not physical masses. The
+mass ratios measured in nature are
+$m_\mu / m_e \approx 206{.}8$ and $m_\tau / m_e \approx 3477$,
+orders of magnitude larger. The occupation model captures the
+\textbf{ordering} $m_1 < m_2 < m_3$ and the internal statistics
+of the simulation, but the function $m_{\text{physical}}(N)$ that
+converts belly size to inertial mass requires the
+complete dynamics of the Hasse diagram (maximum chain length,
+gravitational coupling, and group renormalization) and remains
+open.
+
+\medskip
+Both inputs---$(p_+, p_0, p_-)$ and $f(N)$---are determined
+entirely by the geometry of the Poisson \emph{sprinkling}.
+Within the i.i.d.\ model, no parameter is fitted.
+
+\begin{result}[title={The mass hierarchy is an occupation effect}]
+\label{res:mass-hierarchy-occupancy}
+The hierarchy $m_1 < m_2 < m_3$ is not a mystery: it is the
+inevitable consequence of the fact that Generation~1 (a single phase
+occupied) is biased toward small bellies while
+Generation~3 (three phases occupied) requires large bellies. The
+i.i.d.\ occupation model reproduces the ratios
+$\langle N\rangle_g / \langle N\rangle_1$ with error $< 2\%$
+relative to the simulation. The translation of $\langle N\rangle_g$
+to physical masses (MeV) is an open problem that requires the
+complete functional $m(N)$.
+\end{result}
+
+\stoneref{In Stone duality, the mass hierarchy is a
+\textbf{logical selection effect}. A proof of
+complexity~1 (a single mode of inference) can be short; a
+proof of complexity~3 (three distinct modes of inference)
+\emph{needs} to be long to contain at least one instance of each
+mode. Mass---the number of intermediate lemmas---is larger for
+more complex proofs because complexity demands logical
+space.}
+
+
+% ███████████████████████████████████████████████████████████████████████████████
+%   MODULE 9: MODULAR SYNTHESIS AND QUANTUM INTERFERENCE
+% ███████████████████████████████████████████████████████████████████████████████

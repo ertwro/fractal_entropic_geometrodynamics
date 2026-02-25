@@ -1,0 +1,562 @@
+% ═══════════════════════════════════════════════════════════════════════════════
+\chapter{The Causal Derivative: Diffusion and Resolution}
+% ═══════════════════════════════════════════════════════════════════════════════
+% CENTRAL CORRESPONDENCE:
+%   Continuum: ∂f/∂x^μ, ∇_μ, □  (derivatives, connection, d'Alembertian)
+%   Discrete: diffusion over the Hasse, local valence, net flux
+
+\begin{introduction}
+  \item The diffusion operator and the spectral dimension as a derivative.
+  \item The Causal Resolution Theorem: precision of the discrete derivative.
+  \item Flow gradients, inertia, and continuity equations.
+\end{introduction}
+
+If the Kuratowski integral gives us volume (the event count),
+the derivative reveals dimensionality and curvature. In this
+chapter, we define the differential operator not as a subtraction of
+values at adjacent points, but as the rate of propagation of
+information through the causal network.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{The Diffusion Operator and the Spectral Dimension}
+
+In Riemann calculus, the dimension of a manifold is given
+a priori: one fixes $d = 4$ before writing a single
+equation. In Kuratowski Calculus, the dimension is an
+\emph{emergent}
+property~\cite{carlip2017,ambjorn2005,eichhorn2014},
+detectable via a diffusion operator (the random walker
+on the Hasse diagram).
+
+\begin{definition}[Random Walker on the Hasse Diagram]
+\label{def:random-walker}
+Let $H = (V, E)$ be the Hasse diagram (undirected) of a causal
+set $\mathcal{C} = (V, \prec)$, where $E$ is the set of
+covering links~$\covers$ with the orientation suppressed.
+A \textbf{random walker} starts from an event~$u_0 \in V$ and, at
+each discrete step $t \to t+1$, jumps to a neighbor chosen
+uniformly at random:
+\[
+  \Pr\bigl[u_{t+1} = v \;\big|\; u_t = u\bigr]
+  \;=\;
+  \begin{cases}
+    1/\deg(u) & \text{if } (u,v) \in E,\\[2pt]
+    0 & \text{otherwise,}
+  \end{cases}
+\]
+where $\deg(u) = |\{v : (u,v) \in E\}|$ is the total valence
+(in-degree $+$ out-degree in the original DAG).
+\end{definition}
+
+\begin{definition}[Return Probability and Spectral Dimension]
+\label{def:spectral-dimension}
+The \textbf{return probability} $P(t)$ is the probability that
+the walker returns to its origin after $t$~steps, averaged
+over all possible origins:
+\[
+  P(t) \;=\; \frac{1}{|V|}\sum_{u \in V}
+  \Pr\bigl[u_t = u \;\big|\; u_0 = u\bigr].
+\]
+The \textbf{spectral dimension} is extracted as the logarithmic
+slope of this probability:
+\begin{equation}
+  \boxed{\;
+  \dS(t) \;=\; -2\,\frac{d\log P(t)}{d\log t}.
+  \;}
+  \label{eq:spectral-dim}
+\end{equation}
+For a smooth $d$-dimensional manifold, $P(t) \sim t^{-d/2}$
+and therefore $\dS(t) \to d$.
+\end{definition}
+
+\stoneref{$\dS$ is the \emph{inferential dimensionality}: the number
+of independent inference axes of the deductive system.
+$\dS \to 4$ means that there exist exactly four
+orthogonal logical directions in which the system can reason. The
+question ``why 4 dimensions?'' becomes ``why
+4 independent inference axes?''}
+
+\noindent
+The spectral dimension is the fundamental \emph{derivative} of
+Kuratowski Calculus: it measures how the propagation of
+information decays with temporal depth. It is the discrete analogue
+of the trace of the heat kernel
+$K(t) = \mathrm{Tr}\,e^{-t\Delta}$ in Riemannian spectral
+geometry~\cite{minakshisundaram1949,gilkey1975}. The
+spectral dimension was introduced as a diagnostic for
+causal sets in~\cite{eichhorn2014}; the phenomenon of
+dimensional reduction at short scales ($\dS \to 2$) also appears
+in causal dynamical
+triangulations~\cite{ambjorn2005} and other approaches to quantum
+gravity~\cite{carlip2009,modesto2009}.
+
+\begin{theorem}[Dimensional Stabilization by Causal Prisms]
+\phantomsection\label{thm:dimensional-stabilization}
+The presence of Causal Prisms~$K_{2,N}$ in the Hasse diagram
+\textbf{stabilizes} the spectral dimension $\dS$ around~$4$
+at intermediate diffusion times.
+\end{theorem}
+
+\begin{proof}
+A Causal Prism $K_{2,N}$ adds to the Hasse diagram a complete
+bipartite subgraph: $N$ intermediaries, each connected
+\emph{only} to both poles $u$ and $v$ (the intermediaries are
+mutually disconnected by the triangle-free property). The
+degree of the poles grows to $\deg(u), \deg(v) \geq N$, creating a
+region of high connectivity around the poles.
+
+The trapping mechanism operates via \textbf{polar ping-pong}:
+a random walker (undirected) that reaches an intermediary
+$w_i$ has exactly two neighbors ($u$ and $v$), so it jumps to
+one of the poles with probability~$1/2$ each. Upon arriving at pole
+$u$ (of degree $\geq N$), the walker chooses uniformly among its
+$N$ intermediate children---with high probability it returns to the
+belly of the prism instead of escaping into the vacuum. Thus, the
+walker bounces between pole $\to$ intermediate $\to$ pole repeatedly,
+generating a dwell time on the order of the \textbf{coupon
+collector problem}: to visit all $N$ distinct intermediaries
+requires $O(N\,H_N)$ steps, where $H_N =
+\sum_{k=1}^{N} 1/k$.
+
+This trapping modifies the return probability:
+$P(t,u) = \Pr(X_t = u \mid X_0 = u)$ increases relative to the pure
+vacuum at intermediate times, since the walker remains in the
+neighborhood of the prism. Since $\dS = -2\,d(\ln P)/d(\ln t)$, an
+increase in~$P$ in the range of diffusion times associated with the
+prism scale reduces the logarithmic derivative, stabilizing $\dS$
+near the value~$4$ corresponding to the dimension of the
+macroscopic causal diamond ($d = 4$).
+
+Without prisms, the pure vacuum (uniform Poisson) has degree
+fluctuations of $O(\sqrt{\rho})$ that produce noisy variations
+in~$P(t)$ and therefore in~$\dS$. The prisms smooth out these
+fluctuations by imposing a regular connectivity structure.
+\end{proof}
+
+\begin{result}[title={Dimensional Stabilization by Matter}]
+\phantomsection\label{res:dimensional-stabilization}
+Matter is not a guest of four-dimensional spacetime; it is,
+by operational definition, the topological structure that
+\emph{forces} the derivative of information to behave
+four-dimensionally
+(Theorem~\ref{thm:dimensional-stabilization}).
+\end{result}
+
+\noindent\textit{Numerical observation.}\enspace
+The simulation ($N$ up to $5 \times 10^6$) confirms that the pure
+vacuum exhibits a noisy and fractal spectral dimension, while the
+presence of prisms stabilizes $\dS \approx 4$ at intermediate
+diffusion times, consistent with
+Theorem~\ref{thm:dimensional-stabilization}.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{The Causal Resolution Theorem}
+
+The validity of any discrete derivative depends on the resolution
+of the probe. In Kuratowski Calculus, the precision of our
+description of spacetime is intrinsically tied to the
+number of causal paths probed.
+
+Theorem~\ref{thm:causal-resolution} (Chapter~6) establishes that
+in order to maintain an error tolerance~$\epsilon$ in the measurement
+of the geometry up to a depth~$t_{\max}$, the number of
+walkers must satisfy:
+\begin{equation}
+  W \;\geq\; \frac{t_{\max}^{\,2}}{c\;\epsilon^2}.
+  \tag{\ref{eq:causal-resolution}}
+\end{equation}
+
+\noindent
+This result establishes the \textbf{certainty limit}:
+the illusion of the Riemannian continuum is only sustainable if the
+density of causal interactions is high enough to
+average out the Poisson noise of the discrete topology. The scaling
+$W \propto t_{\max}^2$ is a direct consequence of $\dS = 4$:
+in a spacetime of spectral dimension~$d$, the general bound
+is $W \propto t_{\max}^{d/2}$.
+
+\begin{theorem}[General Spectral Resolution Bound]
+\label{thm:resolution-general}
+For a causal set with spectral dimension~$\dS$ at large
+times, $P(t) \sim t^{-\dS/2}$. The resolution bound of
+Theorem~\ref{thm:causal-resolution} generalizes to:
+\begin{equation}
+  W \;\geq\; \frac{t_{\max}^{\,\dS/2}}{c\;\epsilon^2}.
+  \label{eq:resolution-general}
+\end{equation}
+In particular:
+\begin{enumerate}
+  \item $\dS = 2$ (UV limit, tree-like graphs):
+        $W \propto t_{\max}$\quad (linear cost).
+  \item $\dS = 4$ (macroscopic spacetime):
+        $W \propto t_{\max}^2$\quad (quadratic cost).
+  \item $\dS > 4$ (compact extra dimensions):
+        the cost grows faster than quadratic.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+Follows identically the proof of
+Theorem~\ref{thm:causal-resolution}, substituting
+$P(t_{\max}) = c\,t_{\max}^{-\dS/2}$:
+\[
+  W \;\geq\; \frac{1}{\epsilon^2\,P(t_{\max})}
+  \;=\; \frac{t_{\max}^{\,\dS/2}}{c\;\epsilon^2}.
+\]
+\end{proof}
+
+\noindent
+Formula~\eqref{eq:resolution-general} reveals that the
+spectral dimension directly controls the
+\emph{computational price of smoothness}: higher dimensions
+are more costly to sustain.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Antichains: The Spatial Slices of the DAG}
+
+To define spatial gradients over the causal network, we need
+the notion of a ``discrete instant'': a cut of the DAG that separates
+past from future.
+
+\begin{definition}[Antichain]
+\label{def:antichain}
+An \textbf{antichain} is a subset $\mathcal{A} \subset V$
+whose elements are mutually incomparable under the causal order:
+\[
+  \forall\, a, b \in \mathcal{A},\;a \neq b
+  \;\colon\quad
+  a \nprec b \;\;\text{and}\;\; b \nprec a.
+\]
+An antichain is the discrete analogue of a
+\textbf{simultaneity hypersurface}: it defines an ``instant''
+where no event can causally influence another.
+\end{definition}
+
+\noindent
+The causal DAG admits a \textbf{Hasse stratum
+foliation}~\cite{rideout2000,surya2019}: a partition
+$V = \mathcal{A}_0 \cup \mathcal{A}_1 \cup \cdots \cup
+\mathcal{A}_T$ where each stratum~$\mathcal{A}_k$ is a maximal
+antichain, and every link $u \covers v$ connects a
+stratum~$\mathcal{A}_k$ with the next stratum~$\mathcal{A}_{k+1}$.
+The strata define a ``global discrete time'' $k = 0, 1,
+\ldots, T$.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Flow Gradients and Inertia}
+
+The Kuratowski derivative allows us to define force not as an
+external vector field, but as a \emph{connectivity
+gradient}.
+
+\begin{definition}[Discrete d'Alembertian
+Operator]
+\label{def:box-operator}
+Let $\phi \colon V \to \mathbb{R}$ be a scalar function over the
+events of the causal set. The \textbf{discrete d'Alembertian}
+(or causal wave operator) at an event~$u$ is defined as the
+difference between the outgoing flux and the incoming flux through
+the covering links:
+\begin{equation}
+  (\Box_{\mathcal{C}}\,\phi)(u)
+  \;=\;
+  \underbrace{\sum_{v :\, u \covers v} \phi(v)}_{\text{children of } u}
+  \;-\;
+  \underbrace{\sum_{w :\, w \covers u} \phi(w)}_{\text{parents of } u}.
+  \label{eq:box-discrete}
+\end{equation}
+\end{definition}
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+  event/.style={circle, fill=structure, inner sep=2pt, minimum size=6pt},
+  layer1/.style={circle, fill=main, inner sep=1.5pt, minimum size=5pt},
+  layer2/.style={circle, fill=third, inner sep=1.5pt, minimum size=5pt},
+  layer3/.style={circle, fill=fourth, inner sep=1.5pt, minimum size=5pt},
+  link/.style={draw=gray!40, thin},
+  >=Stealth
+]
+% Central event
+\node[event, label={[font=\small]above:$u$}] (u) at (0,0) {};
+% Layer 1 (parents) -- coefficient +9
+\foreach \i/\a in {1/200, 2/240, 3/280, 4/320} {
+  \node[layer1] (L1\i) at (\a:1.5) {};
+  \draw[link] (L1\i) -- (u);
+}
+\node[font=\scriptsize, main] at (260:2.1) {$L_1$: $+9$};
+% Layer 2 (grandparents) -- coefficient -16
+\foreach \i/\a in {1/195, 2/225, 3/255, 4/285, 5/315} {
+  \node[layer2] (L2\i) at (\a:2.8) {};
+  \draw[link, gray!25] (L2\i) -- (u);
+}
+\node[font=\scriptsize, third] at (255:3.4) {$L_2$: $-16$};
+% Layer 3 (great-grandparents) -- coefficient +8
+\foreach \i/\a in {1/210, 2/240, 3/270, 4/300} {
+  \node[layer3] (L3\i) at (\a:4.0) {};
+  \draw[link, gray!15] (L3\i) -- (u);
+}
+\node[font=\scriptsize, fourth] at (240:4.6) {$L_3$: $+8$};
+% Central coefficient
+\node[font=\scriptsize, structure] at (0.6,0.4) {$-1$};
+% Temporal arrow
+\draw[->, thick, structure!40] (2.5,0.5) -- (2.5,-4)
+  node[midway, right, font=\small, color=structure!50] {past};
+\end{tikzpicture}
+\caption{The d'Alembertian template. The central event~$u$
+(coefficient~$-1$) connects to three layers of causal ancestors. The
+alternating-sign coefficients $\{-1,+9,-16,+8\}$ cancel the
+volume of the interior and isolate the curvature signal at the
+boundary---a discrete implementation of Huygens' principle.}
+\label{fig:plantilla-dalembertiano}
+\end{figure}
+
+\noindent
+This operator has a transparent interpretation. Let
+$d^+(u) = |\{v : u \covers v\}|$ be the out-degree and
+$d^-(u) = |\{w : w \covers u\}|$ the in-degree of~$u$. Then:
+\begin{itemize}
+  \item If $\phi \equiv 1$ (constant field):
+    $(\Box_{\mathcal{C}}\,\phi)(u) = d^+(u) - d^-(u)$.
+    The operator measures the \textbf{local causal asymmetry}---the
+    difference between the number of immediate futures and immediate
+    pasts.
+  \item If $\phi$ varies, the operator detects how the
+    signal \textbf{propagates}: the sum over children measures the
+    dispersion toward the future, and the sum over parents measures the
+    convergence from the past.
+\end{itemize}
+
+\noindent
+Starting from~\eqref{eq:box-discrete}, the \textbf{normalized causal
+gradient} in the temporal direction is:
+
+\begin{definition}[Causal Gradient]
+\label{def:causal-gradient}
+\begin{equation}
+  (\nabla_t\,\phi)(u)
+  \;=\;
+  \frac{1}{d^+(u)}\sum_{v :\, u \covers v} \phi(v)
+  \;-\;
+  \frac{1}{d^-(u)}\sum_{w :\, w \covers u} \phi(w).
+  \label{eq:causal-gradient}
+\end{equation}
+It is the average toward the future minus the average from the past: the
+discrete rate of change of~$\phi$ per topological step.
+\end{definition}
+
+\subsection{Inertia as Resistance to Flow}
+
+When a walker traverses a Causal Prism~$K_{2,N}$, it experiences
+a decrease in its effective propagation speed due to the
+bifurcation of paths at the $N$ intermediate nodes. Let us formalize
+this observation.
+
+\begin{theorem}[Gradient Delay by Causal Prisms]
+\label{thm:gradient-delay}
+Let $\phi$ be a scalar field propagating through a
+Prism~$\mathcal{P}(u,v,W)$ with $|W| = N$ intermediate nodes
+(\S\ref{def:topological-resistance}). For the entry
+pole~$u$, the causal gradient satisfies:
+\begin{equation}
+  (\nabla_t\,\phi)(u)
+  \;=\;
+  \frac{1}{N}\sum_{w \in W} \phi(w)
+  \;-\;
+  \frac{1}{d^-(u)}\sum_{w' :\, w' \covers u} \phi(w'),
+  \label{eq:gradient-prism}
+\end{equation}
+where the first sum distributes uniformly over the $N$
+intermediaries. If $\phi$ is constant over~$W$ (homogeneous field in
+the belly of the prism), then:
+\[
+  (\nabla_t\,\phi)(u)
+  \;=\; \phi_W - \bar{\phi}_{\text{pasado}},
+\]
+independently of~$N$. However, the information requires
+$N$~diffusion steps to traverse the belly before reaching the
+exit pole~$v$, producing an \textbf{effective delay}
+$\Delta t_{\text{prisma}} = N$.
+\end{theorem}
+
+\begin{proof}
+In the Prism $\mathcal{P}(u,v,W)$, the pole~$u$ has $d^+(u) = N$
+children (all the $w \in W$). By
+Definition~\ref{def:causal-gradient}:
+\[
+  (\nabla_t\,\phi)(u)
+  \;=\;
+  \frac{1}{N}\sum_{w \in W}\phi(w) - \bar{\phi}_{\text{pasado}}.
+\]
+A walker entering~$u$ must choose one of the $N$ intermediate
+paths. Each intermediary~$w_i$ is connected to~$v$ by a
+covering link $w_i \covers v$. But before the
+information can propagate from~$u$ to~$v$, it must pass through at
+least one intermediary: the minimum path is
+$u \covers w_i \covers v$, of length~2. Compared with a
+direct vacuum link $u \covers v'$ (length~1), the
+Prism introduces a delay of $+1$ step for each intermediary
+visited. If the walker explores the $N$ intermediaries by diffusion,
+the mean first-passage time to pole~$v$ scales as $\Delta
+t_{\text{prisma}} \sim N$.
+\end{proof}
+
+\noindent
+This ``resistance'' to the flow of information is the mathematical
+representation of inertia. The object does not ``weigh'' because it
+possesses a mysterious intrinsic property; it weighs because the
+derivative of its causal advance is delayed by the topology of the
+Prism.
+
+\begin{result}[title={The Derivative of Inertia}]
+\phantomsection\label{res:inertia-derivative}
+The topological mass $M = \kappa N$
+(Axiom of Topological Inertia, Vol.~II) manifests
+dynamically as the delay of the causal gradient:
+\[
+  \Delta t_{\text{prisma}} \;\sim\; N \;=\; M/\kappa.
+\]
+The greater the mass, the greater the delay. Inertia is, literally,
+the number of covering links that information must process before
+advancing one global step.
+\end{result}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{The Layered Operator (Benincasa--Dowker)}
+
+The discrete d'Alembertian $\Box_{\mathcal{C}}$
+(Def.~\ref{def:box-operator}) uses only the covering
+links---the Hasse layer $L_1$.  To obtain second-order precision
+in the continuum limit $\Box = \nabla_\mu \nabla^\mu$, we must
+extend the sum to deeper layers of the Hasse diagram.
+
+\begin{definition}[Hasse Layers]
+Let $u$ be an event of the causal set.  The \textbf{Hasse layer}
+$L_k(u)$ is the set of ancestors of~$u$ at Hasse distance
+exactly~$k$:
+\[
+  L_k(u) \;=\; \bigl\{\,v : v \prec u
+  \text{ at Hasse distance exactly } k\,\bigr\}.
+\]
+Thus, $L_1(u)$ are the direct parents, $L_2(u)$ the ``grandparents,'' etc.
+\end{definition}
+
+\begin{definition}[Layered Operator (Benincasa--Dowker)]
+\phantomsection\label{def:box-layered}
+The \textbf{layered operator} $\boxlayer$ is defined as
+\begin{equation}
+  \boxlayer\,\Phi(x)
+  \;=\;
+  \frac{4}{\lP^2\sqrt{6}}
+  \Bigl(
+    -\Phi(x)
+    \;+\; 9\!\!\sum_{L_1}\!\Phi
+    \;-\; 16\!\!\sum_{L_2}\!\Phi
+    \;+\; 8\!\!\sum_{L_3}\!\Phi
+  \Bigr).
+  \label{eq:box-layered}
+\end{equation}
+\end{definition}
+
+\noindent
+The coefficients $\{-1, +9, -16, +8\}$ are not free parameters: they are
+the unique solution of the system of three \textbf{moment conditions}
+that require $\boxlayer$ to annihilate constant, linear,
+and quadratic fields on a flat Poisson sprinkling.  The simple
+operator $\Box_{\mathcal{C}}$ (Def.~\ref{def:box-operator}) is the
+truncation to the layer $L_1$ alone.
+
+\medskip\noindent\textbf{Sign alternation and complex phases.}\quad
+The signs of the coefficients alternate: $(-,+,-,+)$.  This alternation
+forces oscillatory behavior in the diffusion over the Hasse
+graph.  In the continuum limit, preserving unitarity requires that
+these oscillations fold into complex phases $e^{i\theta}$---this
+is the discrete origin of the imaginary unit~$i$ in the
+Schr\"odinger equation.  The complex Hilbert space of quantum
+mechanics is not an independent axiom; it is a derived consequence
+of the sign structure of~$\boxlayer$.
+
+\begin{result}[title={The Layered Operator}]
+The operator $\boxlayer$ has no free parameters: its coefficients
+are dictated by the geometry.  The sign alternation forces
+oscillatory diffusion that, in the continuum limit, produces the
+complex phases of quantum mechanics.
+\end{result}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Continuity Equations on the Graph}
+\label{sec:discrete-continuity}
+
+Flux conservation on a directed acyclic graph is not an
+additional axiom: it is an algebraic consequence of the definition of
+current over covering links~\cite{sorkin2012,johnston2009,aslanbeigi2014}.
+
+\begin{definition}[Discrete Divergence]
+\label{def:discrete-divergence}
+Let $J : E_H \to \mathbb{R}$ be a \textbf{causal current} defined
+over the edges of the Hasse diagram~$E_H$.  The \textbf{discrete
+divergence} at an event~$u$ is
+\begin{equation}
+  (\operatorname{div}\,J)(u)
+  \;=\;
+  \sum_{v:\, u \covers v} J(u,v)
+  \;-\;
+  \sum_{w:\, w \covers u} J(w,u),
+  \label{eq:discrete-divergence}
+\end{equation}
+where $\covers$ denotes the covering link (Hasse edge).
+\end{definition}
+
+\begin{theorem}[Discrete Continuity Equation]
+\label{thm:discrete-continuity}
+Let $J$ be a conserved current over~$E_H$.  For every event~$u$
+in the interior of the causal set,
+\[
+  (\operatorname{div}\,J)(u) \;=\; 0.
+\]
+\end{theorem}
+
+\begin{proof}
+Consider an antichain~$\Sigma$ that separates the past from the
+future of~$u$.  The total flux through~$\Sigma$ is
+$\Phi(\Sigma) = \sum_{e \in E_H \cap \Sigma} J(e)$.
+Since the Hasse diagram is a DAG, every edge entering~$u$
+from~$\Sigma$ must exit through some edge toward the future of~$u$.
+The telescoping sum over the antichain cancels term by
+term: each incoming flux contribution appears exactly
+once as outgoing flux. The result is
+$\sum_{\text{in}} J - \sum_{\text{out}} J = 0$.
+\end{proof}
+
+\medskip\noindent\textbf{Continuum limit.}\quad
+When $N \to \infty$ with density~$\rho = \lP^{-4}$, the convergence
+of the Hasse diagram to the Lorentzian manifold
+(Theorem~\ref{thm:emergent-metric}) carries the discrete divergence to the
+classical operator: $\operatorname{div}\,J \to \partial_\mu J^\mu$.
+The discrete continuity equation becomes
+$\partial_\mu J^\mu = 0$, recovering the standard conservation law
+of general relativity~\cite{aslanbeigi2014}.
+
+\medskip\noindent\textbf{Connection with the random walker.}\quad
+The random walker of the spectral dimension
+(Def.~\ref{def:spectral-dimension}) is the probabilistic dual of the
+deterministic current: its transition probabilities define a
+stochastic current whose divergence vanishes by the conservation
+of probability. Causal flux and spectral diffusion are two faces of
+the same algebraic structure.
+
+\begin{result}[title={Flux Conservation}]
+Flux conservation on the DAG is not an additional axiom: it is an
+algebraic consequence of the definition of current over covering
+links. Every conserved current satisfies
+$\operatorname{div}\,J = 0$ at each event, and this statement converges to
+$\partial_\mu J^\mu = 0$ in the continuum limit.
+\end{result}
+
+\stoneref{Flux conservation is the consistency of the deductive
+system: each premise produces exactly as many conclusions as
+it receives from its own premises. A valid argument neither creates nor
+destroys inferential information.}
+
+% ███████████████████████████████████████████████████████████████████████████████
+%   PART II : EMERGENT PHYSICS

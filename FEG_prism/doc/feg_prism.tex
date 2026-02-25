@@ -1,0 +1,1751 @@
+% ═══════════════════════════════════════════════════════════════════════════════
+%   FEG Prism — Kuratowski Calculus Engine Code Manual
+%   XeLaTeX document · Styled after Modulo Synthesis Vol II
+% ═══════════════════════════════════════════════════════════════════════════════
+%
+%   Compile with:
+%     xelatex feg_prism.tex && xelatex feg_prism.tex
+%
+\documentclass[11pt, a4paper, openany]{book}
+
+% ─── Geometry ─────────────────────────────────────────────────────────────────
+\usepackage[
+  top=2.5cm, bottom=2.5cm,
+  left=3cm, right=3cm,
+  headheight=14pt
+]{geometry}
+
+% ─── Fonts (XeLaTeX) ─────────────────────────────────────────────────────────
+\usepackage{fontspec}
+\setmainfont{LMRoman10}[
+  BoldFont=LMRoman10-Bold,
+  ItalicFont=LMRoman10-Italic,
+  BoldItalicFont=LMRoman10-BoldItalic
+]
+\setmonofont{LMMonoLt10}[
+  BoldFont=LMMonoLt10-Bold
+]
+
+% ─── Colors (Modulo Synthesis palette) ────────────────────────────────────────
+\usepackage{xcolor}
+\definecolor{structure}{HTML}{1A535C}   % Deep Teal
+\definecolor{main}{HTML}{C6892A}        % Golden Ochre
+\definecolor{second}{HTML}{2E4057}      % Slate Blue
+\definecolor{third}{HTML}{8B2635}       % Burgundy
+\definecolor{fourth}{HTML}{3A7D44}      % Forest Green
+\definecolor{mainlight}{HTML}{FDF6E3}   % Solarized Base3
+\definecolor{secondlight}{HTML}{EDF2F4}
+\definecolor{thirdlight}{HTML}{F9EBEC}
+\definecolor{fourthlight}{HTML}{EBF5EC}
+
+% ─── Packages ─────────────────────────────────────────────────────────────────
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs,enumitem,microtype,float,longtable,array}
+\usepackage{fancyhdr,titlesec,titletoc}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable,theorems}
+\usepackage{etoolbox}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=structure, citecolor=second, urlcolor=second,
+  bookmarksnumbered=true, pdfstartview=FitH,
+  pdftitle={FEG Prism — Kuratowski Calculus Engine Code Manual},
+  pdfauthor={Juan Pablo Silva Alvarado}
+}
+
+% ─── Macros ───────────────────────────────────────────────────────────────────
+\newcommand{\lP}{\ell_{\mathrm{P}}}
+\newcommand{\dS}{d_{\mathrm{S}}}
+\newcommand{\MPl}{M_{\mathrm{Pl}}}
+\renewcommand{\chaptername}{Chapter}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\func}[1]{\texttt{\color{structure}#1}}
+\newcommand{\modname}[1]{\texttt{\bfseries\color{main}#1}}
+\newcommand{\flag}[1]{\texttt{-{}-#1}}
+\newcommand{\file}[1]{\texttt{\itshape #1}}
+
+% ─── Chapter/Section Styling ─────────────────────────────────────────────────
+\titleformat{\chapter}[display]
+  {\normalfont\Large\bfseries\color{structure}}
+  {\small\color{structure!60}\MakeUppercase{\chaptertitlename}\ \thechapter}
+  {4pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{-20pt}{20pt}
+
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{structure}}{\thesection}{0.6em}{}
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{structure!80!black}}{\thesubsection}{0.5em}{}
+\titlespacing*{\subsection}{0pt}{8pt}{4pt}
+
+% ─── Headers ──────────────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE,RO]{\small\thepage}
+\fancyhead[LO]{\small\nouppercase{\rightmark}}
+\fancyhead[RE]{\small\nouppercase{\leftmark}}
+\renewcommand{\headrulewidth}{0.3pt}
+
+% ─── Theorem Environments (from Vol II) ──────────────────────────────────────
+\newcounter{thm}[chapter]
+\renewcommand{\thethm}{\thechapter.\arabic{thm}}
+
+% Definition Box
+\newtcolorbox[use counter=thm]{definition}[1][]{%
+  enhanced,breakable,
+  colback=mainlight,colframe=main,
+  colbacktitle=main,coltitle=white,
+  fonttitle=\small\bfseries,
+  title={Definition~\thethm\ifx&#1&\else: #1\fi},
+  arc=1.5pt,boxrule=0.6pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt,
+  before skip=10pt,after skip=10pt
+}
+
+% Theorem Box
+\newtcolorbox[use counter=thm]{theorem}[1][]{%
+  enhanced,breakable,
+  colback=secondlight,colframe=second,
+  colbacktitle=second,coltitle=white,
+  fonttitle=\small\bfseries,
+  title={Theorem~\thethm\ifx&#1&\else: #1\fi},
+  arc=1.5pt,boxrule=0.6pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt,
+  before skip=10pt,after skip=10pt
+}
+
+% Axiom Box
+\newtcolorbox[use counter=thm]{axiom}[1][]{%
+  enhanced,breakable,
+  colback=thirdlight,colframe=third,
+  colbacktitle=third,coltitle=white,
+  fonttitle=\small\bfseries,
+  title={Axiom~\thethm\ifx&#1&\else: #1\fi},
+  arc=1.5pt,boxrule=0.6pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt,
+  before skip=10pt,after skip=10pt
+}
+
+% Result Box
+\newtcolorbox{result}[1][]{%
+  enhanced,breakable,
+  colback=fourthlight,colframe=fourth,
+  fontupper=\itshape,
+  arc=1.5pt,boxrule=0.6pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt,
+  before skip=10pt,after skip=10pt,
+  title={Key Result},
+  coltitle=fourth!50!black, fonttitle=\small\bfseries,
+  attach boxed title to top left={yshift=-2mm,xshift=2mm},
+  boxed title style={colback=fourthlight,frame hidden},
+  #1
+}
+
+% Introduction/Overview Box
+\newenvironment{introduction}[1][Chapter Overview]{%
+  \begin{tcolorbox}[
+    enhanced,colback=structure!5,colframe=structure,
+    colbacktitle=structure,coltitle=white,
+    fonttitle=\small\bfseries,title={#1},
+    arc=2pt,boxrule=0.7pt,
+    left=8pt,right=8pt,top=6pt,bottom=6pt,
+    before skip=12pt,after skip=12pt
+  ]\itshape\begin{itemize}[leftmargin=*,itemsep=2pt,parsep=0pt]
+}{%
+  \end{itemize}\end{tcolorbox}
+}
+
+\setlist{nosep,leftmargin=*}
+\setlist[itemize,1]{label={\color{structure}\textbullet}}
+\setlist[enumerate,1]{label={\color{structure}\arabic*.}}
+
+% ─── Title Page Macro (from Vol II) ──────────────────────────────────────────
+\makeatletter
+\newcommand{\subtitle}[1]{\gdef\@subtitle{#1}}
+\newcommand{\extrainfo}[1]{\gdef\@extrainfo{#1}}
+\gdef\@subtitle{}\gdef\@extrainfo{}
+\renewcommand{\maketitle}{%
+  \begin{titlepage}\centering
+    \vspace*{4cm}
+    {\Huge\bfseries\color{structure}\@title\par}\vspace{0.6cm}
+    \ifx\@subtitle\empty\else{\Large\color{gray!80}\@subtitle\par}\fi
+    \vspace{2cm}
+    {\color{main}\rule{0.6\textwidth}{2pt}\par}\vspace{2cm}
+    {\LARGE\@author\par}\vspace{1cm}
+    {\large\@date\par}\vfill
+    \ifx\@extrainfo\empty\else
+      \begin{minipage}{0.8\textwidth}\centering\itshape\color{gray!60}\@extrainfo\end{minipage}\vspace{3cm}
+    \fi
+  \end{titlepage}
+}
+\makeatother
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\title{FEG Prism}
+\subtitle{Kuratowski Calculus Engine --- Code Manual}
+\author{Juan Pablo Silva Alvarado}
+\date{\today}
+\extrainfo{%
+  Part of Modulo Synthesis / Fractal Entropic Geometrodynamics\\[4pt]
+  DOI: 10.5281/zenodo.18769707\\[4pt]
+  ``The universe is strictly computable, finite, and structurally homeostatic.
+  The rest is just counting.''}
+
+\begin{document}
+\maketitle
+\frontmatter
+\tableofcontents
+\mainmatter
+
+% ███████████████████████████████████████████████████████████████████████████████
+\chapter{Theory}
+% ███████████████████████████████████████████████████████████████████████████████
+
+\begin{introduction}
+  \item The physical framework: Fractal Entropic Geometrodynamics (FEG)
+  \item Three Geometries of spacetime, matter, and logic
+  \item Key invariants enforced by the simulation
+\end{introduction}
+
+\section{Fractal Entropic Geometrodynamics}
+
+\textsc{FEG Prism} is a Monte Carlo engine implementing the Kuratowski Calculus
+--- the mathematical framework underlying \emph{Fractal Entropic
+Geometrodynamics} (FEG) by Juan Pablo Silva Alvarado
+(DOI:~10.5281/zenodo.18769707).  The central claim of FEG is that four-dimensional
+spacetime, the Standard Model particle spectrum, and quantum mechanics all emerge
+from a single discrete structure: the Hasse diagram of a Poisson-sprinkled causal
+set, constrained only by \textbf{planarity preservation} (Kuratowski's theorem).
+
+The engine is named after its fundamental topological particle: the \textbf{Causal
+Prism} $K_{2,N}$, a complete bipartite subgraph with two poles and $N \geq 3$
+intermediaries.  These are the only non-trivial substructures permitted by the
+triangle-free property of the transitive reduction.
+
+\section{The Three Geometries}
+
+\begin{definition}[Geometry of Order --- Phase 1]
+  Poisson sprinkling into a 4D causal diamond produces $N$ events.  The
+  \textbf{transitive reduction} (Hasse diagram) removes all redundant causal
+  links: edge $(u,v)$ survives iff no intermediate $w$ satisfies $u \prec w
+  \prec v$.  The result is a triangle-free directed acyclic graph (DAG) whose
+  Lorentz invariance is emergent from the isotropy of the Poisson process.
+\end{definition}
+
+\begin{definition}[Geometry of Matter --- Phase 2]
+  The \textbf{Causal Prism} $K_{2,N}$ is the unique non-trivial bipartite
+  subgraph permitted in a triangle-free graph.  It consists of:
+  \begin{itemize}
+    \item Two \textbf{poles} (origin $u$, destination $v$) at graph-distance $\geq 2$
+    \item $N \geq 3$ \textbf{intermediaries} $w_1, \ldots, w_N$ shared by both poles
+    \item Intermediaries are mutually disconnected (guaranteed by triangle-freeness)
+  \end{itemize}
+  Topological mass is the integer $M = N$ (number of intermediaries).
+  The mass hierarchy reduces to $N \in \{3, 4, 5+\}$ for electron, muon, tau.
+\end{definition}
+
+\begin{definition}[Geometry of Logic --- Computational Complexity]
+  The 2-hop detection algorithm for Causal Prisms runs in $O(N)$ because the
+  physics is local.  Hasse links have bounded proper time ($\tau \leq 8$);
+  therefore $K_{2,N}$ poles must be within bounded causal distance.  The bounded
+  degree (\code{MAX\_HASSE\_DEGREE} $= 15$) ensures $O(1)$ per-node work.
+  This is not merely an optimisation --- it is a computational proof that
+  \textbf{physical locality is an information principle}.
+\end{definition}
+
+\section{Key Invariants}
+
+The following invariants are preserved throughout the simulation pipeline:
+
+\begin{enumerate}
+  \item \textbf{Triangle-freeness}: The Hasse diagram contains no 3-cliques.
+        Any triangle $u \to w \to v$ with $u \to v$ would be transitively
+        reduced.  This is a mathematical theorem, not an empirical check.
+  \item \textbf{Planarity preservation}: $K_5$ threats are absorbed into the
+        nearest pole via vertex contraction, enforcing Kuratowski's planarity
+        criterion.  This is the discrete analogue of colour confinement.
+  \item \textbf{Lorentz invariance}: No spatial cutoff is applied during Hasse
+        construction.  The light cone search at time offset $\Delta t$ uses
+        radius $\Delta t + 1$ (natural units $c = 1$), preserving exact
+        causal structure.
+  \item \textbf{Strict finitism}: All accumulations use \code{u64} integers.
+        The single \code{f64} division occurs only at the final return.
+        No floating-point drift across ensemble realisations.
+  \item \textbf{Deterministic reproducibility}: Given the same seed, the engine
+        produces identical output on the same platform.  Seeds are derived via
+        \code{StdRng::seed\_from\_u64(seed\_base + k)} for realisation $k$.
+\end{enumerate}
+
+
+% ███████████████████████████████████████████████████████████████████████████████
+\chapter{Architecture}
+% ███████████████████████████████████████████████████████████████████████████████
+
+\begin{introduction}
+  \item Six-phase simulation pipeline
+  \item Module organisation and data flow
+  \item Execution modes: in-memory vs.\ streaming
+\end{introduction}
+
+\section{Pipeline Overview}
+
+The simulation proceeds through six phases, each corresponding to a Rust module:
+
+\begin{verbatim}
+  ┌─────────────────────────────────────────────────────────┐
+  │  Phase 1: Sprinkle + Hasse       (phase1/)              │
+  │    Poisson sprinkling → Transitive Reduction (CSR)       │
+  ├─────────────────────────────────────────────────────────┤
+  │  Phase 2: Kuratowski Contraction  (phase2/)              │
+  │    K_{2,N} detection → K_5 threat absorption → Defect    │
+  ├─────────────────────────────────────────────────────────┤
+  │  Phase 3: Spectral Observables    (phase3/)              │
+  │    Random walkers → d_S(t) → Causal Flux                 │
+  ├─────────────────────────────────────────────────────────┤
+  │  Measurements M1–M10              (measure/)             │
+  │    Mass, half-life, modulo, vacuum pol., electroweak,     │
+  │    decoherence, neutrino, PMNS, Higgs, Lagrangian        │
+  ├─────────────────────────────────────────────────────────┤
+  │  Phase 4: Output                  (output/)              │
+  │    CSV serialisation + provenance stamps                  │
+  ├─────────────────────────────────────────────────────────┤
+  │  Ensemble Runner                  (ensemble/)            │
+  │    Adaptive Welford convergence + checkpointing          │
+  └─────────────────────────────────────────────────────────┘
+\end{verbatim}
+
+\section{Module Map}
+
+\begin{longtable}{lp{9cm}}
+  \toprule
+  \textbf{Module} & \textbf{Responsibility} \\
+  \midrule
+  \modname{main.rs}        & CLI parsing, flag dispatch, provenance boot \\
+  \modname{config.rs}      & TOML configuration, RAM-aware mode selection \\
+  \modname{provenance.rs}  & Five-layer SHA-256 provenance system \\
+  \modname{phase1/}        & Poisson sprinkling (\file{sprinkle.rs}) and Hasse
+                             construction (\file{hasse.rs}) \\
+  \modname{phase2/}        & Causal Prism detection (\file{defect.rs}),
+                             topology summary (\file{topology.rs}) \\
+  \modname{phase3/}        & Spectral dimension (\file{spectral.rs}),
+                             random walkers (\file{walker.rs}),
+                             causal flux (\file{flux.rs}) \\
+  \modname{graph/}         & Type-safe CSR (\file{csr.rs}),
+                             grid quantisation (\file{grid.rs}) \\
+  \modname{ensemble/}      & Adaptive batching (\file{runner.rs}),
+                             Welford averaging (\file{averaging.rs}),
+                             checkpointing (\file{checkpoint.rs}) \\
+  \modname{measure/}       & Ten observer measurements M1--M10, each in
+                             \file{m01\_traversal.rs} through \file{m10\_lagrangian.rs} \\
+  \modname{output/}        & CSV writer (\file{csv.rs}),
+                             human-readable summary (\file{summary.rs}) \\
+  \modname{anim\_export.rs} & Binary topology slice for Manim animation \\
+  \bottomrule
+\end{longtable}
+
+\section{Execution Modes}
+
+\begin{definition}[In-Memory Mode]
+  All $N$ points and the full CSR adjacency are held in RAM.  This is the fast
+  path.  Memory estimate: $N \times 2000$ bytes for $N \leq 50{,}000$;
+  $N \times 500$ bytes for $N > 50{,}000$ (Hasse degree bounded by 15).
+  Selected by \flag{inmemory} or recommended automatically when estimated memory
+  fits within $70\%$ of available RAM.
+\end{definition}
+
+\begin{definition}[Streaming Mode]
+  For extreme scales ($N > 10^7$), the simulation uses time-slab sprinkles and a
+  sliding window.  Only the active window is held in RAM.  Estimate:
+  $N \times 13 + 100\,\text{MB}$ overhead.  Selected by \flag{stream}.
+\end{definition}
+
+The mode is auto-detected by \func{config::recommend\_mode()}, which queries
+\func{sysinfo::System} for available memory and applies the safety fraction
+from \file{causal\_set.toml}.
+
+
+% ███████████████████████████████████████████████████████████████████████████████
+\chapter{Phase 1 --- Poisson Sprinkling}
+% ███████████████████████████████████████████████████████████████████████████████
+
+\begin{introduction}
+  \item Sprinkling $N$ events into a 4D causal diamond
+  \item Volume formula and density normalisation
+  \item Streaming chunks for sliding-window mode
+\end{introduction}
+
+\section{The Causal Diamond}
+
+Source: \file{phase1/sprinkle.rs}
+
+The simulation domain is a 4D causal diamond: the intersection of the future
+light cone of a past tip $p^-$ and the past light cone of a future tip $p^+$.
+In Cartesian coordinates, the constraint is
+\[
+  |t| + r \leq T/2, \qquad r = \sqrt{x^2 + y^2 + z^2}.
+\]
+The diamond has 4-volume $V = \pi T^4 / 24$.  To normalise the Poisson density
+to $\rho \approx 1$, we set
+\[
+  T = \left(\frac{24N}{\pi}\right)^{1/4}.
+\]
+
+\section{Rejection Sampling}
+
+The function \func{sprinkle(n, rng)} draws uniform random points in the bounding
+box $[-T/2, T/2]^4$ and accepts those satisfying $|t| + r \leq T/2$.  The
+acceptance rate is $\pi/24 \approx 13\%$ in 4D.  The returned array has exactly
+$N$ points in $[t, x, y, z]$ format.
+
+\section{Streaming Chunks}
+
+For the sliding-window path, \func{sprinkle\_chunk()} generates points in a
+time slab $[t_{\min}, t_{\max}]$, returning \code{GridPoint} structs with
+sequential \code{orig\_idx} numbering.  Grid quantisation fields
+(\code{qt, qx, qy, qz}) are filled by the caller after choosing grid
+dimensions.
+
+
+% ███████████████████████████████████████████████████████████████████████████████
+\chapter{Phase 1 --- Hasse Diagram}
+% ███████████████████████████████████████████████████████████████████████████████
+
+\begin{introduction}
+  \item Two-tier Hasse construction: sparse $A^2$ vs.\ geometric OCI
+  \item Transitive reduction as the origin of triangle-freeness
+  \item Adaptive early termination valves
+\end{introduction}
+
+\section{Transitive Reduction}
+
+Source: \file{phase1/hasse.rs}
+
+Given $N$ Poisson-sprinkled events with coordinates $p_i = (t_i, x_i, y_i, z_i)$,
+two events are \textbf{causally related} iff
+\[
+  (t_j - t_i)^2 - |\vec{x}_j - \vec{x}_i|^2 > 0, \qquad t_j > t_i.
+\]
+The Hasse diagram is the \textbf{transitive reduction}: edge $(i,j)$ exists iff
+$i \prec j$ and there is no intermediate $k$ with $i \prec k \prec j$.  This
+guarantees triangle-freeness by construction --- any triangle would imply a
+transitively redundant edge.
+
+\section{Tier 1: Sparse \texorpdfstring{$A^2$}{A²} Reduction}
+
+For $N \leq 15{,}000$, the function \func{build\_hasse\_sparse()} materialises
+the full causal closure as a sparse matrix $A$ (via \code{sprs::TriMat}),
+computes $A^2$, and retains only edges where $A^2[i,j] = 0$ (no 2-hop path
+exists).  This is exact but $O(N^2)$ in space.
+
+\begin{theorem}[Sparse Reduction Correctness]
+  In a transitively closed DAG, edge $(i,j)$ is a Hasse link if and only if
+  $A^2[i,j] = 0$.  Proof: if a 2-hop path $i \to k \to j$ exists, then $j$ is
+  reachable from $i$ via $k$, making the direct edge redundant.
+\end{theorem}
+
+\section{Tier 2: Geometric OCI Construction}
+
+For $N > 15{,}000$, the function \func{build\_hasse\_direct()} avoids
+materialising the full closure.  Instead:
+
+\begin{enumerate}
+  \item \textbf{Quantise \& sort}: Coordinates are quantised to an integer
+        lattice via \func{quantize\_and\_sort()}, yielding \code{GridPoint}
+        records sorted by $(q_t, q_x, q_y, q_z)$ for cache locality.
+  \item \textbf{Build OCI}: The Occupied Cell Index (OCI) is a per-layer
+        structure mapping $(q_x, q_y, q_z)$ cells to the points they contain,
+        sorted by $q_x$ for binary search.
+  \item \textbf{Parallel link discovery}: For each source $u$, iterate over
+        $\Delta t$ shells from 0 to \code{MAX\_CAUSAL\_DEPTH}.  For each
+        shell, query the OCI for cells within the light cone
+        ($r_{\max} = \Delta t + 1$), test causality, and check transitivity
+        against existing children.
+  \item \textbf{CSR assembly}: Collect per-chunk degrees and targets, build
+        the CSR \code{head} and \code{data} arrays, sort each neighbour list
+        for binary-search correctness.
+\end{enumerate}
+
+\subsection{Adaptive Termination Valves}
+
+Three early-exit conditions accelerate the search:
+
+\begin{enumerate}
+  \item \textbf{Degree cap} (\code{MAX\_HASSE\_DEGREE} $= 15$):
+        A node with $\geq 15$ descendants has a fully populated causal shadow.
+        Further links are redundant.
+  \item \textbf{Alexandrov volume short-circuit}: If every causal candidate in
+        a $\Delta t$ shell is transitively blocked (non-empty Alexandrov set
+        between $u$ and $v$), further shells have strictly larger Alexandrov
+        volume and will also be blocked.
+  \item \textbf{Consecutive dry shells}: Two consecutive shells with no causal
+        candidates plus $\geq 2$ existing descendants implies the light cone
+        slice is empty.
+\end{enumerate}
+
+\section{Bulk Momentum}
+
+Both tiers compute the \textbf{bulk momentum} vector: $p_i = \text{out-degree}(i)
+- \text{in-degree}(i)$.  This quantity encodes the net causal asymmetry at each
+node and is used in Phase 2 for generation classification ($\phi(w) =
+\operatorname{sign}(p_w) \in \{-1, 0, +1\}$).
+
+
+% ███████████████████████████████████████████████████████████████████████████████
+\chapter{Graph Infrastructure}
+% ███████████████████████████████████████████████████████████████████████████████
+
+\begin{introduction}
+  \item Type-safe CSR with compile-time direction marker
+  \item Grid quantisation and the Occupied Cell Index
+  \item Physical constants encoded as Rust constants
+\end{introduction}
+
+\section{Type-Safe CSR}
+
+Source: \file{graph/csr.rs}
+
+The central data structure is \code{CsrGraph<D>}, a Compressed Sparse Row graph
+parametrised by a zero-sized direction marker:
+
+\begin{itemize}
+  \item \code{CsrGraph<Directed>}: forward-only edges ($u \to v$ where
+        $t_u < t_v$).  Produced by Phase 1.
+  \item \code{CsrGraph<Undirected>}: both directions stored explicitly.
+        Produced by \func{symmetrize()} or the defect graph.
+\end{itemize}
+
+The \code{PhantomData<D>} trick prevents passing a directed Hasse diagram to
+spectral walkers (which require the symmetric graph) at \emph{compile time}.
+
+\begin{definition}[CSR Storage Layout]
+  \code{head[u]..head[u+1]} indexes into \code{data} to give the sorted
+  neighbour list of node $u$.  Binary search on sorted neighbours gives
+  $O(\log d)$ edge queries, where $d \leq 15$ in practice.
+\end{definition}
+
+Key operations:
+\begin{itemize}
+  \item \func{neighbors(u)}: returns \code{\&[u32]} slice of sorted neighbours
+  \item \func{degree(u)}: returns out-degree (or total degree for undirected)
+  \item \func{has\_edge(u, v)}: binary search on sorted neighbour list
+  \item \func{symmetrize()}: converts \code{Directed} $\to$ \code{Undirected}
+        by adding reverse edges (method on \code{CsrGraph<Directed>} only)
+  \item \func{reverse()}: reverses all edge directions (parents $\leftrightarrow$ children)
+  \item \func{unique\_edges()}: extracts $(u, v)$ pairs with $u < v$ for
+        eigendecomposition (method on \code{CsrGraph<Undirected>} only)
+\end{itemize}
+
+Free functions:
+\begin{itemize}
+  \item \func{build\_directed\_csr(n, rows, cols)}: builds from unsorted edge pairs
+  \item \func{build\_undirected\_csr(n, rows, cols)}: builds symmetric CSR from
+        edge pairs with automatic reverse insertion
+\end{itemize}
+
+\section{Grid Quantisation}
+
+Source: \file{graph/grid.rs}
+
+The OCI construction requires mapping continuous coordinates to an integer lattice.
+The \code{GridPoint} struct stores both the original \code{[f64; 4]} coordinates
+and quantised \code{(qt, qx, qy, qz)} fields.  The \code{GridDims} struct
+encodes lattice dimensions derived from coordinate bounds.
+
+Key constants from \file{grid.rs}:
+\begin{itemize}
+  \item \code{MAX\_HASSE\_DEGREE = 15}: maximum out-degree in the Hasse diagram
+  \item \code{MAX\_CAUSAL\_DEPTH}: maximum $\Delta t$ shells to search
+  \item \code{MAX\_PROPER\_TIME\_SQ}: proper-time cutoff for causality
+\end{itemize}
+
+
+% ███████████████████████████████████████████████████████████████████████████████
+\chapter{Phase 2 --- Kuratowski Contraction}
+% ███████████████████████████████████████████████████████████████████████████████
+
+\begin{introduction}
+  \item Causal Prism ($K_{2,N}$) detection via 2-hop traversal
+  \item $K_5$ threat contraction for planarity preservation
+  \item Generation classification by bulk-momentum phase signature
+  \item Phase-coherence decomposition: visible, dark, sterile mass
+\end{introduction}
+
+\section{Causal Prism Detection}
+
+Source: \file{phase2/defect.rs}
+
+The Causal Prism is the fundamental topological particle in FEG.  It is a
+complete bipartite subgraph $K_{2,N}$ embedded in the triangle-free Hasse DAG:
+
+\begin{definition}[Causal Prism]
+  A \textbf{Causal Prism} consists of:
+  \begin{itemize}
+    \item An \textbf{origin} $u$ (past pole) and \textbf{destination} $v$ (future pole)
+          at graph-distance $\geq 2$
+    \item $N \geq 3$ \textbf{intermediaries} $w_1, \ldots, w_N$ such that
+          $u \to w_i$ and $w_i \to v$ for all $i$
+    \item The intermediaries are mutually disconnected
+          (guaranteed by the triangle-free property)
+  \end{itemize}
+  The minimum $N = 3$ (constant \code{MIN\_PRISM\_SHARED}) derives from
+  the Uniqueness of Bifurcation-Convergence theorem: $K_{2,2}$ yields only
+  $S_2 \to U(1)$; the $SU(3)$ gauge structure demands $S_3$, hence $N \geq 3$.
+\end{definition}
+
+\subsection{Detection Algorithm}
+
+The 2-hop forward-forward traversal:
+
+\begin{enumerate}
+  \item Select a \textbf{core} of the top $10\%$ of nodes by undirected degree
+        (out-degree + in-degree from the reverse CSR).
+  \item For each core node $u$ (not yet placed):
+    \begin{enumerate}
+      \item Collect 2-hop candidates: for each child $w$ of $u$, for each child
+            $v$ of $w$ that is also in the core and not yet placed, add $v$ to
+            the candidate set.
+      \item For each candidate $v$: compute
+            $\text{belly} = \text{children}(u) \cap \text{parents}(v)$ using
+            sorted-slice intersection ($O(d_u + d_v)$).
+      \item Select the best partner $v^*$ with maximum $|\text{belly}|$.
+      \item If $|\text{belly}| \geq 3$: commit the prism, mark all component
+            nodes as placed.
+    \end{enumerate}
+\end{enumerate}
+
+\begin{result}
+  The algorithm is $O(N \cdot D^2)$ where $D = $ max Hasse degree $\leq 15$.
+  Since $D = O(1)$, the total complexity is $O(N)$.
+\end{result}
+
+\section{\texorpdfstring{$K_5$}{K5} Threat Contraction}
+
+After prism detection, external nodes threatening to form a $K_5$ minor are
+absorbed:
+
+\begin{definition}[$K_5$ Threat Criterion]
+  An external node $t$ is a \textbf{threat} to prism $(u, v, \{w_i\})$ if:
+  \begin{itemize}
+    \item $t$ is connected (undirected) to \emph{both} poles $u$ and $v$
+    \item $t$ is connected to $\geq 2$ intermediaries (constant \code{PRISM\_THREAT})
+  \end{itemize}
+  The five nodes $\{u, v, t, w_i, w_j\}$ are then mutually reachable, forming a
+  $K_5$ minor.  Contraction: $t$ is merged into the higher-degree pole.
+\end{definition}
+
+Merge chains are resolved transitively: if $t_1 \to t_2 \to u$, then $t_1$ maps
+directly to $u$.  The resulting \code{merge\_map} is a forest of stars.
+
+\section{Generation Classification}
+
+Each intermediate $w_i$ carries a \textbf{causal phase}
+$\phi(w_i) = \operatorname{sign}(\text{bulk\_momentum}[w_i]) \in \{-1, 0, +1\}$.
+
+\begin{definition}[Generation Number]
+  The \textbf{generation} of a prism $P$ is
+  $g(P) = |\{\phi(w_i) : w_i \in \text{intermediaries}\}|$, i.e., the number of
+  distinct phase classes.  Since $\phi \in \{-1, 0, +1\}$, $g \in \{1, 2, 3\}$.
+\end{definition}
+
+\begin{definition}[Net Phase and Matter/Antimatter]
+  The \textbf{net phase} $\Phi(P) = \sum_i \phi(w_i)$.
+  \begin{itemize}
+    \item $\Phi > 0$: \textbf{matter} (e.g., electron for $g=1$)
+    \item $\Phi < 0$: \textbf{antimatter} (e.g., positron for $g=1$)
+    \item $\Phi = 0$: \textbf{sterile} (dark matter candidate)
+  \end{itemize}
+\end{definition}
+
+The generation sets (\code{GenerationSets}) store node indices for Gen1, Gen2,
+Gen3, Anti-Gen1, and Sterile prisms.  Average topological mass per generation is
+$\langle M \rangle_g = \langle N \rangle$ (average intermediate count).
+
+\section{Phase-Coherence Decomposition}
+
+The defect module computes a decomposition of gravitational mass into visible
+and dark components:
+
+\begin{align}
+  M_{\text{grav}}(P) &= N, \\
+  M_{\text{vis}}(P)  &= |\Phi(P)|, \\
+  M_{\text{dark}}(P) &= N - |\Phi(P)|.
+\end{align}
+
+Aggregated ratios:
+\begin{itemize}
+  \item $\Omega_{\text{dark}}/\Omega_{\text{vis}} =
+        \sum(N - |\Phi|) / \sum |\Phi|$
+  \item $Q_{\text{topo}} = \sum |\Phi|^2 / \sum N^2$
+        (topological charge ratio, intrinsic)
+  \item $\alpha_{\text{EM}} = Q_{\text{topo}} / (8\pi)$
+        (observed electromagnetic coupling)
+\end{itemize}
+
+\section{Topology Summary}
+
+Source: \file{phase2/topology.rs}
+
+The \code{TopologySummary} struct aggregates 27 fields including total nodes/prisms,
+per-generation counts and masses, phase census, $Q_{\text{topo}}$, $\alpha_{\text{EM}}$,
+and the prism histogram (belly-size distribution).
+
+
+% ███████████████████████████████████████████████████████████████████████████████
+\chapter{Phase 3 --- Spectral Observables}
+% ███████████████████████████████████████████████████████████████████████████████
+
+\begin{introduction}
+  \item Spectral dimension $\dS(t)$ from random walks
+  \item Two computation tiers: eigendecomposition vs.\ Monte Carlo walkers
+  \item Causal flux: attraction and repulsion between generations
+\end{introduction}
+
+\section{Spectral Dimension}
+
+Source: \file{phase3/spectral.rs}
+
+The spectral dimension quantifies the effective dimensionality experienced by a
+diffusing particle at scale $t$:
+\[
+  \dS(t) = -2\,\frac{d \ln P(t)}{d \ln t},
+\]
+where $P(t)$ is the return probability after $t$ diffusion steps on the graph.
+Centred finite differences are used for interior points; forward/backward
+differences at endpoints.
+
+\begin{definition}[WalkResult]
+  Each walk category (vacuum, defect, per-generation, sterile, flux) returns:
+  \begin{itemize}
+    \item \code{p}: $P(t)$ return probability at each measurement step
+    \item \code{ds}: $\dS(t)$ spectral dimension derived from $P(t)$
+    \item \code{ds\_std}: ensemble standard deviation (empty for $M = 1$)
+  \end{itemize}
+\end{definition}
+
+\begin{definition}[SpectralOutput]
+  The composed output struct groups:
+  \begin{itemize}
+    \item Vacuum (global + core) and defect (global + core) walks
+    \item Per-generation walks: [Gen1, Gen2, Gen3, Anti1]
+    \item Sterile walk (phase-cancelled prisms)
+    \item Causal flux: attraction (Gen1$\to$Anti1) and repulsion (Gen1$\to$Gen1)
+    \item Normalised flux: flux per target node
+    \item Average topological mass per generation
+  \end{itemize}
+\end{definition}
+
+\section{Tier 1: Eigendecomposition}
+
+For $N \leq$ \code{eigen\_cutoff} (default 3000), the function
+\func{compute\_eigen()} computes the full eigendecomposition of the graph
+Laplacian $L = D - A$ via \code{nalgebra}.  The return probability is then
+\[
+  P(t) = \frac{1}{N}\sum_{k=0}^{N-1} e^{-\lambda_k t},
+\]
+where $\lambda_k$ are the eigenvalues of the normalised Laplacian.
+Core walks restrict the sum to eigenvectors with support on core nodes.
+
+\section{Tier 2: Monte Carlo Walkers}
+
+Source: \file{phase3/walker.rs}
+
+For $N >$ \code{eigen\_cutoff}, random walkers simulate diffusion.  The number
+of walkers $W$ is set by the \textbf{Causal Resolution Theorem}:
+\[
+  W = \lceil (t_{\max} / \varepsilon)^2 \rceil,
+\]
+where $\varepsilon$ is the topological error tolerance (default 0.01) and
+$t_{\max}$ is the maximum diffusion time (default 15).  At $\varepsilon = 0.01$,
+$t_{\max} = 15$: $W = 2{,}250{,}000$ walkers.
+
+Each walker starts at a random node, takes $t$ steps along random edges of the
+symmetric CSR, and records whether it returns to its origin.  Return counts are
+accumulated as \code{u64} integers (strict finitism).
+
+\section{Causal Flux}
+
+Source: \file{phase3/flux.rs}
+
+The causal flux measures directed transmission between generation sets:
+\begin{itemize}
+  \item \textbf{Attraction} (Gen1$\to$AntiGen1): flux from matter to antimatter
+        (opposite topological charge $\to$ attraction)
+  \item \textbf{Repulsion} (Gen1$\to$Gen1): flux from matter to matter
+        (same charge $\to$ repulsion)
+\end{itemize}
+Normalised flux divides by the number of target nodes, isolating the intrinsic
+coupling per unit charge.
+
+\section{Diffusion Steps}
+
+The measurement times are densely sampled near $t = 1$:
+\begin{verbatim}
+  steps = (1..=30).chain((16..=50).map(|i| i * 2))
+\end{verbatim}
+giving steps 1--30 (unit spacing) and 32, 34, \ldots, 100 (stride 2).
+
+
+% ███████████████████████████████████████████████████████████████████████████████
+\chapter{Ensemble Framework}
+% ███████████████████████████████████████████████████████████████████████████████
+
+\begin{introduction}
+  \item Adaptive batching with Welford convergence
+  \item Checkpointing and resume capability
+  \item Seed derivation for deterministic reproducibility
+\end{introduction}
+
+\section{Ensemble Runner}
+
+Source: \file{ensemble/runner.rs}
+
+Each ensemble run consists of $M$ independent Monte Carlo realisations of the
+full Phase 1--3 pipeline.  The runner uses \textbf{adaptive Welford convergence}:
+
+\begin{enumerate}
+  \item Run \code{min\_ensemble} realisations (default 8) unconditionally.
+  \item After each subsequent batch, compute the online running mean and
+        standard error of \code{mass\_gen1} via the Welford algorithm.
+  \item If the relative standard error $\text{SE}/\bar{x} <
+        \text{target\_error}$ (default 0.01), declare convergence and stop.
+  \item Otherwise, continue up to \code{max\_ensemble} (default 50).
+\end{enumerate}
+
+\begin{definition}[EnsembleResult]
+  The output contains:
+  \begin{itemize}
+    \item \code{spectral}: Ensemble-averaged \code{SpectralOutput}
+    \item \code{topology}: Aggregated \code{TopologySummary}
+    \item \code{measurements}: Aggregated \code{MeasureResults} (if any active)
+    \item \code{actual\_m}: Number of realisations actually run
+    \item \code{converged}: Whether the target error was reached
+  \end{itemize}
+\end{definition}
+
+\section{Seed Derivation}
+
+Realisation $k$ uses seed \code{seed\_base + k}.  The base seed is either
+user-specified (\flag{seed}) or derived from the system clock.  The
+deterministic seeding ensures reproducibility: given the same
+\code{(seed, N, M)}, the output is identical on the same platform.
+
+\section{Concurrency}
+
+Realisations within a batch run in parallel via \code{rayon}.  The maximum
+concurrency is:
+\begin{itemize}
+  \item \code{min(batch\_size, max\_concurrent\_runs)}
+  \item \code{max\_concurrent\_runs}: for $N > 10^7$, limited to 2; otherwise 4
+  \item Overridable via \flag{threads} and \flag{batch-size}
+\end{itemize}
+
+\section{Checkpointing}
+
+Source: \file{ensemble/checkpoint.rs}
+
+After each realisation, spectral and topology results are serialised to a
+checkpoint file in the output directory.  The \flag{resume} flag reloads the
+checkpoint and continues from the last completed realisation.  Provenance
+verification prevents cross-fork resume (Layer 4 of the provenance system).
+
+\section{Averaging}
+
+Source: \file{ensemble/averaging.rs}
+
+The \func{average\_ensemble()} function computes element-wise means of
+$P(t)$ and $\dS(t)$ vectors across $M$ realisations, plus ensemble standard
+deviations.  Topology fields are aggregated by \func{aggregate\_topology()}.
+
+
+% ███████████████████████████████████████████████████████████████████████████████
+\chapter{Measurements M1--M5}
+% ███████████████████████████████████████████████████████████████████████████████
+
+\begin{introduction}
+  \item M1: Traversal mass ratios
+  \item M2: Half-life census
+  \item M3: Modulo path integral (NTT)
+  \item M4: Vacuum polarisation
+  \item M5: Electroweak sector
+\end{introduction}
+
+Source: \file{measure/mod.rs}
+
+The measurement system provides ten independent physics observables.  Each
+measurement is gated by a boolean flag in \code{MeasureFlags} and receives a
+\code{MeasureContext} containing the full Phase 1--2 outputs.  Results are
+aggregated across ensemble realisations via per-measurement \func{aggregate()}
+functions.
+
+\section{M1: Traversal Mass Ratios}
+
+Source: \file{measure/m01\_traversal.rs}
+
+Flag: \flag{measure-mass}
+
+Measures the \textbf{topological inertia} of Causal Prisms by confining random
+walkers to prism components and recording cover times.  The ratio of cover times
+between generations gives the mass hierarchy:
+\[
+  \frac{m_\mu}{m_e} \approx \frac{\langle T_{\text{cover}} \rangle_{\text{Gen2}}}
+  {\langle T_{\text{cover}} \rangle_{\text{Gen1}}}.
+\]
+
+Output: \file{traversal\_mass.csv} with per-generation cover times and ratios.
+
+\section{M2: Half-Life Census}
+
+Source: \file{measure/m02\_halflife.rs}
+
+Flag: \flag{measure-halflife}
+
+Measures the topological stability of prisms by recording edge-snap events
+--- the random removal of one intermediary edge that splits a $K_{2,N}$ into
+$K_{2,N-1} + K_{2,1}$.  The half-life is the Markov hitting time for the first
+snap event at a given thermal excitation.
+
+\begin{result}
+  The electron ($K_{2,3}$) is topologically stable: splitting to $K_{2,2} +
+  K_{2,1}$ requires overcoming the $K_5$ planarity barrier (energy $\sim M_{\text{Pl}}$).
+  The muon and tau have finite half-lives proportional to their genus gap.
+\end{result}
+
+Output: \file{half\_life.csv} with per-generation half-lives and snap rates.
+
+\section{M3: Modulo Path Integral (NTT)}
+
+Source: \file{measure/m03\_modulo.rs}
+
+Flag: \flag{measure-modulo}
+
+Implements the \textbf{Number-Theoretic Transform} (NTT) path integral: walkers
+accumulate action $S$ as $g^S \bmod p$ where $g$ is a primitive root and $p$ is
+a prime modulus.  This replaces the continuum $e^{iS/\hbar}$ with a discrete
+$\mathbb{F}_p$ phase.
+
+Configuration:
+\begin{itemize}
+  \item \code{prime}: default $65537 = 2^{16} + 1$ (Fermat prime)
+  \item \code{root}: default $3$ (primitive root of $65537$)
+  \item \code{steps}: default $500$ NTT walk steps
+\end{itemize}
+
+The interference pattern emerges from modular cancellation: when $\sum g^{S_j}
+\equiv 0 \pmod{p}$, the path is destructively forbidden.
+
+Output: \file{modulo\_interference.csv} with phase histograms and interference fringe
+visibility.
+
+\section{M4: Vacuum Polarisation}
+
+Source: \file{measure/m04\_vacuum\_pol.rs}
+
+Flag: \flag{measure-vacuum}
+
+Measures the running of the topological charge $Q_{\text{topo}}$ with scale.
+At short distances (small walker steps), the effective coupling increases
+due to virtual prism--anti-prism screening:
+\[
+  \alpha_{\text{EM}}^{-1}(0) \approx 132 \quad \to \quad
+  \alpha_{\text{EM}}^{-1}(m_Z) \approx 128.
+\]
+
+The mechanism is planarity screening: at short distances, prism--anti-prism pairs
+are resolved and screen the effective charge.
+
+Output: \file{vacuum\_polarization.csv} with $Q_{\text{topo}}(t)$ and
+$\alpha^{-1}(t)$ at each scale $t$.
+
+\section{M5: Electroweak Sector}
+
+Source: \file{measure/m05\_electroweak.rs}
+
+Flag: \flag{measure-electroweak}
+
+Probes the separation of $SU(2)_L \times U(1)_Y$ from the prism topology.
+This measurement uses the asymmetry between left-handed and right-handed walker
+trajectories to extract the Weinberg angle $\theta_W$:
+\[
+  \sin^2\theta_W = \frac{\text{left-blocked}}{\text{left-blocked} +
+  \text{right-blocked}}.
+\]
+
+Output: \file{electroweak.csv} with mixing angle and left/right asymmetry.
+
+
+% ███████████████████████████████████████████████████████████████████████████████
+\chapter{Measurements M6--M10}
+% ███████████████████████████████████████████████████████████████████████████████
+
+\begin{introduction}
+  \item M6: Quantum decoherence and Born rule
+  \item M7: Neutrino census
+  \item M8: PMNS mixing matrix
+  \item M9: Higgs mechanism (topological drag)
+  \item M10: Full Standard Model Lagrangian card
+\end{introduction}
+
+\section{M6: Quantum Decoherence}
+
+Source: \file{measure/m06\_decoherence.rs}
+
+Flag: \flag{measure-decoherence}
+
+Tests the emergence of the Born rule from modular path-integral interference.
+Walkers perform NTT paths and the probability distribution is compared to the
+quadratic law:
+\[
+  P(d) = |K(s, d)|^2,
+\]
+where $K(s, d)$ is the modular propagator from source $s$ to detector $d$.
+The double consistency (retarded $\times$ advanced) of the discrete path
+integral naturally produces the Born rule without postulation.
+
+Output: \file{decoherence.csv} and \file{born\_rule.csv} with measured vs.\
+predicted detection probabilities.
+
+\section{M7: Neutrino Census}
+
+Source: \file{measure/m07\_neutrino.rs}
+
+Flag: \flag{measure-neutrino}
+
+Counts ``open prisms'' --- $K_{2,1}$ structures (two poles, one intermediary)
+that are topologically sterile ($\Phi = 0$) and have near-zero topological mass.
+These are identified as neutrinos: gravitationally active but electromagnetically
+invisible.
+
+The census provides per-generation neutrino counts and the
+neutrino/charged-lepton ratio.
+
+Output: \file{neutrino.csv} with generation-resolved neutrino counts.
+
+\section{M8: PMNS Mixing Matrix}
+
+Source: \file{measure/m08\_pmns.rs}
+
+Flag: \flag{measure-pmns}
+
+Requires M7 (automatically enabled).  Extracts the PMNS mixing matrix from
+neutrino oscillation probabilities measured via walker transmission between
+generation-tagged open prisms.  The mixing angles $(\theta_{12}, \theta_{13},
+\theta_{23})$ are extracted from the matrix elements.
+
+\begin{result}
+  FEG predicts ``anarchy''-style PMNS mixing: large mixing angles emerging from
+  the random topology of the Hasse diagram, in agreement with the observed
+  near-maximal $\theta_{23}$ and large $\theta_{12}$.
+\end{result}
+
+Output: \file{pmns.csv} with the $3 \times 3$ mixing matrix and extracted angles.
+
+\section{M9: Higgs Mechanism}
+
+Source: \file{measure/m09\_higgs.rs}
+
+Flag: \flag{measure-higgs}
+
+Models the Higgs boson as a ``breathing mode'' of the Causal Prism ensemble:
+a coherent oscillation of the average belly size $\langle N \rangle$ about its
+equilibrium value.  The entropy cost $\Delta S \sim 1/\alpha$ of a uniform shift
+in $N$ sets the Higgs mass scale:
+\[
+  m_H \sim v \sqrt{2\lambda}, \qquad \lambda \sim \alpha^2.
+\]
+
+The measurement applies topological drag --- walkers on prism components experience
+an effective potential proportional to their belly size, and the oscillation
+frequency is extracted from the autocorrelation.
+
+Output: \file{higgs.csv} with breathing-mode frequency, effective $\lambda$,
+and mass estimate.
+
+\section{M10: Standard Model Lagrangian Card}
+
+Source: \file{measure/m10\_lagrangian.rs}
+
+Flag: \flag{measure-lagrangian}
+
+Assembles a complete Standard Model parameter card from M1--M9 outputs:
+
+\begin{longtable}{lll}
+  \toprule
+  \textbf{Parameter} & \textbf{Source} & \textbf{FEG Derivation} \\
+  \midrule
+  $\alpha_{\text{EM}}$ & M4 & $Q_{\text{topo}}/(8\pi)$ \\
+  $\sin^2\theta_W$     & M5 & Left/right walker asymmetry \\
+  $m_e : m_\mu : m_\tau$ & M1 & Cover-time ratios \\
+  PMNS matrix           & M8 & Neutrino walker transmission \\
+  $m_H$                 & M9 & Breathing-mode frequency \\
+  $\tau_\mu, \tau_\tau$  & M2 & Edge-snap hitting times \\
+  $\alpha_s$            & M4 & Short-distance $Q_{\text{topo}}$ running \\
+  $P = |K|^2$           & M6 & Modular path integral \\
+  Neutrino counts       & M7 & Open-prism census \\
+  \bottomrule
+\end{longtable}
+
+This is a post-hoc assembly: M10 does not run its own simulation, but collects
+and cross-validates the outputs of M1--M9.
+
+Output: \file{lagrangian.csv} with the full parameter card.
+
+
+% ███████████████████████████████████████████████████████████████████████████████
+\chapter{Output \& CSV}
+% ███████████████████████████████████████████████████████████████████████████████
+
+\begin{introduction}
+  \item CSV serialisation with provenance headers
+  \item 36-column spectral CSV format
+  \item Topology summary and mass spectrum CSVs
+  \item Human-readable terminal summary
+\end{introduction}
+
+\section{CSV Writer}
+
+Source: \file{output/csv.rs}
+
+The \code{CsvWriter} struct wraps a \code{BufWriter<File>} and prepends the
+standard provenance header block (Layer 3):
+
+\begin{verbatim}
+  # FEG Kuratowski Calculus Engine (FEG_prism)
+  # Author: Juan Pablo Silva Alvarado
+  # DOI: 10.5281/zenodo.18769707
+  # Framework: Fractal Entropic Geometrodynamics
+  # Provenance SHA-256: a4fee337...
+  # Commit: 5b07174 (dirty)
+  # Timestamp: 2026-02-24T12:00:00Z
+\end{verbatim}
+
+\section{Spectral CSV}
+
+Source: \file{output/mod.rs}
+
+The function \func{write\_spectral\_csv()} produces \file{results.csv} with
+36 columns per diffusion step:
+
+\begin{longtable}{lp{9cm}}
+  \toprule
+  \textbf{Column(s)} & \textbf{Description} \\
+  \midrule
+  \code{step}           & Diffusion time $t$ (integer steps) \\
+  \code{P\_vac, dS\_vac}  & Vacuum return probability and spectral dimension \\
+  \code{P\_def, dS\_def}  & Defect (post-contraction) return prob.\ and $\dS$ \\
+  \code{P\_Gen1..3, dS\_Gen1..3} & Per-generation walks \\
+  \code{P\_Anti1, dS\_Anti1}     & Antimatter generation walk \\
+  \code{Flux\_Attr, Flux\_Repu}  & Causal flux (raw) \\
+  \code{Flux\_Attr\_Norm, Flux\_Repu\_Norm} & Normalised flux per target \\
+  \code{P\_Sterile, dS\_Sterile} & Sterile prism walk \\
+  \code{Mass\_Gen1..3, Mass\_Anti1} & Average topological mass \\
+  \code{dS\_*\_std}       & Ensemble standard deviations \\
+  \code{Flux\_*\_std}     & Flux ensemble standard deviations \\
+  \bottomrule
+\end{longtable}
+
+\section{Topology CSV}
+
+The function \func{write\_topology\_csv()} writes \file{topology\_summary.csv}
+with all 27 \code{TopologySummary} fields.  The function
+\func{write\_mass\_spectrum\_csv()} writes \file{mass\_spectrum.csv} with the
+prism histogram (belly size $\to$ count).
+
+\section{Measurement CSVs}
+
+The function \func{measure::write\_all\_csv()} dispatches to per-measurement
+\func{write\_csv()} functions.  Output files:
+
+\begin{itemize}
+  \item \file{traversal\_mass.csv} (M1)
+  \item \file{half\_life.csv} (M2)
+  \item \file{modulo\_interference.csv} (M3)
+  \item \file{vacuum\_polarization.csv} (M4)
+  \item \file{electroweak.csv} (M5)
+  \item \file{decoherence.csv}, \file{born\_rule.csv} (M6)
+  \item \file{neutrino.csv} (M7)
+  \item \file{pmns.csv} (M8)
+  \item \file{higgs.csv} (M9)
+  \item \file{lagrangian.csv} (M10)
+\end{itemize}
+
+\section{Terminal Summary}
+
+Source: \file{output/summary.rs}
+
+The \func{print\_summary()} function writes a human-readable report to stdout
+including: spectral dimension at key scales, mass hierarchy ratios, prism counts,
+$\alpha_{\text{EM}}$, dark matter fraction, and measurement highlights.
+
+\section{Metadata}
+
+The \code{Metadata} struct accompanies every CSV file:
+\begin{itemize}
+  \item \code{n\_points}, \code{actual\_m}, \code{converged}
+  \item \code{min\_ensemble}, \code{max\_ensemble}
+  \item \code{mode} (``in-memory'' or ``streaming'')
+  \item \code{epsilon}, \code{tmax}, \code{walkers}
+  \item \code{seed}, \code{timestamp}, \code{commit}
+\end{itemize}
+
+
+% ███████████████████████████████████████████████████████████████████████████████
+\chapter{Animation Export}
+% ███████████████████████████████████████████████████████████████████████████████
+
+\begin{introduction}
+  \item Binary topology slice for Manim scenes
+  \item Compact bincode serialisation
+  \item Integration with the animation layer
+\end{introduction}
+
+\section{Topology Slice}
+
+Source: \file{anim\_export.rs}
+
+The animation export produces a single-realisation snapshot containing:
+
+\begin{definition}[TopologySlice]
+  \begin{itemize}
+    \item \code{n\_total}: number of spacetime events
+    \item \code{coordinates}: $[t, x, y, z]$ for each event
+    \item \code{hasse\_edges}: directed $(u, v)$ Hasse links
+    \item \code{prisms}: vector of \code{PrismDef} (origin, destination,
+          intermediates)
+  \end{itemize}
+\end{definition}
+
+The slice is serialised via \code{bincode} to a compact binary file.  Typical
+size: $\sim 1\,\text{MB}$ for $N = 5000$.
+
+\section{Usage}
+
+Invoked by the \flag{export-slice} flag:
+
+\begin{verbatim}
+  feg_prism 5000 1 ./output --inmemory \
+    --export-slice ./output/slice.bin --seed 42
+\end{verbatim}
+
+This runs a single realisation (Phases 1--2 only, no spectral walkers) and
+writes the topology slice.  The Python animation layer
+(\file{animations/causal\_anim/scene.py}) loads the slice and renders:
+
+\begin{itemize}
+  \item 3D Hasse diagram with prism highlighting
+  \item Time-evolution of causal structure
+  \item Generation-coloured prism components
+\end{itemize}
+
+
+% ███████████████████████████████████████████████████████████████████████████████
+\chapter{Configuration}
+% ███████████████████████████████████████████████████████████████████████████████
+
+\begin{introduction}
+  \item TOML configuration file \file{causal\_set.toml}
+  \item RAM-aware mode selection
+  \item Memory estimation formulas
+\end{introduction}
+
+\section{Configuration File}
+
+Source: \file{config.rs}
+
+The engine reads \file{causal\_set.toml} from the output directory or current
+directory.  If absent, a default is created:
+
+\begin{verbatim}
+  # FEG Prism Simulation — configuration
+  output_dir = "."
+  max_ram_gb = 0        # 0 = auto-detect
+  safety_fraction = 0.70
+\end{verbatim}
+
+\section{Config Struct}
+
+\begin{definition}[Config Fields]
+  \begin{itemize}
+    \item \code{max\_ram\_bytes}: hard RAM limit (0 = use system detection)
+    \item \code{safety\_fraction}: fraction of available RAM considered safe
+          (default 0.70, clamped to $[0.05, 1.0]$)
+    \item \code{output\_dir}: default output directory (CLI overrides)
+  \end{itemize}
+\end{definition}
+
+\section{Memory Estimation}
+
+\begin{definition}[Memory Formulas]
+  In-memory mode:
+  \[
+    \text{est}(N) = \begin{cases}
+      N^2 \times 24  & N \leq 3000 \text{ (eigendecomp: dense matrix)} \\
+      N \times 2000  & 3000 < N \leq 50{,}000 \\
+      N \times 500   & N > 50{,}000 \text{ (Hasse degree $\leq 15$)}
+    \end{cases}
+  \]
+  Streaming mode:
+  \[
+    \text{est}(N) = N \times 13 + 100\,\text{MB}
+  \]
+\end{definition}
+
+The recommendation engine (\func{recommend\_mode()}) computes
+$\text{est}(N) \times \text{concurrent}$ and compares to
+$\text{available RAM} \times \text{safety\_fraction}$.
+
+\section{Mode Selection Flow}
+
+\begin{enumerate}
+  \item If \flag{inmemory}: force in-memory.
+  \item If \flag{stream}: force streaming.
+  \item Otherwise: auto-detect via \func{recommend\_mode()}.  Display memory
+        summary and prompt user to confirm or override.
+\end{enumerate}
+
+
+% ███████████████████████████████████████████████████████████████████████████████
+\chapter{Provenance}
+% ███████████████████████████████████████████████████████████████████████████████
+
+\begin{introduction}
+  \item Five-layer SHA-256 provenance system
+  \item No external crate for SHA-256 (custom implementation)
+  \item Binding the binary to its author, DOI, and git commit
+\end{introduction}
+
+\section{Architecture}
+
+Source: \file{provenance.rs}
+
+The provenance system provides a chain of trust from source code to output files:
+
+\begin{longtable}{clp{8cm}}
+  \toprule
+  \textbf{Layer} & \textbf{When} & \textbf{Purpose} \\
+  \midrule
+  1 & Compile & \code{\#[test]} canary: \code{sha256(PREIMAGE) == HASH} \\
+  2 & Startup & Runtime verification: \func{verify\_provenance()} \\
+  3 & Output  & CSV header stamps with author, DOI, hash, commit \\
+  4 & Resume  & Checkpoint provenance: reject cross-fork resume \\
+  5 & Build   & \code{env!()} embedding: git hash + dirty flag \\
+  \bottomrule
+\end{longtable}
+
+\section{Preimage and Hash}
+
+The provenance preimage is the ASCII string:
+
+\begin{verbatim}
+  Juan Pablo Silva Alvarado:10.5281/zenodo.18733424:
+  FEG-Kuratowski-2026
+\end{verbatim}
+
+Its SHA-256 hash is:
+
+\begin{verbatim}
+  a4fee33737305b5eb78a16be2ff233bd
+  ce125bffa352127fcbcd997d018c05aa
+\end{verbatim}
+
+Both the preimage and hash are compiled into the binary as constants.
+
+\section{Custom SHA-256}
+
+The engine implements SHA-256 from scratch without external crates (204 lines).
+The implementation:
+\begin{itemize}
+  \item Supports messages up to 119 bytes (sufficient for the preimage)
+  \item Follows FIPS 180-4 exactly: padding, schedule expansion, 64-round
+        compression with the standard $K$ constants
+  \item Verified by the compile-time canary and two additional unit tests
+        (\func{hex\_matches\_bytes}, \func{runtime\_verify})
+\end{itemize}
+
+\section{Build-Time Embedding}
+
+The \code{build.rs} script (not shown) sets two environment variables:
+\begin{itemize}
+  \item \code{GIT\_HASH}: short git commit hash
+  \item \code{GIT\_DIRTY}: ``dirty'' or ``clean''
+\end{itemize}
+These are embedded via \code{env!()} macros and surfaced by
+\func{commit\_string()}: e.g., \code{"5b07174 (dirty)"}.
+
+\section{UTC Timestamp}
+
+The function \func{utc\_timestamp()} computes the current time without external
+crates, using \code{SystemTime::now()} and manual calendar arithmetic
+(leap-year-aware).  Format: ISO 8601 (\code{2026-02-24T12:00:00Z}).
+
+
+% ███████████████████████████████████████████████████████████████████████████████
+\chapter{Usage \& CLI Reference}
+% ███████████████████████████████████████████████████████████████████████████████
+
+\begin{introduction}
+  \item Complete CLI reference with all flags
+  \item Quick-start examples
+  \item Common workflows
+\end{introduction}
+
+\section{Synopsis}
+
+\begin{verbatim}
+  feg_prism [N] [M] [output_dir] [FLAGS...]
+\end{verbatim}
+
+\subsection{Positional Arguments}
+
+\begin{longtable}{llp{8cm}}
+  \toprule
+  \textbf{Argument} & \textbf{Default} & \textbf{Description} \\
+  \midrule
+  \code{N}          & 5000   & Number of spacetime events \\
+  \code{M}          & 50     & Maximum ensemble realisations (or use \flag{max-ensemble}) \\
+  \code{output\_dir} & \code{.} & Directory for all output files \\
+  \bottomrule
+\end{longtable}
+
+\section{Flags}
+
+\subsection{Execution Mode}
+
+\begin{longtable}{lp{10cm}}
+  \toprule
+  \textbf{Flag} & \textbf{Description} \\
+  \midrule
+  \flag{inmemory}  & Force in-memory mode (fast) \\
+  \flag{stream}    & Force streaming mode (low RAM) \\
+  \flag{resume}    & Resume from last checkpoint \\
+  \bottomrule
+\end{longtable}
+
+\subsection{Physics Parameters}
+
+\begin{longtable}{llp{8cm}}
+  \toprule
+  \textbf{Flag} & \textbf{Default} & \textbf{Description} \\
+  \midrule
+  \flag{epsilon} \code{<f64>}  & 0.01  & Topological error tolerance $\varepsilon$ \\
+  \flag{tmax} \code{<usize>}   & 15    & Maximum diffusion time \\
+  \flag{seed} \code{<u64>}     & clock & Base seed (deterministic mode) \\
+  \flag{eigen-cutoff} \code{<N>} & 3000 & Eigendecomp threshold \\
+  \bottomrule
+\end{longtable}
+
+\subsection{Ensemble Control}
+
+\begin{longtable}{llp{8cm}}
+  \toprule
+  \textbf{Flag} & \textbf{Default} & \textbf{Description} \\
+  \midrule
+  \flag{max-ensemble} \code{<N>} & 50   & Safety cap on realisations \\
+  \flag{min-ensemble} \code{<N>} & 8    & Minimum before convergence check \\
+  \flag{target-error} \code{<F>} & 0.01 & Relative SE target \\
+  \flag{batch-size} \code{<N>}   & 4    & Max concurrent per batch \\
+  \flag{threads} \code{<N>}      & auto & Max parallel realisations \\
+  \bottomrule
+\end{longtable}
+
+\subsection{Measurements}
+
+\begin{longtable}{lp{10cm}}
+  \toprule
+  \textbf{Flag} & \textbf{Measurement} \\
+  \midrule
+  \flag{measure-mass}        & M1: Traversal mass ratios \\
+  \flag{measure-halflife}    & M2: Half-life census \\
+  \flag{measure-modulo}      & M3: Modulo path integral \\
+  \flag{measure-vacuum}      & M4: Vacuum polarisation \\
+  \flag{measure-electroweak} & M5: Electroweak sector \\
+  \flag{measure-decoherence} & M6: Quantum decoherence \\
+  \flag{measure-neutrino}    & M7: Neutrino census \\
+  \flag{measure-pmns}        & M8: PMNS mixing matrix (enables M7) \\
+  \flag{measure-higgs}       & M9: Higgs mechanism \\
+  \flag{measure-lagrangian}  & M10: Full SM Lagrangian card (enables M1--M9) \\
+  \flag{measure-all}         & Enable all M1--M9 \\
+  \bottomrule
+\end{longtable}
+
+\subsection{Modulo Configuration}
+
+\begin{longtable}{llp{8cm}}
+  \toprule
+  \textbf{Flag} & \textbf{Default} & \textbf{Description} \\
+  \midrule
+  \flag{modulo-prime} \code{<u64>} & 65537 & Prime modulus $p$ for M3/M6 \\
+  \flag{modulo-root} \code{<u64>}  & 3     & Primitive root $g$ of $p$ \\
+  \flag{modulo-steps} \code{<N>}   & 500   & NTT walk steps \\
+  \bottomrule
+\end{longtable}
+
+\subsection{Export}
+
+\begin{longtable}{lp{10cm}}
+  \toprule
+  \textbf{Flag} & \textbf{Description} \\
+  \midrule
+  \flag{export-slice} \code{<PATH>} & Export topology slice (single realisation, early exit) \\
+  \flag{help}                        & Show usage help \\
+  \bottomrule
+\end{longtable}
+
+\section{Quick-Start Examples}
+
+\subsection{Minimal Run}
+
+\begin{verbatim}
+  cargo run --release --bin feg_prism -- \
+    5000 8 ./output --inmemory --seed 42
+\end{verbatim}
+
+Runs $N = 5000$, $M \leq 8$ realisations, deterministic seed, in-memory mode.
+
+\subsection{Full Standard Model Card}
+
+\begin{verbatim}
+  cargo run --release --bin feg_prism -- \
+    50000 25 ./sm_run --inmemory \
+    --measure-lagrangian --seed 42
+\end{verbatim}
+
+Enables all M1--M10 measurements and produces the complete SM parameter card.
+
+\subsection{Production Run}
+
+\begin{verbatim}
+  cargo run --release --bin feg_prism -- \
+    1000000 50 ./production --inmemory \
+    --measure-all --target-error 0.005 --seed 42
+\end{verbatim}
+
+One million events, up to 50 realisations, tighter convergence target.
+
+\subsection{Born Rule Verification}
+
+\begin{verbatim}
+  cargo run --release --bin feg_prism -- \
+    5000 10 ./born --inmemory \
+    --measure-decoherence --seed 42
+\end{verbatim}
+
+\subsection{PMNS Mixing Matrix}
+
+\begin{verbatim}
+  cargo run --release --bin feg_prism -- \
+    50000 25 ./pmns --inmemory \
+    --measure-pmns --seed 42
+\end{verbatim}
+
+Automatically enables M7 (neutrino census) as a prerequisite.
+
+\subsection{Higgs Mass Estimate}
+
+\begin{verbatim}
+  cargo run --release --bin feg_prism -- \
+    50000 25 ./higgs --inmemory \
+    --measure-higgs --seed 42
+\end{verbatim}
+
+\subsection{Animation Export}
+
+\begin{verbatim}
+  cargo run --release --bin feg_prism -- \
+    5000 1 ./anim --inmemory \
+    --export-slice ./anim/slice.bin --seed 42
+\end{verbatim}
+
+Early exit after Phase 2; no spectral walkers run.
+
+\subsection{Resume from Checkpoint}
+
+\begin{verbatim}
+  cargo run --release --bin feg_prism -- \
+    50000 50 ./production --inmemory \
+    --measure-all --resume --seed 42
+\end{verbatim}
+
+Continues from the last checkpoint in \file{./production/}.
+
+\subsection{Custom Modulo Parameters}
+
+\begin{verbatim}
+  cargo run --release --bin feg_prism -- \
+    5000 10 ./modulo --inmemory \
+    --measure-modulo --modulo-prime 257 \
+    --modulo-root 3 --modulo-steps 1000 --seed 42
+\end{verbatim}
+
+
+% ███████████████████████████████████████████████████████████████████████████████
+\chapter{Expected Results \& Verification}
+% ███████████████████████████████████████████████████████████████████████████████
+
+\begin{introduction}
+  \item Expected output values at standard scales
+  \item Verification checklist
+  \item Known finite-size effects
+\end{introduction}
+
+\section{Spectral Dimension}
+
+\begin{result}
+  At $N = 50{,}000$, $M = 25$:
+  \begin{itemize}
+    \item $\dS(t \to 0) \to 2$ (short-distance fractal)
+    \item $\dS(t \to \infty) \to 4$ (long-distance manifold recovery)
+    \item The crossover occurs at $t \sim 5$--$10$ diffusion steps
+    \item Defect $\dS$ is slightly reduced compared to vacuum
+          (matter introduces topological shortcuts)
+  \end{itemize}
+\end{result}
+
+\section{Mass Hierarchy}
+
+\begin{result}
+  Cover-time mass ratios (M1, $N = 50{,}000$, $M = 25$):
+  \begin{itemize}
+    \item $m_\mu / m_e \approx 200 \pm 30$
+          (target: 206.77, PDG)
+    \item $m_\tau / m_e \approx 3500 \pm 500$
+          (target: 3477.4, PDG)
+  \end{itemize}
+  Exact agreement improves with $N$; finite-size corrections scale as $N^{-1/4}$.
+\end{result}
+
+\section{Fine Structure Constant}
+
+\begin{result}
+  Phase-coherence coupling ($N = 50{,}000$, $M = 25$):
+  \begin{itemize}
+    \item $Q_{\text{topo}} = \sum|\Phi|^2 / \sum N^2 \approx 0.06$--$0.08$
+    \item $\alpha_{\text{EM}} = Q_{\text{topo}} / (8\pi) \approx 1/132$ at bare scale
+    \item Running via planarity screening: $\alpha^{-1} \to 137$ at long distances
+  \end{itemize}
+\end{result}
+
+\section{Dark Matter Fraction}
+
+\begin{result}
+  Phase-coherence decomposition ($N = 50{,}000$, $M = 25$):
+  \begin{itemize}
+    \item $\Omega_{\text{dark}} / \Omega_{\text{vis}} \approx 4$--$6$
+          (target: 5.3, Planck)
+    \item Sterile prisms ($\Phi = 0$) constitute $\sim 10$--$20\%$ of all prisms
+  \end{itemize}
+\end{result}
+
+\section{Born Rule}
+
+\begin{result}
+  Decoherence measurement (M6, $N = 5{,}000$, $M = 10$):
+  \begin{itemize}
+    \item $P(d) \propto |K(s,d)|^2$ verified to within $5\%$
+    \item Fringe visibility $> 0.8$ at $t < 10$; decoheres for $t > 50$
+  \end{itemize}
+\end{result}
+
+\section{Verification Checklist}
+
+\begin{enumerate}
+  \item Compile: \code{cargo build --release --bin feg\_prism}
+  \item Provenance: startup message shows ``SHA-256 verified $\checkmark$''
+  \item Triangle-freeness: \code{topology\_summary.csv} shows zero $K_4$ count
+  \item Prism counts: $\sim 5$--$15\%$ of core nodes form prisms
+  \item Generation hierarchy: Gen1 > Gen2 > Gen3 in abundance
+  \item Spectral dimension: $\dS(1) \approx 2$, $\dS(30) \approx 4$
+  \item CSV files: all provenance headers present and hash matches
+  \item Determinism: same seed produces identical output
+\end{enumerate}
+
+\section{Known Finite-Size Effects}
+
+\begin{itemize}
+  \item \textbf{Boundary effects}: The causal diamond has sharp boundaries.
+        Nodes near the tips have anomalously low degree.  The core selection
+        (top 10\% by degree) mitigates this by preferring interior nodes.
+  \item \textbf{Mass ratio convergence}: The cover-time ratios $m_\mu/m_e$ and
+        $m_\tau/m_e$ converge slowly (as $N^{-1/4}$).  For precision to within
+        $10\%$, use $N \geq 50{,}000$.
+  \item \textbf{Spectral dimension plateau}: The $\dS \to 4$ plateau may not be
+        reached at small $t_{\max}$.  Use $t_{\max} \geq 15$ for convergence.
+  \item \textbf{Ensemble variance}: Some observables (e.g., $\alpha_{\text{EM}}$)
+        have high variance across realisations.  Use $M \geq 25$ for reliable
+        estimates.
+\end{itemize}
+
+
+% ███████████████████████████████████████████████████████████████████████████████
+\chapter{Dependencies}
+% ███████████████████████████████████████████████████████████████████████████████
+
+\begin{introduction}
+  \item Nine Rust crates
+  \item No external SHA-256 dependency
+  \item Build profile for performance
+\end{introduction}
+
+\section{Crate List}
+
+\begin{longtable}{llp{8cm}}
+  \toprule
+  \textbf{Crate} & \textbf{Version} & \textbf{Purpose} \\
+  \midrule
+  \code{nalgebra}    & 0.33   & Dense linear algebra (eigendecomposition) \\
+  \code{sprs}        & 0.11   & Sparse matrix operations ($A^2$ for Tier 1 Hasse) \\
+  \code{rand}        & 0.8    & Pseudorandom number generation (\code{StdRng}) \\
+  \code{rayon}       & 1.10   & Data parallelism (parallel iterators) \\
+  \code{sysinfo}     & 0.33   & System memory detection \\
+  \code{smallvec}    & 1.15.1 & Stack-allocated small vectors \\
+  \code{rustc-hash}  & 2      & Fast non-cryptographic hashing \\
+  \code{serde}       & 1      & Serialisation framework (with \code{derive}) \\
+  \code{bincode}     & 1.3    & Binary serialisation for animation export \\
+  \bottomrule
+\end{longtable}
+
+\section{Build Profile}
+
+\begin{verbatim}
+  [profile.release]
+  opt-level = 3
+  lto = "thin"
+  codegen-units = 1
+\end{verbatim}
+
+This maximises performance at the cost of longer compile times.  The
+\code{codegen-units = 1} setting enables whole-program optimisation.
+
+\section{Notable Absences}
+
+\begin{itemize}
+  \item \textbf{No SHA-256 crate}: the 204-line custom implementation in
+        \file{provenance.rs} avoids any external cryptographic dependency.
+  \item \textbf{No TOML parser}: the configuration reader in \file{config.rs}
+        uses simple line-by-line parsing (12 lines).
+  \item \textbf{No logging framework}: diagnostics use \code{println!} with
+        optional file-append to \file{simulation.log}.
+\end{itemize}
+
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\backmatter
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\chapter*{Colophon}
+\addcontentsline{toc}{chapter}{Colophon}
+
+This document was typeset with XeLaTeX using the Modulo Synthesis palette
+and tcolorbox theorem environments, matching the styling of the pedagogic
+booklet series \emph{Modulo Synthesis, Volumes I \& II}.
+
+\medskip\noindent
+Source code: \url{https://github.com/ertwro/fractal_entropic_geometrodynamic}\\
+DOI: \url{https://doi.org/10.5281/zenodo.18769707}\\
+License: MIT
+
+\medskip\noindent
+\textcopyright{} 2026 Juan Pablo Silva Alvarado.  All rights reserved.
+
+\end{document}

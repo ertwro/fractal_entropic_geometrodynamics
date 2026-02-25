@@ -6,6 +6,9 @@
 *.bbl
 *.blg
 *.compile.log
+*.fdb_latexmk
+*.fls
+*.xdv
 *Notes.bib
 texput.log
 
@@ -18,13 +21,32 @@ __pycache__/
 *.pyo
 
 # ── Simulation artifacts ──
-causal_set.toml
 *.checkpoint.bin
 *.checkpoint.bin.bak*
 .checkpoint.bin*
-prism_simulation/simulation.log
-prism_simulation/test_*.log
-prism_simulation/-M/
+simulation.log
+nohup.out
+
+# ── Stray config ──
+causal_set.toml
+
+# ── Private / not for upload ──
+animations/
+paper/
+prism_simulation/
+pedagogic_booklets/modulo_synthesis_kuratowski_calculus_en*
+
+# ── Excess data directories ──
+data/ensemble_10M/
+data/ensemble_born_rule/
+data/ensemble_higgs/
+data/ensemble_neutrino/
+data/ensemble_neutrino_single/
+data/ensemble_pmns/
+data/data/
+
+# ── Generated figures ──
+data/figures/
 
 # ── OS ──
 .DS_Store

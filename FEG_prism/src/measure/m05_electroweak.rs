@@ -1,0 +1,366 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Juan Pablo Silva Alvarado
+// Fractal Entropic Geometrodynamics — DOI: 10.5281/zenodo.18769707
+
+//! M5 — Electroweak Sector (SU(2) Chirality + U(1) Port Counting)
+//!
+//! Per-intermediate chirality chi = (out_d - in_d) / (out_d + in_d) classifies
+//! handedness.  SU(2) doublets = min(n_left, n_right).  Port counting on
+//! poles vs intermediates yields a topological charge Q_topo that should
+//! converge to 4/21 (Vol II, Thm 6.3).
+//!
+//! Calculo de Kuratowski, Vol II, section 7: parity violation from causal arrow.
+
+use super::context::MeasureContext;
+use crate::output::CsvWriter;
+use crate::phase2::defect::CausalPrism;
+use rayon::prelude::*;
+
+// ── Data Structures ──────────────────────────────────────────────────────────
+
+#[derive(Clone, Debug)]
+pub struct PrismElectroweak {
+    pub prism_idx: usize,
+    pub generation: u8,
+    pub n_intermediates: usize,
+    pub n_left: usize,
+    pub n_right: usize,
+    pub n_balanced: usize,
+    pub su2_doublets: usize,
+    pub chirality_sum: f64,
+    pub mean_abs_chirality: f64,
+    pub free_ports_origin: u32,
+    pub free_ports_dest: u32,
+    pub free_ports_intermediates: u32,
+    pub weak_filtered_ports: u32,
+    pub causal_filtered_ports: u32,
+    pub local_q_topo: f64,
+    pub transparency: f64,
+}
+
+#[derive(Clone, Debug)]
+pub struct ElectroweakResult {
+    pub per_prism: Vec<PrismElectroweak>,
+    pub mean_chirality_imbalance: f64,
+    pub left_fraction: f64,
+    pub mean_doublets: f64,
+    pub q_topo_port: f64,
+    pub alpha_port: f64,
+    pub total_free_ports: u64,
+    pub total_weak_filtered: u64,
+    pub total_causal_filtered: u64,
+    pub gen_left_fraction: [f64; 3],
+    pub gen_mean_chirality: [f64; 3],
+    pub gen_prism_count: [usize; 3],
+}
+
+// ── Utilities ────────────────────────────────────────────────────────────────
+
+fn build_gen_lookup(n: usize, ctx: &MeasureContext) -> Vec<u8> {
+    let mut lookup = vec![0u8; n];
+    for &node in &ctx.defect.generations.gen1 {
+        if node < n { lookup[node] = 1; }
+    }
+    for &node in &ctx.defect.generations.gen2 {
+        if node < n { lookup[node] = 2; }
+    }
+    for &node in &ctx.defect.generations.gen3 {
+        if node < n { lookup[node] = 3; }
+    }
+    for &node in &ctx.defect.generations.anti1 {
+        if node < n { lookup[node] = 4; }
+    }
+    lookup
+}
+
+fn classify_prism_generation(prism: &CausalPrism, gen_lookup: &[u8]) -> u8 {
+    for &node in &prism.intermediates {
+        let g = gen_lookup[node];
+        if g >= 1 && g <= 3 { return g; }
+    }
+    let g = gen_lookup[prism.origin];
+    if g >= 1 && g <= 3 { return g; }
+    let g = gen_lookup[prism.destination];
+    if g >= 1 && g <= 3 { return g; }
+    0
+}
+
+// ── Measurement ──────────────────────────────────────────────────────────────
+
+pub fn run(ctx: &MeasureContext) -> ElectroweakResult {
+    const MAX_HASSE_DEGREE: u32 = 15;
+
+    let n = ctx.n_points;
+    let gen_lookup = build_gen_lookup(n, ctx);
+    let (vac_head, _vac_data) = ctx.vacuum_csr.raw();
+
+    // Build reverse CSR (same pattern as M4)
+    let mut rev_deg = vec![0u32; n];
+    for u in 0..n {
+        let s = vac_head[u] as usize;
+        let e = vac_head[u + 1] as usize;
+        let vac_data = ctx.vacuum_csr.data();
+        for &v in &vac_data[s..e] {
+            let vi = v as usize;
+            if vi < n {
+                rev_deg[vi] += 1;
+            }
+        }
+    }
+    let mut rev_head = vec![0u32; n + 1];
+    for i in 0..n {
+        rev_head[i + 1] = rev_head[i] + rev_deg[i];
+    }
+
+    // Process each prism in parallel
+    let per_prism: Vec<PrismElectroweak> = ctx.prisms
+        .par_iter()
+        .enumerate()
+        .map(|(pi, prism)| {
+            let gen = classify_prism_generation(prism, &gen_lookup);
+            let n_inter = prism.intermediates.len();
+
+            // 1. Per-intermediate chirality
+            let mut n_left = 0usize;
+            let mut n_right = 0usize;
+            let mut n_balanced = 0usize;
+            let mut chi_sum = 0.0f64;
+            let mut abs_chi_sum = 0.0f64;
+
+            for &w in &prism.intermediates {
+                if w >= n { continue; }
+                let out_d = (vac_head[w + 1] - vac_head[w]) as f64;
+                let in_d = (rev_head[w + 1] - rev_head[w]) as f64;
+                let total = out_d + in_d;
+                if total > 0.0 {
+                    let chi = (out_d - in_d) / total;
+                    chi_sum += chi;
+                    abs_chi_sum += chi.abs();
+                    if chi > 0.0 {
+                        n_left += 1;
+                    } else if chi < 0.0 {
+                        n_right += 1;
+                    } else {
+                        n_balanced += 1;
+                    }
+                } else {
+                    n_balanced += 1;
+                }
+            }
+
+            // 2. SU(2) doublets = min(n_left, n_right)
+            let su2_doublets = n_left.min(n_right);
+
+            let mean_abs_chi = if n_inter > 0 {
+                abs_chi_sum / n_inter as f64
+            } else {
+                0.0
+            };
+
+            // 3. Port counting (U(1) hypercharge)
+            let degree_of = |node: usize| -> u32 {
+                if node >= n { return 0; }
+                vac_head[node + 1] - vac_head[node]
+            };
+
+            let free_origin = MAX_HASSE_DEGREE.saturating_sub(degree_of(prism.origin));
+            let free_dest = MAX_HASSE_DEGREE.saturating_sub(degree_of(prism.destination));
+            let free_inter: u32 = prism
+                .intermediates
+                .iter()
+                .map(|&w| MAX_HASSE_DEGREE.saturating_sub(degree_of(w)))
+                .sum();
+
+            let total_free = free_origin + free_dest + free_inter;
+            // Weak filtered: poles only (intermediate ports forbidden)
+            let weak_filtered = free_origin + free_dest;
+            // Causal filtered: one pole only (time-ordering)
+            let causal_filtered = free_origin;
+
+            let local_q = if total_free > 0 {
+                causal_filtered as f64 / total_free as f64
+            } else {
+                0.0
+            };
+            let transparency = if total_free > 0 {
+                weak_filtered as f64 / total_free as f64
+            } else {
+                0.0
+            };
+
+            PrismElectroweak {
+                prism_idx: pi,
+                generation: gen,
+                n_intermediates: n_inter,
+                n_left,
+                n_right,
+                n_balanced,
+                su2_doublets,
+                chirality_sum: chi_sum,
+                mean_abs_chirality: mean_abs_chi,
+                free_ports_origin: free_origin,
+                free_ports_dest: free_dest,
+                free_ports_intermediates: free_inter,
+                weak_filtered_ports: weak_filtered,
+                causal_filtered_ports: causal_filtered,
+                local_q_topo: local_q,
+                transparency,
+            }
+        })
+        .collect();
+
+    // Aggregation
+    let total_prisms = per_prism.len();
+    let mut total_left = 0usize;
+    let mut total_right = 0usize;
+    let mut total_doublets = 0usize;
+    let mut sum_chi_imbalance = 0.0f64;
+    let mut total_free: u64 = 0;
+    let mut total_weak: u64 = 0;
+    let mut total_causal: u64 = 0;
+
+    let mut gen_left_count = [0usize; 3];
+    let mut gen_total_inter = [0usize; 3];
+    let mut gen_chi_sum = [0.0f64; 3];
+    let mut gen_chi_count = [0usize; 3];
+    let mut gen_prism_count = [0usize; 3];
+
+    for p in &per_prism {
+        total_left += p.n_left;
+        total_right += p.n_right;
+        total_doublets += p.su2_doublets;
+        sum_chi_imbalance += (p.n_left as f64 - p.n_right as f64).abs();
+        total_free += (p.free_ports_origin + p.free_ports_dest + p.free_ports_intermediates) as u64;
+        total_weak += p.weak_filtered_ports as u64;
+        total_causal += p.causal_filtered_ports as u64;
+
+        let gi = p.generation as usize;
+        if gi >= 1 && gi <= 3 {
+            let idx = gi - 1;
+            gen_left_count[idx] += p.n_left;
+            gen_total_inter[idx] += p.n_intermediates;
+            gen_chi_sum[idx] += p.chirality_sum;
+            gen_chi_count[idx] += p.n_intermediates;
+            gen_prism_count[idx] += 1;
+        }
+    }
+
+    let total_lr = (total_left + total_right) as f64;
+    let left_fraction = if total_lr > 0.0 { total_left as f64 / total_lr } else { 0.5 };
+    let mean_chi_imbalance = if total_prisms > 0 {
+        sum_chi_imbalance / total_prisms as f64
+    } else {
+        0.0
+    };
+    let mean_doublets = if total_prisms > 0 {
+        total_doublets as f64 / total_prisms as f64
+    } else {
+        0.0
+    };
+    let q_topo_port = if total_free > 0 {
+        total_causal as f64 / total_free as f64
+    } else {
+        0.0
+    };
+    let alpha_port = q_topo_port / (8.0 * std::f64::consts::PI);
+
+    let gen_left_fraction = [
+        if gen_total_inter[0] > 0 { gen_left_count[0] as f64 / gen_total_inter[0] as f64 } else { 0.0 },
+        if gen_total_inter[1] > 0 { gen_left_count[1] as f64 / gen_total_inter[1] as f64 } else { 0.0 },
+        if gen_total_inter[2] > 0 { gen_left_count[2] as f64 / gen_total_inter[2] as f64 } else { 0.0 },
+    ];
+    let gen_mean_chirality = [
+        if gen_chi_count[0] > 0 { gen_chi_sum[0] / gen_chi_count[0] as f64 } else { 0.0 },
+        if gen_chi_count[1] > 0 { gen_chi_sum[1] / gen_chi_count[1] as f64 } else { 0.0 },
+        if gen_chi_count[2] > 0 { gen_chi_sum[2] / gen_chi_count[2] as f64 } else { 0.0 },
+    ];
+
+    ElectroweakResult {
+        per_prism,
+        mean_chirality_imbalance: mean_chi_imbalance,
+        left_fraction,
+        mean_doublets,
+        q_topo_port,
+        alpha_port,
+        total_free_ports: total_free,
+        total_weak_filtered: total_weak,
+        total_causal_filtered: total_causal,
+        gen_left_fraction,
+        gen_mean_chirality,
+        gen_prism_count,
+    }
+}
+
+// ── Ensemble Aggregation ─────────────────────────────────────────────────────
+
+pub fn aggregate(results: &[ElectroweakResult]) -> ElectroweakResult {
+    let m = results.len() as f64;
+    let mut gen_left = [0.0f64; 3];
+    let mut gen_chi = [0.0f64; 3];
+    let mut gen_count = [0usize; 3];
+    for ew in results {
+        for i in 0..3 {
+            gen_left[i] += ew.gen_left_fraction[i];
+            gen_chi[i] += ew.gen_mean_chirality[i];
+            gen_count[i] += ew.gen_prism_count[i];
+        }
+    }
+    for i in 0..3 { gen_left[i] /= m; gen_chi[i] /= m; }
+    let total_free: u64 = results.iter().map(|e| e.total_free_ports).sum();
+    let total_weak: u64 = results.iter().map(|e| e.total_weak_filtered).sum();
+    let total_causal: u64 = results.iter().map(|e| e.total_causal_filtered).sum();
+    let q_topo = if total_free > 0 { total_causal as f64 / total_free as f64 } else { 0.0 };
+    ElectroweakResult {
+        per_prism: vec![],
+        mean_chirality_imbalance: results.iter().map(|e| e.mean_chirality_imbalance).sum::<f64>() / m,
+        left_fraction: results.iter().map(|e| e.left_fraction).sum::<f64>() / m,
+        mean_doublets: results.iter().map(|e| e.mean_doublets).sum::<f64>() / m,
+        q_topo_port: q_topo,
+        alpha_port: q_topo / (8.0 * std::f64::consts::PI),
+        total_free_ports: total_free,
+        total_weak_filtered: total_weak,
+        total_causal_filtered: total_causal,
+        gen_left_fraction: gen_left,
+        gen_mean_chirality: gen_chi,
+        gen_prism_count: gen_count,
+    }
+}
+
+// ── CSV Output ───────────────────────────────────────────────────────────────
+
+pub fn write_csv(result: &ElectroweakResult, w: &mut CsvWriter) {
+    w.comment("M5 Electroweak Sector (SU(2) chirality + U(1) port counting)");
+    w.header(&[
+        "prism_idx", "generation", "n_intermediates",
+        "n_left", "n_right", "n_balanced", "su2_doublets",
+        "chirality_sum", "mean_abs_chirality",
+        "free_ports_origin", "free_ports_dest", "free_ports_inter",
+        "weak_filtered", "causal_filtered", "local_q_topo", "transparency",
+    ]);
+    for p in &result.per_prism {
+        w.row_fmt(format_args!(
+            "{},{},{},{},{},{},{},{:.6},{:.6},{},{},{},{},{},{:.6},{:.6}",
+            p.prism_idx, p.generation, p.n_intermediates,
+            p.n_left, p.n_right, p.n_balanced, p.su2_doublets,
+            p.chirality_sum, p.mean_abs_chirality,
+            p.free_ports_origin, p.free_ports_dest, p.free_ports_intermediates,
+            p.weak_filtered_ports, p.causal_filtered_ports,
+            p.local_q_topo, p.transparency
+        ));
+    }
+}
+
+// ── Terminal Summary ─────────────────────────────────────────────────────────
+
+pub fn print_summary(result: &ElectroweakResult) {
+    println!("  [M5] Electroweak Sector:");
+    println!("    Left fraction:   {:.4}", result.left_fraction);
+    println!("    Mean doublets:   {:.2}", result.mean_doublets);
+    println!("    Q_topo (port):   {:.6}", result.q_topo_port);
+    println!("    alpha (port):    {:.6}  (1/alpha={:.1})",
+        result.alpha_port, if result.alpha_port > 0.0 { 1.0 / result.alpha_port } else { 0.0 });
+    println!("    Gen left frac:   [{:.4}, {:.4}, {:.4}]",
+        result.gen_left_fraction[0], result.gen_left_fraction[1], result.gen_left_fraction[2]);
+    println!("    Gen mean chi:    [{:.4}, {:.4}, {:.4}]",
+        result.gen_mean_chirality[0], result.gen_mean_chirality[1], result.gen_mean_chirality[2]);
+}

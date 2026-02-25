@@ -64,8 +64,8 @@ C = {
 }
 
 HERE = pathlib.Path(__file__).resolve().parent
-REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
-DATA = REPO_ROOT / "data" / "ensemble_10M"
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+DATA = REPO_ROOT / "data" / "ensemble_10M_final"
 OUT  = REPO_ROOT / "data" / "figures"
 OUT.mkdir(parents=True, exist_ok=True)
 

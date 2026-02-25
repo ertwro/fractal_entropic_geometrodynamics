@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="14.527in" height="10.25in"
+     viewBox="0 0 14527 10250">
+<!--
+  KDP Wraparound Cover — 7"×10" trim, 123pp white paper
+  Spine: 0.277"  |  Bleed: 0.125" all edges
+  Coordinate system: 1 unit = 0.001 inch (1 mil)
+
+  Layout (left to right):
+    0..125        back bleed
+    125..7125     back cover trim (center x=3625)
+    7125..7402    spine (center x=7264)
+    7402..14402   front cover trim (center x=10902)
+    14402..14527  front bleed
+-->
+
+  <!-- Full dark background (extends into all bleeds) -->
+  <rect width="14527" height="10250" fill="#0d0d0f"/>
+
+  <!-- ============================================================ -->
+  <!-- BACK COVER                                                    -->
+  <!-- Trim: x=125..7125, y=125..10125  |  Center x=3625            -->
+  <!-- ============================================================ -->
+
+  <!-- Tagline -->
+  <text x="3625" y="2800" text-anchor="middle"
+        font-family="'Liberation Serif', 'DejaVu Serif', 'Times New Roman', serif"
+        font-size="150" font-style="italic" fill="#a0a0a5" letter-spacing="2">
+    Spacetime is not a stage; it is a computation.
+  </text>
+
+  <!-- Description -->
+  <g text-anchor="middle"
+     font-family="'Liberation Serif', 'DejaVu Serif', 'Times New Roman', serif"
+     fill="#707075" font-size="112" letter-spacing="1">
+    <text x="3625" y="3600">The Kuratowski Calculus derives the constants</text>
+    <text x="3625" y="3800">of nature from two simple rules: causal finitism</text>
+    <text x="3625" y="4000">and planarity preservation. By replacing the</text>
+    <text x="3625" y="4200">smooth manifold with a finite directed acyclic</text>
+    <text x="3625" y="4400">graph, this work demonstrates how gravity, gauge</text>
+    <text x="3625" y="4600">symmetry, and three generations of matter emerge</text>
+    <text x="3625" y="4800">as mathematical necessities.</text>
+    <text x="3625" y="5200">From the discrete differential to dessins</text>
+    <text x="3625" y="5400">d&#x2019;enfants, this volume provides the complete</text>
+    <text x="3625" y="5600">mathematical bridge from graph rewriting to</text>
+    <text x="3625" y="5800">the Standard Model of particle physics.</text>
+    <text x="3625" y="6200" font-style="italic" fill="#a0a0a5">No free parameters. No tuned couplings.</text>
+    <text x="3625" y="6400" font-style="italic" fill="#a0a0a5">Just the graph.</text>
+  </g>
+
+  <!-- Volume / Series -->
+  <text x="3625" y="7200" text-anchor="middle"
+        font-family="'Liberation Serif', 'DejaVu Serif', 'Times New Roman', serif"
+        font-size="108" fill="#505058" font-style="italic" letter-spacing="2">
+    Volume III &#x00B7; The Modulo Synthesis
+  </text>
+
+  <!-- DOI -->
+  <text x="3625" y="7600" text-anchor="middle"
+        font-family="'Liberation Mono', 'DejaVu Sans Mono', 'Courier New', monospace"
+        font-size="88" fill="#404045">
+    doi:10.5281/zenodo.18769707
+  </text>
+
+  <!-- Barcode safe zone: KDP auto-places ISBN barcode in lower-right back -->
+  <!-- Keeping y > 8000, x > 4500 clear -->
+
+  <!-- ============================================================ -->
+  <!-- SPINE                                                         -->
+  <!-- Area: x=7125..7402  |  Width: 277 mils  |  Center x=7264     -->
+  <!-- ============================================================ -->
+
+  <!-- Thin vertical rules delineating spine -->
+  <line x1="7125" y1="125" x2="7125" y2="10125"
+        stroke="#1a1a1e" stroke-width="2"/>
+  <line x1="7402" y1="125" x2="7402" y2="10125"
+        stroke="#1a1a1e" stroke-width="2"/>
+
+  <!-- Spine text: rotated 90° CW → reads top-to-bottom (US convention) -->
+  <g transform="translate(7264, 5125) rotate(90)">
+    <text text-anchor="middle"
+          font-family="'Liberation Serif', 'DejaVu Serif', 'Times New Roman', serif"
+          font-size="115" fill="#a0a0a5" letter-spacing="3">
+      KURATOWSKI CALCULUS &#x00B7; J. P. Silva Alvarado
+    </text>
+  </g>
+
+  <!-- ============================================================ -->
+  <!-- FRONT COVER                                                   -->
+  <!-- Trim: x=7402..14402, y=125..10125  |  Center x=10902          -->
+  <!-- Nested SVG maps original 1600×2400 design to trim area        -->
+  <!-- ============================================================ -->
+
+  <svg x="7402" y="125" width="7000" height="10000"
+       viewBox="0 0 1600 2400" preserveAspectRatio="none">
+
+    <!-- Decorative double border -->
+    <rect x="150" y="150" width="1300" height="2100"
+          fill="none" stroke="#2a2a2e" stroke-width="2"/>
+    <rect x="165" y="165" width="1270" height="2070"
+          fill="none" stroke="#2a2a2e" stroke-width="1"/>
+
+    <!-- Title -->
+    <g text-anchor="middle"
+       font-family="'Liberation Serif', 'DejaVu Serif', 'Times New Roman', serif"
+       fill="#eaeaea">
+      <text x="800" y="380" font-size="72" font-weight="normal"
+            letter-spacing="12">KURATOWSKI</text>
+      <text x="800" y="480" font-size="72" font-weight="normal"
+            letter-spacing="12">CALCULUS</text>
+    </g>
+
+    <!-- Subtitle -->
+    <text x="800" y="580" text-anchor="middle"
+          font-family="'Liberation Serif', 'DejaVu Serif', 'Times New Roman', serif"
+          font-size="42" font-style="italic" fill="#a0a0a5"
+          letter-spacing="4">The Modulo Synthesis</text>
+
+    <!-- K_{2,3} Causal Prism -->
+    <g transform="translate(0, -100)">
+      <!-- Edges -->
+      <g stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.6">
+        <path d="M 400 1300 Q 600 950 800 950" fill="none"/>
+        <path d="M 800 950 Q 1000 950 1200 1300" fill="none"/>
+        <path d="M 400 1300 Q 600 1650 800 1650" fill="none"/>
+        <path d="M 800 1650 Q 1000 1650 1200 1300" fill="none"/>
+        <line x1="400" y1="1300" x2="1200" y2="1300"/>
+      </g>
+
+      <!-- Nodes (poles) -->
+      <circle cx="400" cy="1300" r="12" fill="#0d0d0f"
+              stroke="#ffffff" stroke-width="4"/>
+      <circle cx="1200" cy="1300" r="12" fill="#0d0d0f"
+              stroke="#ffffff" stroke-width="4"/>
+
+      <!-- Nodes (intermediaries) -->
+      <circle cx="800" cy="950" r="12" fill="#0d0d0f"
+              stroke="#ffffff" stroke-width="4"/>
+      <circle cx="800" cy="1300" r="12" fill="#0d0d0f"
+              stroke="#ffffff" stroke-width="4"/>
+      <circle cx="800" cy="1650" r="12" fill="#0d0d0f"
+              stroke="#ffffff" stroke-width="4"/>
+    </g>
+
+    <!-- Author -->
+    <text x="800" y="2050" text-anchor="middle"
+          font-family="'Liberation Serif', 'DejaVu Serif', 'Times New Roman', serif"
+          font-size="48" fill="#eaeaea" letter-spacing="8">JUAN PABLO SILVA ALVARADO</text>
+
+  </svg>
+
+</svg>

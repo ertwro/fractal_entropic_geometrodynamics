@@ -22,9 +22,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 # ── Paths ────────────────────────────────────────────────────────────────────
-REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 FSS_JSON = REPO_ROOT / "data" / "fss_scaling" / "fss_comprehensive_results.json"
-CSV_FILE = REPO_ROOT / "data" / "ensemble_10M" / "results_M20.csv"
+CSV_FILE = REPO_ROOT / "data" / "ensemble_10M_final" / "results_M20.csv"
 OUT = REPO_ROOT / "data" / "figures"
 OUT.mkdir(parents=True, exist_ok=True)
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# Usage: python data/scripts/plot_universe.py
 """
 plot_universe.py — Publication-quality figures for Modulo Synthesis / FEG.
 
@@ -54,15 +53,11 @@ PAL = {
 }
 
 HERE = pathlib.Path(__file__).resolve().parent
-REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
-DATA = REPO_ROOT / "data" / "ensemble_10M"
-OUT = REPO_ROOT / "data" / "figures"
-OUT.mkdir(parents=True, exist_ok=True)
 
 
 def load_csv(name: str) -> pd.DataFrame:
     """Load a CSV, skipping leading comment lines (# ...)."""
-    path = DATA / name
+    path = HERE / name
     return pd.read_csv(path, comment="#")
 
 
@@ -133,8 +128,8 @@ def fig1_spectral_dimension():
 
     sns.despine(ax=ax)
     fig.tight_layout()
-    fig.savefig(OUT / "fig1_spectral_dimension.pdf")
-    fig.savefig(OUT / "fig1_spectral_dimension.png")
+    fig.savefig(HERE / "fig1_spectral_dimension.pdf")
+    fig.savefig(HERE / "fig1_spectral_dimension.png")
     print("  [+] fig1_spectral_dimension.pdf")
     plt.close(fig)
 
@@ -187,8 +182,8 @@ def fig2_mass_spectrum():
 
     sns.despine(ax=ax)
     fig.tight_layout()
-    fig.savefig(OUT / "fig2_mass_spectrum.pdf")
-    fig.savefig(OUT / "fig2_mass_spectrum.png")
+    fig.savefig(HERE / "fig2_mass_spectrum.pdf")
+    fig.savefig(HERE / "fig2_mass_spectrum.png")
     print("  [+] fig2_mass_spectrum.pdf")
     plt.close(fig)
 
@@ -241,8 +236,8 @@ def fig3_causal_flux():
 
     sns.despine(ax=ax)
     fig.tight_layout()
-    fig.savefig(OUT / "fig3_causal_flux.pdf")
-    fig.savefig(OUT / "fig3_causal_flux.png")
+    fig.savefig(HERE / "fig3_causal_flux.pdf")
+    fig.savefig(HERE / "fig3_causal_flux.png")
     print("  [+] fig3_causal_flux.pdf")
     plt.close(fig)
 
@@ -263,4 +258,4 @@ if __name__ == "__main__":
 
     print()
     print("Done. Figures saved as PDF + PNG in:")
-    print(f"  {OUT}")
+    print(f"  {HERE}")

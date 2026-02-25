@@ -1,0 +1,22 @@
+# FEG Kuratowski Calculus Engine (FEG_prism)
+# Author: Juan Pablo Silva Alvarado
+# DOI: 10.5281/zenodo.18769707
+# Framework: Fractal Entropic Geometrodynamics
+# Provenance SHA-256: a4fee33737305b5eb78a16be2ff233bdce125bffa352127fcbcd997d018c05aa
+# Commit: 5b07174 (dirty)
+# Timestamp: 2026-02-25T07:29:29Z
+# N: 10000000  M: 20 (converged=true, min=8, max=20)  mode: in-memory
+# epsilon: 0.01  tmax: 15  walkers: 2250000
+# algorithm: forward-forward belly (children(u) ∩ parents(v))
+# seed: 42
+# M8 PMNS Mixing Matrix (layered front propagation)
+from_gen,to_gen,raw_count,probability
+1,1,1460,0.425556
+1,2,517,0.150695
+1,3,1455,0.423749
+2,1,1157,0.367988
+2,2,658,0.209194
+2,3,1329,0.422818
+3,1,1734,0.114583
+3,2,1270,0.084079
+3,3,12125,0.801339

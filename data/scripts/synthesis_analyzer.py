@@ -1,15 +1,7 @@
-#!/usr/bin/env python3
-# Usage: python data/scripts/synthesis_analyzer.py
-import pathlib
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-
-REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
-DATA = REPO_ROOT / "data" / "ensemble_10M"
-OUT = REPO_ROOT / "data" / "figures"
-OUT.mkdir(parents=True, exist_ok=True)
 
 # --- CONFIGURACIÓN ESTÉTICA (Physical Review Style) ---
 plt.style.use('seaborn-v0_8-paper')
@@ -27,9 +19,9 @@ plt.rcParams.update(params)
 
 def analyze_and_plot():
     print("[*] Leyendo telemetría completa...")
-    df_res = pd.read_csv(DATA / 'results.csv', comment='#')
-    df_mass = pd.read_csv(DATA / 'mass_spectrum.csv', comment='#')
-    df_top = pd.read_csv(DATA / 'topology_summary.csv', comment='#')
+    df_res = pd.read_csv('results.csv', comment='#')
+    df_mass = pd.read_csv('mass_spectrum.csv', comment='#')
+    df_top = pd.read_csv('topology_summary.csv', comment='#')
     top_dict = dict(zip(df_top['key'], df_top['value']))
 
     df_res['inv_alpha'] = df_res.apply(
@@ -55,7 +47,7 @@ def analyze_and_plot():
     ax1.set_xlim(0, 15)
     ax1.set_ylim(1, 8)
     ax1.legend()
-    fig1.savefig(OUT / 'fig1_macroscopic_geometry.png')
+    fig1.savefig('fig1_macroscopic_geometry.png')
     print(" -> Generado: fig1_macroscopic_geometry.png")
 
     # =========================================================
@@ -72,7 +64,7 @@ def analyze_and_plot():
     ax2.set_xscale('log')
     ax2.set_yscale('log')
     ax2.legend()
-    fig2.savefig(OUT / 'fig2_topological_inertia.png')
+    fig2.savefig('fig2_topological_inertia.png')
     print(" -> Generado: fig2_topological_inertia.png")
 
     # =========================================================
@@ -103,7 +95,7 @@ def analyze_and_plot():
 
     fig3.suptitle(f'Figure 3: Topological Origin of Particles ({metadata_str})', fontsize=14, y=1.02)
     fig3.tight_layout()
-    fig3.savefig(OUT / 'fig3_matter_spectrum.png')
+    fig3.savefig('fig3_matter_spectrum.png')
     print(" -> Generado: fig3_matter_spectrum.png")
 
     # =========================================================
@@ -133,7 +125,7 @@ def analyze_and_plot():
 
     fig4.suptitle(f'Figure 4: Emergent Electromagnetism ({metadata_str})', fontsize=14, y=1.02)
     fig4.tight_layout()
-    fig4.savefig(OUT / 'fig4_forces_and_alpha.png')
+    fig4.savefig('fig4_forces_and_alpha.png')
     print(" -> Generado: fig4_forces_and_alpha.png")
     
     print("[*] Todas las figuras han sido generadas y listas para LaTeX.")

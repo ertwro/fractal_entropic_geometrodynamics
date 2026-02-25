@@ -1,0 +1,895 @@
+\part{Emergent Physics}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\chapter{Geodesics and the Maximum Proper Time Principle}
+% ═══════════════════════════════════════════════════════════════════════════════
+% CENTRAL CORRESPONDENCE:
+%   Continuum: δ∫L dτ = 0  (extremum of the action functional)
+%   Discrete: longest causal chain between A and B (maximum proper time)
+
+\begin{introduction}
+  \item The geodesic as a causal chain of maximum length.
+  \item Inertia and geodesic deviation: the Prism as a topological
+        obstruction.
+  \item The principle of minimum logical action: causal efficiency.
+\end{introduction}
+
+In the continuous Riemannian geometry~\cite{wald1984}, a free
+particle follows a geodesic, defined as the curve that extremizes the
+distance between two points. In Euclidean signature, the extremum is a
+minimum. However, in the Lorentzian signature of spacetime, the
+principle reverses: the timelike geodesic \textbf{maximizes} proper
+time~\cite{mtw1973}. The Kuratowski Calculus formalizes this reversal
+in a natural way through the chain structure of the DAG.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{The Geodesic as Maximal Chain}
+
+In Chapter~1, we defined proper time along a chain $\gamma$ as its
+number of covering links:
+$\tau(\gamma) = |\gamma|$
+(Definition~\ref{def:proper-time}). The Myrheim--Meyer Theorem
+(\ref{thm:myrheim-meyer}) showed that, in the high-density limit, the
+longest chain converges to the geodesic proper time of the continuum.
+We now formalize the discrete geodesic as a central object:
+
+\begin{definition}[Kuratowski Geodesic]
+\label{def:geodesic}
+Let $A, B \in V$ with $A \prec B$. The \textbf{Kuratowski geodesic}
+between~$A$ and~$B$ is any causal chain that achieves the maximum
+length. The \textbf{geodesic length} is:
+\begin{equation}
+  \boxed{\;
+  \tau(A, B)
+  \;=\;
+  \max_{\gamma \,\in\, \Gamma(A,B)} |\gamma|
+  \;=\; \ell(A,B),
+  \;}
+  \label{eq:geodesic-length}
+\end{equation}
+where $\Gamma(A,B)$ is the set of all chains between~$A$ and~$B$
+(Definition~\ref{def:chain}).
+\end{definition}
+
+\stoneref{The geodesic is the \emph{optimal proof}: the inferential
+chain that extracts the maximum deductive content between the premises
+$\varphi_A$ and~$\varphi_B$. Nature chooses the most detailed proof.}
+
+\noindent
+Note the reversal with respect to Euclidean intuition: the geodesic
+does not minimize, but rather \textbf{maximizes}. In Euclidean space,
+the shortest path wins. In causal spacetime, the longest path
+wins---because it accumulates more covering links and, therefore, more
+proper time. This is exactly the principle of General Relativity:
+between two events, the inertial observer (in free fall) is the one
+whose clock records the \emph{greatest} time interval.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+  event/.style={circle, fill=structure, inner sep=1.5pt},
+  link/.style={draw=gray!30, thin},
+  geodesic/.style={draw=main, thick, >=Stealth},
+  >=Stealth
+]
+% Events
+\node[event, label={[font=\small]below:$A$}] (A) at (0,0) {};
+\node[event] (p1) at (-1.2,0.8) {};
+\node[event] (p2) at (0.8,0.7) {};
+\node[event] (p3) at (-0.5,1.5) {};
+\node[event] (p4) at (0.3,1.4) {};
+\node[event] (p5) at (1.0,1.6) {};
+\node[event] (p6) at (-0.8,2.3) {};
+\node[event] (p7) at (0.5,2.2) {};
+\node[event] (p8) at (-0.2,3.0) {};
+\node[event] (p9) at (0.7,3.1) {};
+\node[event, label={[font=\small]above:$B$}] (B) at (0.2,3.9) {};
+% Non-geodesic links (gray)
+\draw[link] (A) -- (p1);
+\draw[link] (A) -- (p2);
+\draw[link] (p1) -- (p3);
+\draw[link] (p2) -- (p5);
+\draw[link] (p3) -- (p6);
+\draw[link] (p5) -- (p7);
+\draw[link] (p6) -- (p8);
+\draw[link] (p7) -- (p9);
+\draw[link] (p8) -- (B);
+\draw[link] (p9) -- (B);
+\draw[link] (p1) -- (p6);
+\draw[link] (p2) -- (p4);
+% Geodesic chain (longest path, highlighted)
+\draw[geodesic,->] (A) -- (p2);
+\draw[geodesic,->] (p2) -- (p4);
+\draw[geodesic,->] (p4) -- (p7);
+\draw[geodesic,->] (p7) -- (p9);
+\draw[geodesic,->] (p9) -- (B);
+% Annotation
+\node[font=\small, main, align=center] at (2.8,2)
+  {geodesic:\\$\tau(A,B) = 5$};
+\node[font=\scriptsize, gray, align=center] at (-2.5,2)
+  {short\\chain: 4};
+\end{tikzpicture}
+\caption{Proper time as maximal chain. Among all chains connecting $A$
+to $B$, the geodesic (ochre, length~5) is the one that
+\textbf{maximizes} the link count. The Brightwell--Gregory theorem
+guarantees that this discrete maximum converges to the continuum
+proper time: $\tau \propto n^{1/d}$.}
+\label{fig:cadena-maxima}
+\end{figure}
+
+\begin{theorem}[Asymptotic Uniqueness of the
+Geodesic]
+\label{thm:geodesic-uniqueness}
+Let $\mathcal{C}$ be a causal set obtained by Poisson \emph{sprinkling}
+with density~$\rho$ in a globally hyperbolic spacetime. For $A \prec B$
+with $\ell(A,B) \gg 1$, the maximal chain is asymptotically unique in
+the following sense: if $\gamma_1$ and $\gamma_2$ are two chains of
+length~$\ell(A,B)$, then their elements differ in at most
+$O(\sqrt{\ell})$ nodes.
+\end{theorem}
+
+\begin{proof}
+Let $\gamma^* = (e_0, e_1, \ldots, e_\ell)$ be a maximal chain.
+Any alternative chain~$\gamma'$ of equal length must pass through the
+same ``bottlenecks'' of the DAG---regions where the diamond
+$\diam{A}{B}$ narrows. In a $d$-dimensional Poisson
+\emph{sprinkling}, the number of events in a cross-section at
+depth~$k$ fluctuates as $\sqrt{\rho\,\sigma_k}$, where $\sigma_k$ is
+the $(d{-}1)$-volume of the section. Two maximal chains can only
+diverge where the cross-section admits multiple paths of equal length,
+which occurs in a fraction $O(1/\sqrt{\ell})$ of the steps. Thus, the
+number of nodes in which they differ is $O(\sqrt{\ell})$, and the
+discrepancy fraction tends to zero: $O(\sqrt{\ell})/\ell =
+O(1/\sqrt{\ell}) \to 0$.
+\end{proof}
+
+\noindent
+This quasi-uniqueness explains why macroscopic matter experiences time
+as something fluid and deterministic: the average over trillions of
+maximal chains converges to a single continuous geodesic, with
+imperceptible relative fluctuations.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Inertia and Geodesic Deviation}
+
+Why does a particle feel ``heavy''? In the Kuratowski Calculus,
+inertia is the resistance of the topology to allowing long chains.
+
+\begin{definition}[Topological Resistance]
+\label{def:topological-resistance}
+Let $\diam{A}{B}$ be a diamond containing a density $\nu$ of Causal
+Prisms per unit of causal depth. The \textbf{topological resistance}
+of the diamond is:
+\begin{equation}
+  \mathcal{R}(A,B)
+  \;=\;
+  \frac{\ell_{\text{vac}}(A,B) - \ell(A,B)}{\ell_{\text{vac}}(A,B)},
+  \label{eq:topological-resistance}
+\end{equation}
+where $\ell_{\text{vac}}(A,B)$ is the geodesic length that the same
+diamond would have in the absence of Prisms (pure vacuum), and
+$\ell(A,B)$ is the actual geodesic length.
+\end{definition}
+
+\noindent
+Theorem~\ref{thm:time-dilation} (Chapter~1) already showed that
+Prisms consume links in internal routes, reducing the global causal
+advance. We can now quantify the effect on the geodesic:
+
+\begin{theorem}[Geodesic Shortening by Prisms]
+\label{thm:geodesic-shortening}
+Let $\diam{A}{B}$ be a diamond containing $p$~Prisms
+$\mathcal{P}_1, \ldots, \mathcal{P}_p$ with
+$N_j = |W_j|$ intermediaries each. The effective geodesic length
+satisfies:
+\begin{equation}
+  \ell(A,B)
+  \;\leq\;
+  \ell_{\text{vac}}(A,B) - \sum_{j=1}^{p} (N_j - 1),
+  \label{eq:geodesic-shortening}
+\end{equation}
+where the term $N_j - 1$ reflects that each Prism diverts the maximal
+chain by at least $N_j - 1$ additional links that do not contribute to
+global advance.
+\end{theorem}
+
+\begin{proof}
+In vacuum, the maximal chain uses each covering link to advance
+causally from $A$ toward~$B$. When the chain traverses the Prism
+$\mathcal{P}_j(u_j, v_j, W_j)$, the path
+$u_j \covers w \covers v_j$ consumes 2~links to traverse a causal
+distance that, in vacuum, would require 1 (the direct link
+$u_j \covers v_j$ does not exist because $W_j$ intercepts it). The
+net cost per Prism is at least~$+1$ link per intermediary visited. If
+the maximal chain must traverse all $N_j$~intermediaries sequentially
+(worst case), the cost is $N_j - 1$ links consumed without global
+advance. Summing over all Prisms:
+\[
+  \ell(A,B)
+  \;\leq\;
+  \ell_{\text{vac}}(A,B)
+  \;-\; \sum_{j=1}^{p} (N_j - 1).
+\]
+\end{proof}
+
+\noindent
+Geodesic deviation---the divergence between two initially nearby
+maximal chains---is the mechanism by which curvature manifests itself.
+In a region of uniform vacuum ($\nu = 0$), two parallel geodesics
+remain parallel. In a region with Prisms ($\nu > 0$), a geodesic
+passing near a Prism deviates (it loses links to internal processing),
+while a distant geodesic does not. This difference in length is the
+\textbf{discrete curvature}, analogous to the Jacobi geodesic
+deviation equation in the
+continuum~\cite{wald1984,hawking1973}.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{The Principle of Minimum Logical Action}
+
+In classical physics, the action
+$S[\gamma] = \int_\gamma L\,d\tau$ is a scalar functional over
+trajectories, and the equations of motion emerge from the condition
+$\delta S = 0$. In the Kuratowski Calculus, we reinterpret the action
+as a measure of \textbf{logical efficiency} of the
+graph~\cite{benincasa2010,benincasa2011,buck2015}.
+
+\begin{definition}[Discrete Action Functional]
+\label{def:discrete-action}
+Let $\gamma \in \Gamma(A,B)$ be a causal chain. The \textbf{Kuratowski
+action functional} is:
+\begin{equation}
+  S[\gamma] \;=\; -|\gamma|.
+  \label{eq:discrete-action}
+\end{equation}
+The negative sign ensures that \emph{minimizing}~$S$ is equivalent to
+\emph{maximizing} the chain length---recovering the maximum proper
+time principle.
+\end{definition}
+
+\stoneref{$S[\gamma] = -|\gamma|$ is the \emph{principle of maximum
+proof length}: nature chooses the most detailed demonstration.
+Minimizing the action is equivalent to maximizing the number of atomic
+inferential steps---the proof that omits no lemma.}
+
+\begin{theorem}[Discrete Extremal Condition]
+\label{thm:extremal-condition}
+A chain $\gamma^* \in \Gamma(A,B)$ is an extremum of the action
+functional $S[\gamma] = -|\gamma|$ if and only if it admits no
+\textbf{insertions}: there exists no event $e \in \diam{A}{B}
+\setminus \gamma^*$ such that, upon inserting it into~$\gamma^*$, the
+resulting chain is longer.
+
+Formally, $\gamma^*$ is extremal if and only if $\gamma^*$ is a
+\textbf{maximal chain}:
+\begin{equation}
+  |\gamma^*| \;=\; \ell(A,B)
+  \;=\; \max_{\gamma \in \Gamma(A,B)} |\gamma|.
+  \label{eq:extremal}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The discrete ``variation'' $\delta\gamma$ consists of inserting an
+event~$e$ between two consecutive links $e_k$ and $e_{k+1}$ of the
+chain. This is possible if and only if there exist links
+$e_k \covers e \covers e_{k+1}$, in which case the length increases
+by~$+1$. If $\gamma^*$ admits such an insertion, then
+$|\gamma^*| < |\gamma^* \cup \{e\}|$, contradicting maximality.
+Conversely, if $\gamma^*$ is maximal, no insertion can increase its
+length.
+\end{proof}
+
+\noindent
+A free particle does not ``choose'' its path; the path emerges from
+the graph configuration that allows the greatest propagation of
+causality. The Kuratowski geodesic is the path of least informational
+resistance, which turns out to be, paradoxically, the one that
+accumulates the greatest number of proper time events: the path where
+information flows with the fewest topological obstructions ($K_5$).
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\chapter{The Inertia Tensor and the Emergent Metric}
+% ═══════════════════════════════════════════════════════════════════════════════
+% CENTRAL CORRESPONDENCE:
+%   Continuum: T_μν (energy-momentum tensor) and g_μν (metric)
+%   Discrete: Causal Prism K_{2,N} and density of intermediate links
+
+\begin{introduction}
+  \item The Causal Prism as delay operator: the local inertia tensor.
+  \item The emergent metric $g_{\mu\nu}$ from the return probability.
+  \item Lorentz invariance in the discrete: from Poisson to valence.
+  \item Gravity as path statistics.
+\end{introduction}
+
+In General Relativity, matter tells space how to curve through the
+energy-momentum tensor $T_{\mu\nu}$. In the Kuratowski Calculus, this
+process is not an interaction between two distinct entities, but a
+manifestation of information density. Curvature is the statistical
+response of the graph to the accumulation of topological defects.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{The Causal Prism as Delay Operator}
+
+A Causal Prism $K_{2,N}$ acts as an \emph{information sieve}. When a
+geodesic (maximal chain) traverses it, the number of possible paths
+expands, but the local connectivity becomes ``heavy'': the chain must
+invest links in internal processing
+(Theorem~\ref{thm:geodesic-shortening}).
+
+To quantify this effect, we define the inertia load that each event
+bears:
+
+\begin{definition}[Local Inertia Tensor]
+\label{def:inertia-tensor}
+Let $\mathcal{C} = (V, \prec)$ be a causal set containing a set of
+Prisms
+$\{\mathcal{P}_k(u_k, v_k, W_k)\}_{k=1}^{p}$. The \textbf{local
+inertia tensor} at an event~$u \in V$ is:
+\begin{equation}
+  \mathcal{I}(u)
+  \;=\;
+  \sum_{k=1}^{p} \mathbf{1}_{u \in \mathcal{P}_k} \;\cdot\; N_k,
+  \label{eq:inertia-tensor}
+\end{equation}
+where $\mathbf{1}_{u \in \mathcal{P}_k}$ is the indicator function
+($= 1$ if $u$ belongs to Prism~$\mathcal{P}_k$ as a pole or
+intermediary, $= 0$ otherwise) and $N_k = |W_k|$ is the topological
+mass of Prism~$k$.
+\end{definition}
+
+\stoneref{$\mathcal{I}(u) = \sum N_k$ is the \emph{total lemma
+complexity}: the number of indirect inferential steps that a reasoning
+must traverse at~$u$. Mass is the length of the indirect proof
+(Theorem~\ref{thm:antimatter-tollens}).}
+
+\noindent
+The inertia $\mathcal{I}(u)$ is not an extrinsic charge assigned to
+the event; it is the count of bifurcations that a walker must
+``resolve'' in order to advance through~$u$. A vacuum event has
+$\mathcal{I}(u) = 0$. An event participating in a single Prism of
+mass~$N$ has $\mathcal{I}(u) = N$. If multiple Prisms overlap at~$u$,
+their contributions add up---a discrete analogue of the superposition
+of sources in $T_{\mu\nu}$.
+
+\begin{theorem}[Accumulated Geodesic Delay]
+\label{thm:accumulated-delay}
+Let $\gamma^*$ be a geodesic (maximal chain) between $A$ and $B$. The
+total delay accumulated along~$\gamma^*$ relative to vacuum is bounded
+by:
+\begin{equation}
+  \ell_{\text{vac}}(A,B) - \ell(A,B)
+  \;\geq\;
+  \sum_{u \in \gamma^*} \frac{\mathcal{I}(u)}{d^+(u)},
+  \label{eq:accumulated-delay}
+\end{equation}
+where $d^+(u)$ is the out-degree of~$u$. The quotient
+$\mathcal{I}(u)/d^+(u)$ represents the fraction of the immediate
+future of~$u$ that is consumed by internal Prism structure.
+\end{theorem}
+
+\begin{proof}
+At each event~$u$ along the geodesic, the walker seeking the maximal
+chain has $d^+(u)$ options for advancing. Of these, $\mathcal{I}(u)$
+lead to Prism intermediaries that do not advance globally
+(Theorem~\ref{thm:time-dilation}). The probability of taking a
+productive path is at most
+$(d^+(u) - \mathcal{I}(u))/d^+(u)$, and the expected number of
+``wasted'' links per step is $\mathcal{I}(u)/d^+(u)$. Summing along
+the geodesic yields the bound~\eqref{eq:accumulated-delay}.
+\end{proof}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{The Emergence of the Metric $g_{\mu\nu}$}
+
+The Riemannian metric $g_{\mu\nu}$ defines the distance between
+nearby points. In the Kuratowski Calculus, ``distance'' is an
+emergent property of the diffusion statistics on the Hasse diagram.
+
+The connection comes from spectral
+geometry~\cite{gilkey1975,berger2003}. On a $d$-dimensional Riemannian
+manifold, the heat kernel (the return probability of a diffuser)
+satisfies the \textbf{Minakshisundaram--Pleijel
+expansion}~\cite{minakshisundaram1949}:
+\begin{equation}
+  K(t, x, x)
+  \;\sim\;
+  \frac{1}{(4\pi t)^{d/2}\,\sqrt{g(x)}}
+  \left(1 + a_1(x)\,t + a_2(x)\,t^2 + \cdots\right),
+  \label{eq:heat-kernel}
+\end{equation}
+where $g(x) = |\det g_{\mu\nu}(x)|$ and the coefficients $a_k(x)$
+encode the curvature. In the Kuratowski Calculus, the return
+probability $P(t, u)$ of the random walker
+(Definition~\ref{def:random-walker}) is the discrete analogue of
+$K(t, x, x)$.
+
+\begin{theorem}[Emergent Metric by Diffusion]
+\label{thm:emergent-metric}
+Let $P(t, u)$ be the return probability of the random walker to
+event~$u$ after $t$~steps. In the high-density limit
+$\rho \to \infty$, the relation between $P$ and the metric
+determinant is:
+\begin{equation}
+  \boxed{\;
+  \sqrt{g(u)}
+  \;\propto\;
+  \bigl\langle P(t, u) \bigr\rangle^{-1}
+  \quad\text{at fixed, intermediate $t$.}
+  \;}
+  \label{eq:metric-from-return}
+\end{equation}
+Where there is matter (Prisms), walkers return more frequently ($P$
+increases, the diffuser gets ``stuck''), which corresponds to a
+smaller metric determinant---a contraction of the local volume that
+the continuum calculus interprets as curvature.
+\end{theorem}
+
+\begin{proof}
+From the expansion~\eqref{eq:heat-kernel} at leading order:
+$K(t, x, x) \propto 1/\sqrt{g(x)}$ at fixed $t$. In the continuum
+limit, $P(t, u) \to K(t, x, x)$ when $u$ corresponds to the
+point~$x$ (Theorem~\ref{thm:volume-convergence}, applied to the
+convergence of discrete diffusion). Therefore,
+$P(t, u) \propto 1/\sqrt{g(u)}$, whence
+$\sqrt{g(u)} \propto P(t, u)^{-1}$.
+
+Physically: in a region with Prisms $K_{2,N}$, the walker becomes
+trapped in the $N$ intermediaries, increasing $P(t,u)$ relative to
+vacuum. This reduces $\sqrt{g(u)}$, contracting the local volume
+element. For a macroscopic observer using continuous metric rulers,
+this contraction is indistinguishable from the curvature of space.
+\end{proof}
+
+\noindent
+The coefficients $a_k(x)$ of the
+expansion~\eqref{eq:heat-kernel} encode the curvature:
+$a_1(x) = R(x)/6$ where $R$ is the Ricci curvature scalar. In the
+discrete, the deviation of $P(t,u)$ from the vacuum value at
+different times~$t$ allows one to extract, order by order, all the
+geometric information:
+\begin{align}
+  t^0 &\;\to\; \sqrt{g} \quad\text{(local volume)},
+  \label{eq:heat-order0}\\
+  t^1 &\;\to\; R \quad\text{(scalar curvature)},
+  \label{eq:heat-order1}\\
+  t^2 &\;\to\; R_{\mu\nu}R^{\mu\nu},\;
+  R_{\mu\nu\alpha\beta}R^{\mu\nu\alpha\beta}
+  \quad\text{(quadratic invariants)}.
+  \label{eq:heat-order2}
+\end{align}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Lorentz Invariance and Discreteness}
+
+A historic challenge of discrete theories is maintaining Lorentz
+invariance. The Kuratowski Calculus guarantees it through two
+complementary mechanisms:
+
+\begin{enumerate}
+  \item \textbf{Poisson Sprinkling}
+    (Bombelli--Henson--Sorkin
+    Theorem~\cite{bombelli2009}, Chapter~2,
+    Section~2.3): the event distribution is the only one that
+    preserves statistical invariance under Lorentz boosts. An observer
+    who ``moves'' in the graph sees the same event density as one at
+    rest, because the redistribution due to Lorentz contraction
+    cancels exactly with the rearrangement of simultaneities.
+
+  \item \textbf{Valence limit $\mathcal{V}_{\max}$}
+    (Theorem~\ref{thm:valence-limit}): the saturation of the causal
+    flow guarantees that the \emph{resolution} of the differential is
+    uniform for all observers. No matter how fast an entity ``moves''
+    in the graph: its out-degree cannot exceed $\mathcal{V}_{\max}$,
+    and therefore the granularity of the differential $\covers$ is
+    the same in every direction.
+\end{enumerate}
+
+\begin{result}[title={The Speed of Light as Causal Bit}]
+\phantomsection\label{res:speed-of-light}
+The speed of light $c$ is not the limiting velocity of a particle,
+but the propagation rate of a bit of information through a single
+covering link $\covers$. In natural units of the Kuratowski Calculus,
+$c = 1$ link per step: an event can only influence its immediate
+successor, and this restriction is absolute and observer-independent.
+\end{result}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Gravity as Path Statistics}
+
+With the local inertia tensor $\mathcal{I}(u)$ and the emergent
+metric $\sqrt{g(u)} \propto P(t,u)^{-1}$, we can assemble the
+relation between matter and geometry:
+
+\begin{theorem}[Einstein Equations as
+Statistical Limit]
+\label{thm:einstein-statistical}
+In the thermodynamic limit $\rho \to \infty$ (or equivalently
+$N \to \infty$ at fixed volume), the discrete relation between the
+Prism density (source) and the modification of the return probability
+(geometry) converges to the Einstein field equations:
+\begin{equation}
+  \boxed{\;
+  G_{\mu\nu}
+  \;=\; R_{\mu\nu} - \tfrac{1}{2}\,R\,g_{\mu\nu}
+  \;=\; 8\pi G\, T_{\mu\nu}.
+  \;}
+  \label{eq:einstein-limit}
+\end{equation}
+Newton's constant $G$ is identified with a combination of the
+fundamental density~$\rho$ and the quantum of topological inertia
+$\kappa$.
+\end{theorem}
+
+\noindent
+\textit{Sketch of the proof.}
+The complete argument is developed in Chapter~6
+(Section~6.2). The central idea is:
+\begin{enumerate}
+  \item The Prism density defines a smooth scalar field
+    $\mathcal{I}(x) \to T_{00}(x)$ in the continuum limit
+    (convergence by the law of large numbers).
+  \item The return probability $P(t, u)$ converges to the heat kernel
+    $K(t, x, x)$, whose coefficients encode $R_{\mu\nu}$.
+  \item The relation between $\mathcal{I}(u)$ and the deviation of
+    $P(t,u)$ from vacuum reproduces, order by order in the heat
+    expansion, the structure of the Einstein equations.
+\end{enumerate}
+
+\noindent
+The underlying statistical argument is powerful: at the scale of
+$1$~meter, the causal graph contains $\sim 10^{140}$~events. The
+relative fluctuations of the metric are
+$\delta g / g \sim 1/\sqrt{N} \sim 10^{-70}$---imperceptible to any
+conceivable instrument. The smoothness of $g_{\mu\nu}$ is not a
+property of spacetime; it is a consequence of large numbers.
+
+% ═══════════════════════════════════════════════════════════════════════════════
+\chapter{The Riemann Limit}
+% ═══════════════════════════════════════════════════════════════════════════════
+% CENTRAL CORRESPONDENCE:
+%   Discrete (finite N) → Continuum (N → ∞)
+%   Kuratowski Calculus → Riemann/Einstein Differential Calculus
+%
+% This chapter closes the circle: it demonstrates that everything built in
+% chapters 1-5 converges analytically to the Einstein field equations
+% when the event density tends to infinity.
+
+\begin{introduction}
+  \item The thermodynamic limit: when $N \to \infty$, the Kuratowski
+        Calculus transforms into the Einstein field equations.
+  \item Resolution of why the universe appears continuous at macroscopic
+        scales.
+\end{introduction}
+
+\section{The Thermodynamic Limit of the Causal Graph}
+
+The continuum limit of the Kuratowski Calculus is not an assumption
+but a \emph{result}: it emerges when the event density
+$\rho = |V|/\mathrm{Vol}$ is sufficiently
+large~\cite{bombelli1987,surya2019,major2007}. The discrete
+observables converge to their continuous analogues:
+%
+\begin{align}
+  \frac{|V \cap A(p,q)|}{\rho} &\;\longrightarrow\; \mathrm{Vol}\bigl(A(p,q)\bigr),
+  \label{eq:vol-limit}\\[4pt]
+  \frac{|\text{maximal chain}(p,q)|}{\rho^{1/d}}
+  &\;\longrightarrow\; \tau(p,q),
+  \label{eq:tau-limit}\\[4pt]
+  \dS(t) &\;\longrightarrow\; 4.
+  \label{eq:ds-limit}
+\end{align}
+%
+The quantitative question is: \textit{how much does it cost} to
+maintain that convergence? The following theorem establishes the lower
+bound.
+
+\subsection{The Causal Resolution Theorem}
+
+In the Kuratowski Calculus, the spectral dimension
+$\dS(t) = -2\,d(\ln P)/d(\ln t)$ is extracted from the return
+probability $P(t)$ of random walkers on the Hasse diagram. For a
+local observer to experience a smooth macroscopic spacetime of
+4~dimensions, the causal network must be probed by a sufficient
+number of independent causal paths. The following result quantifies
+that threshold.
+
+\begin{theorem}[Causal Resolution]
+\label{thm:causal-resolution}
+Let $(V, \prec)$ be a causal set whose spectral dimension converges to
+$\dS = 4$ at large diffusion times, so that the return probability
+satisfies
+\[
+  P(t) \;\sim\; c\,t^{-\dS/2} \;=\; c\,t^{-2},
+  \qquad t \gg 1,
+\]
+where $c > 0$ is a geometric constant of order~$1$. Let $W$ be
+independent spectral walkers that probe the geometry, and let
+$\epsilon > 0$ be the maximum admissible relative fluctuation in the
+estimation of $P(t)$ (the \textbf{granularity tolerance}).
+
+Then, the number of walkers needed to resolve the geometry up to a
+causal depth $t_{\max}$ satisfies:
+\begin{equation}
+  \boxed{\;W \;\geq\; \frac{t_{\max}^{\,2}}{c\;\epsilon^2}\;}
+  \label{eq:causal-resolution}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Each walker returns to the origin at step~$t$ with probability
+$P(t)$, independently of the others. The number of observed returns
+$R(t)$ is the sum of $W$ independent Bernoulli trials with parameter
+$P(t)$.
+
+For $t \gg 1$ we have $P(t) \ll 1$, so by the Poisson limit theorem,
+$R(t) \sim \mathrm{Poisson}\bigl(W P(t)\bigr)$, with
+\[
+  \mu \;=\; \mathbb{E}[R] \;=\; W\,P(t),
+  \qquad
+  \sigma \;=\; \sqrt{\mu} \;=\; \sqrt{W\,P(t)}.
+\]
+
+The estimator of the return probability is
+$\hat{P}(t) = R(t)/W$, whose relative error is:
+\[
+  \frac{\sigma_{\hat{P}}}{\hat{P}}
+  \;=\; \frac{\sqrt{W\,P(t)}\,/\,W}{P(t)}
+  \;=\; \frac{1}{\sqrt{W\,P(t)}}.
+\]
+
+We require that this error does not exceed $\epsilon$ at the most
+unfavorable point $t = t_{\max}$ (where $P$ is minimum and the
+statistics are poorest):
+\[
+  \frac{1}{\sqrt{W\,P(t_{\max})}} \;\leq\; \epsilon
+  \qquad\Longrightarrow\qquad
+  W \;\geq\; \frac{1}{\epsilon^2\,P(t_{\max})}.
+\]
+
+Substituting $P(t_{\max}) = c\,t_{\max}^{-2}$:
+\[
+  W \;\geq\; \frac{t_{\max}^{\,2}}{c\;\epsilon^2}.
+\]
+\end{proof}
+
+\noindent
+The result admits an immediate reading:
+
+\begin{result}[title={The Price of Smoothness}]
+\phantomsection\label{res:price-of-smoothness}
+The informational cost of sustaining the illusion of a continuous
+4-dimensional spacetime scales \textbf{quadratically} with the
+temporal causal depth:
+\[
+  W \;\propto\; t_{\max}^{\,2}.
+\]
+Probing twice the causal depth requires four times as many independent
+paths. Smoothness is not free: it is a statistical property that the
+causal network must finance with information flow.
+\end{result}
+
+\noindent\textit{Remark} (Connection with the simulation).
+In the numerical implementation (\texttt{prism\_simulation}), the
+number of walkers is set as
+$W = \lceil(t_{\max}/\epsilon)^2\rceil$, directly applying
+Theorem~\ref{thm:causal-resolution} with $c = 1$. The parameters
+$t_{\max}$ and $\epsilon$ are configurable via \texttt{-{}-tmax} and
+\texttt{-{}-epsilon}; the default values ($t_{\max}=15$,
+$\epsilon=0{.}01$) give $W = 2{,}250{,}000$ walkers, sufficient to
+resolve the 4D geometry with less than 1\% relative error in $P(t)$
+at maximum depth.
+
+\medskip
+
+\section{Recovery of the Einstein Equations}
+
+Theorem~\ref{thm:einstein-statistical} (Chapter~5) announced that the
+Einstein field equations emerge as a statistical limit. Here we
+develop the three steps of the argument.
+
+\medskip
+\noindent\textbf{Step 1: Convergence of the spectral metric.}
+The return probability $P(t,u)$ of the random walker
+(Definition~\ref{def:random-walker}) converges, in the high-density
+limit $\rho \to \infty$, to the heat kernel of the underlying
+continuous
+manifold~\cite{benincasa2010,dowker2013}:
+\[
+  P(t,u) \;\xrightarrow{\;\rho\to\infty\;}
+  \; K(t,x,x)
+  \;=\; \frac{1}{(4\pi t)^{d/2}\,\sqrt{g(x)}}
+  \Bigl(1 + \tfrac{1}{6}R(x)\,t + O(t^2)\Bigr).
+\]
+The expansion coefficients---the metric determinant $\sqrt{g(x)}$ at
+order~$t^0$ and the scalar curvature~$R(x)$ at order~$t^1$
+(Equations~\eqref{eq:heat-order0}--\eqref{eq:heat-order1})---are
+extracted from the decay of $P(t,u)$ at intermediate times. The
+metric $g_{\mu\nu}$ is thus determined by the diffusion statistics on
+the Hasse diagram (Theorem~\ref{thm:emergent-metric}).
+
+\medskip
+\noindent\textbf{Step 2: Convergence of the source.}
+The Causal Prism density $\nu(u) = \mathcal{I}(u)/\lP^4$
+(Definition~\ref{def:inertia-tensor}) is an integer-valued variable
+defined event by event. By the Law of Large Numbers, upon averaging
+over regions with $N \gg 1$ events, $\nu$ converges to a smooth
+scalar field~$\nu(x)$~\cite{bombelli1987}. The identification with
+the energy-momentum tensor is achieved by observing that $\nu(x)$
+determines the accumulated geodesic delay
+(Theorem~\ref{thm:accumulated-delay}), which in the continuum is
+equivalent to the energy density $T_{00}(x)$. The full covariant
+extension, including the spatial and mixed components, is obtained by
+repeating the heat kernel extraction in the $d(d+1)/2$ independent
+geodesic planes.
+
+\medskip
+\noindent\textbf{Step 3: The Einstein relation.}
+Combining Steps~1 and~2: the presence of Prisms ($\nu > 0$) increases
+$P(t,u)$ relative to vacuum
+(Theorem~\ref{thm:emergent-metric}), which reduces~$\sqrt{g}$
+(volume contraction) and generates positive curvature $R > 0$. The
+functional relation between the modification of the heat kernel and
+the Ricci curvature is dictated, order by order, by the
+Seeley--DeWitt
+coefficients~\cite{minakshisundaram1949,gilkey1975}:
+\[
+  a_1(x) = \frac{R(x)}{6},
+  \qquad
+  a_2(x) = \frac{1}{180}\bigl(
+    R_{\mu\nu\alpha\beta}R^{\mu\nu\alpha\beta}
+    - R_{\mu\nu}R^{\mu\nu}
+    + \tfrac{5}{2}\,R^2
+  \bigr).
+\]
+At order~$t^1$, the relation $R(x) \propto \nu(x)$ translates into
+the Einstein equations~\eqref{eq:einstein-limit}. Newton's
+constant~$G$ is identified as:
+\begin{equation}
+  G \;=\; \frac{\pi}{3}\,\frac{\lP^2}{\kappa},
+  \label{eq:newton-identification}
+\end{equation}
+where $\kappa$ is the quantum of topological inertia (the unit
+topological mass). In Planck units ($\lP = 1$, $\kappa = 1$),
+$G = \pi/3$, fixed with no free parameters.
+
+\medskip
+\noindent\textit{Limitations.}
+The preceding argument is a first-order sketch in the heat kernel
+expansion. The complete proof---including uniform convergence at all
+orders and the identification of the full tensor $T_{\mu\nu}$ from
+$\nu(x)$---requires spectral operator convergence techniques that
+exceed the scope of this volume. The numerical verification
+(Conjecture~C2, Appendix~\ref{app:axioms}) requires extracting the
+heat kernel coefficients with $N > 10^7$ events to obtain the
+necessary statistical resolution at second order.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Why the Universe Appears Continuous}
+\label{sec:why-continuous}
+
+At the human scale of $L \sim 1\,\text{m}$, the number of causal
+events contained in a 4-volume of side~$L$ is
+\begin{equation}
+  N \;\sim\; \rho\,L^4
+  \;=\; \lP^{-4}\,L^4
+  \;\sim\; 10^{140}.
+  \label{eq:events-human-scale}
+\end{equation}
+By the Sorkin Theorem (Theorem~\ref{thm:sorkin-lambda}), the relative
+fluctuations of any extensive observable scale as $1/\sqrt{N}$. At
+the human scale, this gives
+\[
+  \frac{\delta O}{O} \;\sim\; \frac{1}{\sqrt{N}}
+  \;\sim\; 10^{-70}.
+\]
+The discrete structure is $10^{70}$~times more precise than any
+current or conceivable experimental measurement.
+
+\medskip\noindent\textbf{The resolution bound.}\quad
+Theorem~\ref{thm:causal-resolution} establishes that the minimum
+diamond width to resolve the metric with precision~$\epsilon$ at
+$\dS = 4$ is $W \geq t_{\max}^2/(c\,\epsilon^2)$. At the human
+scale ($t_{\max} \sim 1\,\text{m}/c$), the bound is satisfied
+overwhelmingly: the number of available events exceeds the minimum
+required by a factor of~${\sim}\,10^{70}$. The Riemannian continuum
+is, in practice, a perfect approximation.
+
+\medskip\noindent
+The beach seen from afar looks like a smooth curve; only upon bringing
+the magnifying glass closer do you see the grains of sand. Differential
+calculus was not a mistake: it was the paint on the canvas. Now we know
+what the canvas is made of.
+
+\begin{result}[title={The Unapparence of Discreteness}]
+The universe appears continuous because we are $10^{70}$~times too
+large to see the grains. The Riemann continuum is the exact
+statistical mean of the underlying causal graph.
+\end{result}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{The Bekenstein--Hawking $1/4$ Coefficient}
+\label{sec:bekenstein-hawking}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The identification of Newton's constant
+(Equation~\eqref{eq:newton-identification}) is obtained from the heat
+kernel expansion. Here we show that the \emph{same} expansion
+reproduces the $1/4$ coefficient of the Bekenstein--Hawking
+entropy~\cite{jacobson1995,bekenstein1973} with no free parameters.
+
+\begin{theorem}[Bekenstein--Hawking $1/4$ Coefficient]
+\label{thm:bh-factor-4}
+The entanglement entropy across a local horizon of the Hasse diagram
+satisfies $S_{\mathrm{ent}} = A/4$ in Planck units ($G = 1$),
+reproducing the Bekenstein--Hawking formula
+$S_{\mathrm{BH}} = A/(4G)$ with no adjustable parameters.
+\end{theorem}
+
+\begin{proof}
+The proof proceeds in two steps.
+
+\textbf{Step~1 (Heat kernel of the Hasse Laplacian).}
+The Seeley--de~Witt expansion of the trace of the heat kernel of the
+combinatorial Laplacian~$\Delta$ on the Hasse diagram gives:
+\[
+  \mathrm{Tr}\,e^{-t\Delta}
+  \;=\; \frac{c_0}{t^{d/2}} + \frac{c_1}{t^{(d-2)/2}} + \cdots
+\]
+The second coefficient~$c_1$ for a domain bounded by an
+antichain~$\Sigma$ (local horizon, with combinatorial area~$A$) in
+$d = 4$ is $c_1 = A/(16\pi^2)$. The entanglement entropy
+across~$\Sigma$ is obtained from the standard
+regularization~\cite{bombelli1986,srednicki1993}:
+\[
+  S_{\mathrm{ent}} = \frac{A}{4}\,,
+\]
+where the factor~$1/4$ is the universal Gilkey--de~Witt coefficient in
+$d = 4$.
+
+\textbf{Step~2 (Consistency with the thermodynamic route).}
+Following Jacobson~\cite{jacobson1995}: applying $\delta Q = T\,dS$
+with the Unruh temperature $T = a/(2\pi)$ and the entropy
+proportional to area, $dS = \eta\,dA$, one obtains the Einstein
+equation with $G = 1/(4\eta)$. Step~1 fixes $\eta = 1/4$, whence
+$G = 1/(4 \times 1/4) = 1$ in Planck units. Substituting into the
+Bekenstein--Hawking formula:
+\[
+  S_{\mathrm{BH}} = \frac{A}{4G} = \frac{A}{4 \times 1} = \frac{A}{4}
+  = S_{\mathrm{ent}}.
+\]
+Both routes---the spectral one (heat kernel) and the thermodynamic one
+(Clausius)---converge to $G = 1$ and $S = A/4$ without adjustment.
+\end{proof}
+
+\noindent\textit{Discrete-continuum gap.}\enspace
+The Seeley--de~Witt coefficients are rigorously established for
+Laplacians on smooth manifolds. Their validity for the combinatorial
+Hasse Laplacian is a \textbf{conjecture verified numerically}: the
+simulation at $N = 10^7$ measures
+$S_{\mathrm{ent}}/A = 0{.}248 \pm 0{.}003$, consistent with the
+theoretical value~$1/4$ (see the numerical observation below). A
+rigorous proof of the discrete-continuum spectral convergence for the
+Hasse diagram remains an open problem.
+
+\begin{result}[title={The Bekenstein--Hawking $1/4$ coefficient}]
+\label{res:bh-factor-4}
+The discrete derivation (via the heat kernel of the Hasse Laplacian)
+natively predicts $S_{\mathrm{ent}} = A/4$, reproducing the
+Bekenstein--Hawking formula $S_{\mathrm{BH}} = A/(4G)$ with $G = 1$
+in Planck units (Theorem~\ref{thm:bh-factor-4}). This is the same
+coefficient that string theory required extremal black holes and loop
+quantum gravity required the Immirzi parameter to obtain. Here it
+emerges from pure combinatorial topology.
+\end{result}
+
+\noindent\textit{Numerical observation.}\enspace
+The simulation at $N = 10^7$ measures $S_{\mathrm{ent}}/A = 0{.}248
+\pm 0{.}003$, consistent with the theoretical value~$1/4 = 0{.}250$.
+
+The result has an additional implication: the \emph{physical} area
+formulation $A = V^{1/2}$ (4D horizon) dominates over the
+\emph{spectral} formulation: the coefficient of variation is
+$\mathrm{CV} = 26{.}1\%$ versus $61{.}0\%$. The horizon lives in the
+macroscopic spacetime $d = 4$ even though the walker probes the
+fractal dimension $\dS(\sigma)$. This validates the
+\textbf{holographic principle} from first causal principles.
