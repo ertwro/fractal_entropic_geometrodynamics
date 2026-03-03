@@ -15,7 +15,7 @@ The theory rests on three geometric pillars:
 
 2. **Geometry of Matter** (Vol II): Causal Prism K₂,ₙ → mass hierarchy. Topological defects carry quantized topological mass N and are classified into exactly three generations by the Kuratowski limit. *Code:* `phase2/`.
 
-3. **Geometry of Logic**: O(N) scaling ⟺ physical locality. Bounded Hasse degree (D ≤ 15) implies that every topological operation is local, yielding **provably linear** O(N) complexity. This is not an engineering optimisation but a *computational proof* that the theory encodes physical locality as an information principle. *Code:* 2-hop candidate search in `phase2/defect.rs`; OCI construction in `phase1/hasse.rs`.
+3. **Geometry of Logic**: O(N) scaling ⟺ physical locality. Bounded Hasse degree (D ≤ 15) implies that every topological operation is local, yielding **provably linear** O(N) complexity. This is not an engineering optimization but a *computational proof* that the theory encodes physical locality as an information principle. *Code:* 2-hop candidate search in `phase2/defect.rs`; OCI construction in `phase1/hasse.rs`.
 
 ---
 
@@ -165,9 +165,9 @@ FEG Prism provides ten observer measurements (M1–M10):
 ┌─────────────────────────────────────────────────────────────────┐
 │                Phase 5: ensemble/                               │
 │  Adaptive Welford convergence on mass_gen1                      │
-│  Checkpoint after each realisation → checkpoint.bin             │
+│  Checkpoint after each realization → checkpoint.bin             │
 │  --resume: reload checkpoint and continue                       │
-│  Batching: up to --batch-size concurrent realisations           │
+│  Batching: up to --batch-size concurrent realizations           │
 │  Early stop when relative SE < --target-error                   │
 │  Intermediate CSV snapshots after each batch                    │
 └─────────────────────────────────────────────────────────────────┘
@@ -176,10 +176,10 @@ FEG Prism provides ten observer measurements (M1–M10):
 ### Execution Paths
 
 **In-memory** (`--inmemory` or auto-selected when RAM is sufficient):
-All data structures live in RAM. Realisations run in parallel via Rayon with an auto-selected concurrency limit (4 threads, or 2 for N > 10M; overridable via `--threads`). Causal Prism detection uses O(N) 2-hop local candidate search. Heavy structures are dropped as soon as they are no longer needed: `rev_csr` is freed after threat contraction (before defect edge collection), `sym_vac` is freed after measurements (before flux CSR construction), and `pts` is freed after flux CSR construction. The flux CSR itself is built via a two-pass in-place algorithm (degree count then direct fill) that avoids the 2× scratch overhead of edge-list collection. At N = 10M these optimisations reduce peak RSS from ~8.3 GB to ~5.7 GB per realisation, enabling batch-size 4 on 32 GB RAM.
+All data structures live in RAM. Realizations run in parallel via Rayon with an auto-selected concurrency limit (4 threads, or 2 for N > 10M; overridable via `--threads`). Causal Prism detection uses O(N) 2-hop local candidate search. Heavy structures are dropped as soon as they are no longer needed: `rev_csr` is freed after threat contraction (before defect edge collection), `sym_vac` is freed after measurements (before flux CSR construction), and `pts` is freed after flux CSR construction. The flux CSR itself is built via a two-pass in-place algorithm (degree count then direct fill) that avoids the 2× scratch overhead of edge-list collection. At N = 10M these optimizations reduce peak RSS from ~8.3 GB to ~5.7 GB per realization, enabling batch-size 4 on 32 GB RAM.
 
 **Streaming** (`--stream` or auto-selected when RAM is insufficient):
-Uses `scan_edges_with_analysis()` for **single-pass** streaming: degree counting, core classification, and core-edge collection are merged into one scan over the edge generator. Causal Prism detection then operates on the core-induced CSR subgraph using the same 2-hop local search. RAM usage stays under ~1.3 GB per realisation even at N = 100M. Concurrency is auto-selected by CPU count (capped at 8; overridable via `--threads`).
+Uses `scan_edges_with_analysis()` for **single-pass** streaming: degree counting, core classification, and core-edge collection are merged into one scan over the edge generator. Causal Prism detection then operates on the core-induced CSR subgraph using the same 2-hop local search. RAM usage stays under ~1.3 GB per realization even at N = 100M. Concurrency is auto-selected by CPU count (capped at 8; overridable via `--threads`).
 
 Mode selection is automatic based on available system RAM (via `sysinfo`), configurable via `causal_set.toml`, or overridable with `--stream`/`--inmemory` flags.
 
@@ -194,10 +194,10 @@ Mode selection is automatic based on available system RAM (via `sysinfo`), confi
 
 The ensemble runner (`ensemble/runner.rs`) implements adaptive Welford convergence:
 
-1. **Batching**: Realisations are dispatched in parallel batches (default: 4 per batch). Each batch spawns independent Poisson sprinklings with seeds `seed_base + i`.
-2. **Welford Online Algorithm**: After each realisation completes, the running mean and variance of `mass_gen1` are updated incrementally (no array storage). The relative standard error RSE = √(Var/n) / Mean is tested against `--target-error`.
-3. **Convergence Check**: After at least `--min-ensemble` realisations (default: 8), if RSE < target_error, the ensemble stops early. Otherwise, batches continue until `--max-ensemble` (default: 50).
-4. **Checkpointing**: After each realisation, the full accumulated state (Welford accumulators, spectral averages, topology aggregates, measurement results) is serialized to `checkpoint.bin` via bincode. The `--resume` flag reloads this checkpoint and continues from the last completed realisation.
+1. **Batching**: Realizations are dispatched in parallel batches (default: 4 per batch). Each batch spawns independent Poisson sprinklings with seeds `seed_base + i`.
+2. **Welford Online Algorithm**: After each realization completes, the running mean and variance of `mass_gen1` are updated incrementally (no array storage). The relative standard error RSE = √(Var/n) / Mean is tested against `--target-error`.
+3. **Convergence Check**: After at least `--min-ensemble` realizations (default: 8), if RSE < target_error, the ensemble stops early. Otherwise, batches continue until `--max-ensemble` (default: 50).
+4. **Checkpointing**: After each realization, the full accumulated state (Welford accumulators, spectral averages, topology aggregates, measurement results) is serialized to `checkpoint.bin` via bincode. The `--resume` flag reloads this checkpoint and continues from the last completed realization.
 5. **Intermediate Snapshots**: CSV files are re-written after each batch, so long-running ensembles can be monitored in real time.
 
 ### Provenance System
@@ -244,7 +244,7 @@ Pure integer topology — zero floating-point. Core identification → Causal Pr
   2. **Causal Prism detection (O(N) forward-forward 2-hop search)**: For each core node u, collect 2-hop candidates by traversing u → w → v through forward successors w (children of u) and their forward successors v (grandchildren of u, future pole candidates). **Minimum valence pruning**: nodes with out-degree < `MIN_PRISM_SHARED` (3) are skipped before the 2-hop traversal, and candidate poles v with in-degree < 3 are skipped before the belly intersection. Then count belly nodes |children(u) ∩ parents(v)| using the reverse CSR for parents(v). If ≥ 3, the pair forms a Prism with topological mass N = belly size. Greedy best-partner selection maximizes N per pole. **Complexity**: O(N_core × D³). With bounded Hasse degree D ≤ 15: O(10M × 3,375) ≈ 3.4 × 10¹⁰ operations at N = 100M — minutes instead of days. **Completeness**: If u and v are poles of a timelike K_{2,N}, then every belly node w_i satisfies u → w_i → v. The path u → w_i → v guarantees v appears as a candidate of u. The forward-forward 2-hop search is provably complete.
   3. **K₅ threat absorption**: Any neighbor connected to both poles AND ≥ 2 intermediates of an existing Prism is absorbed into the nearest pole (vertex contraction via `merge_map`). The reverse CSR (`rev_csr`) is dropped after threat contraction and before defect edge collection, freeing ~1.18 GB at N = 10M.
   4. **Generation classification (Vol I phase)**: Causal Prisms classified by the Vol I phase function φ(w) = sign(bulk_momentum[w]). For each prism P with intermediates {w₁, ..., wₙ}: g(P) = |{φ(wᵢ)}| counts distinct phase values (generation number 1, 2, or 3), and Φ(P) = Σφ(wᵢ) gives the net phase (matter if Φ ≥ 0, antimatter if Φ < 0). Gen1 = g=1 ∧ Φ≥0, Gen2 = g=2, Gen3 = g=3, Anti1 = g=1 ∧ Φ<0.
-- **`topology.rs`**: `TopologySummary` (27 fields) aggregated across realisations. Includes prism counts, generation abundances, mass averages, dark/visible mass decomposition, coupling constants, phase census, and per-generation prism counts. `aggregate_topology()` combines per-realisation topology data into the ensemble summary.
+- **`topology.rs`**: `TopologySummary` (27 fields) aggregated across realizations. Includes prism counts, generation abundances, mass averages, dark/visible mass decomposition, coupling constants, phase census, and per-generation prism counts. `aggregate_topology()` combines per-realization topology data into the ensemble summary.
 - **Key types**: `CausalPrism` (origin, destination, intermediates), `DefectOutput` (vacuum CSR, defect CSR, generation node lists), `GenerationSets` (gen1..3, anti1, sterile node sets).
 
 ### `phase3/` — Phase 3: Spectral Dimension
@@ -275,8 +275,8 @@ Random walk return probability measurement.
 
 ### `ensemble/` — Adaptive Ensemble
 
-- **`runner.rs`**: `run_ensemble()` — the top-level orchestrator. Dispatches parallel batches, runs Phases 1–3 per realisation, accumulates Welford statistics, checks convergence, writes intermediate snapshots. Returns `EnsembleResult` containing the ensemble-averaged spectral output, topology summary, measurement results, actual realisation count, and convergence flag. Per-realisation memory management: `sym_vac` (symmetrized vacuum CSR) is dropped after measurements, `pts` (coordinates) is dropped after flux CSR construction, reducing peak RSS by ~2.6 GB at N = 10M. Phase 3a walkers (Group A: vac_global, vac_core, def_global, def_core) and Phase 3b walkers (Group B: gen1–3, anti1, sterile, flux) run concurrently within `std::thread::scope` with auto-convergence via Welford batching.
-- **`averaging.rs`**: Welford online accumulation for mean and variance. `average_ensemble()` combines per-realisation `SpectralOutput` vectors using the P-first protocol: P(t) is averaged first, then d_S is recomputed from ⟨P⟩ (averaging P first is critical because d_S is non-linear in P).
+- **`runner.rs`**: `run_ensemble()` — the top-level orchestrator. Dispatches parallel batches, runs Phases 1–3 per realization, accumulates Welford statistics, checks convergence, writes intermediate snapshots. Returns `EnsembleResult` containing the ensemble-averaged spectral output, topology summary, measurement results, actual realization count, and convergence flag. Per-realization memory management: `sym_vac` (symmetrized vacuum CSR) is dropped after measurements, `pts` (coordinates) is dropped after flux CSR construction, reducing peak RSS by ~2.6 GB at N = 10M. Phase 3a walkers (Group A: vac_global, vac_core, def_global, def_core) and Phase 3b walkers (Group B: gen1–3, anti1, sterile, flux) run concurrently within `std::thread::scope` with auto-convergence via Welford batching.
+- **`averaging.rs`**: Welford online accumulation for mean and variance. `average_ensemble()` combines per-realization `SpectralOutput` vectors using the P-first protocol: P(t) is averaged first, then d_S is recomputed from ⟨P⟩ (averaging P first is critical because d_S is non-linear in P).
 - **`checkpoint.rs`**: Serialization/deserialization of ensemble state to `checkpoint.bin` (bincode). Cross-fork rejection via embedded provenance hash. Supports `--resume`.
 
 ### `measure/` — Observer Measurements (M1–M10)
@@ -305,7 +305,7 @@ Ten read-only measurement algorithms that extract physics from existing simulati
 
 - **`context.rs`**: `MeasureContext` — shared read-only references to simulation data (CSR graphs, prism lists, generation sets) passed to each measurement module. `MeasureFlags` and `ModuloConfig` for CLI flag parsing.
 
-### `output/` — Phase 4: CSV Serialisation
+### `output/` — Phase 4: CSV Serialization
 
 Writes ensemble-averaged observables to CSV for analysis with gnuplot, matplotlib, or any standard plotting tool.
 
@@ -332,9 +332,9 @@ Detects available system RAM, estimates memory requirements, and recommends in-m
 - **`ExecMode`**: Enum — `InMemory` or `Streaming`.
 - **`Config`**: User-configurable settings loaded from `causal_set.toml` (`max_ram_bytes`, `safety_fraction`, `output_dir`).
 - **`estimate_memory_bytes(n)`**: Heuristic for in-memory requirements. N ≤ 3k: O(N²) for dense eigendecomp. N ≤ 50k: ~2 KB/node. N > 50k: ~500 B/node (CSR-dominated).
-- **`estimate_streaming_memory_bytes(n)`**: For single-pass architecture: 13N + 100 MB. At N = 100M: ~1.3 GB per realisation, 2 concurrent = 2.6 GB.
+- **`estimate_streaming_memory_bytes(n)`**: For single-pass architecture: 13N + 100 MB. At N = 100M: ~1.3 GB per realization, 2 concurrent = 2.6 GB.
 - **`recommend_mode()`**: Compares estimated need against RAM ceiling (auto-detected or from config). Returns recommendation.
-- **`max_concurrent_runs(n)`**: 4 threads for N ≤ 10M, 2 threads for N > 10M. At N = 10M, peak RSS per realisation is ~5.7 GB after memory optimisations (early drops of `rev_csr`, `sym_vac`, `pts`; two-pass flux CSR). On 32 GB RAM: batch-size 4 fits comfortably (4 × 5.7 = 22.8 GB + OS overhead).
+- **`max_concurrent_runs(n)`**: 4 threads for N ≤ 10M, 2 threads for N > 10M. At N = 10M, peak RSS per realization is ~5.7 GB after memory optimizations (early drops of `rev_csr`, `sym_vac`, `pts`; two-pass flux CSR). On 32 GB RAM: batch-size 4 fits comfortably (4 × 5.7 = 22.8 GB + OS overhead).
 
 ### `provenance.rs` — Provenance System
 
@@ -357,7 +357,7 @@ cargo run --release --bin feg_prism -- 50000 10
 ```
 
 - First argument: number of spacetime events N (default: 5000)
-- Second argument: ensemble realisations M (default: 50)
+- Second argument: ensemble realizations M (default: 50)
 
 ### Streaming run (large N, single-pass O(N))
 
@@ -365,7 +365,7 @@ cargo run --release --bin feg_prism -- 50000 10
 cargo run --release --bin feg_prism -- 1000000 5 --stream
 ```
 
-Forces streaming mode: single-pass edge analysis via `scan_edges_with_analysis()`, followed by O(N) 2-hop prism detection. RAM usage stays under ~1.3 GB per realisation.
+Forces streaming mode: single-pass edge analysis via `scan_edges_with_analysis()`, followed by O(N) 2-hop prism detection. RAM usage stays under ~1.3 GB per realization.
 
 ### With all measurements
 
@@ -433,9 +433,9 @@ Runs a single realization (Phases 1–2 only, no spectral walkers) and writes co
 cargo run --release --bin feg_prism -- 50000 20 --resume
 ```
 
-Reloads `checkpoint.bin` from the output directory and continues from the last completed realisation. Cross-fork provenance rejection prevents resuming with a different code version.
+Reloads `checkpoint.bin` from the output directory and continues from the last completed realization. Cross-fork provenance rejection prevents resuming with a different code version.
 
-### 16 parallel realisations on a high-RAM workstation
+### 16 parallel realizations on a high-RAM workstation
 
 ```bash
 cargo run --release --bin feg_prism -- 10000000 20 --inmemory --threads 16
@@ -466,18 +466,18 @@ cargo run --release --bin feg_prism -- 50000 10 /path/to/output
 | Flag | Type | Default | Effect |
 |------|------|---------|--------|
 | `N` | positional | 5000 | Number of spacetime events |
-| `M` | positional | 50 | Max ensemble realisations |
+| `M` | positional | 50 | Max ensemble realizations |
 | `output_dir` | positional | `.` | Directory for results |
 | `--stream` | flag | auto | Force streaming mode (low RAM) |
 | `--inmemory` | flag | auto | Force in-memory mode (fast) |
-| `--seed <u64>` | u64 | system clock | Base seed. Each realisation uses `seed + i`. |
-| `--threads <usize>` | usize | auto (2–4) | Max parallel realisations |
+| `--seed <u64>` | u64 | system clock | Base seed. Each realization uses `seed + i`. |
+| `--threads <usize>` | usize | auto (2–4) | Max parallel realizations |
 | `--epsilon <f64>` | f64 | 0.01 | Topological error tolerance ε |
 | `--tmax <usize>` | usize | 15 | Maximum diffusion time |
 | `--eigen-cutoff <N>` | usize | 3000 | N ≤ cutoff uses exact eigendecomp |
 | `--target-error <f64>` | f64 | 0.01 | Relative standard error threshold for adaptive convergence |
-| `--max-ensemble <usize>` | usize | 50 | Maximum realisations (hard cap) |
-| `--min-ensemble <usize>` | usize | 8 | Minimum realisations before convergence check |
+| `--max-ensemble <usize>` | usize | 50 | Maximum realizations (hard cap) |
+| `--min-ensemble <usize>` | usize | 8 | Minimum realizations before convergence check |
 | `--batch-size <usize>` | usize | 4 | Concurrent runs per parallel batch |
 | `--resume` | flag | — | Resume from checkpoint (`checkpoint.bin` in output dir) |
 | `--export-slice <PATH>` | string | — | Export topology slice (single realization, no ensemble) |
@@ -521,7 +521,7 @@ safety_fraction = 0.70
 
 ## Expected Results
 
-Production ensemble: **N = 10^7, M = 20 realisations**, seed 42.
+Production ensemble: **N = 10^7, M = 20 realizations**, seed 42.
 
 ### Spectral Dimension
 
@@ -668,7 +668,7 @@ When M > 1, the ensemble averaging computes population standard deviations for a
 | `rand` | Deterministic PRNG (seeded `StdRng`) |
 | `rayon` | Data-parallel iteration across walkers and nodes |
 | `sysinfo` | System RAM detection for automatic mode selection |
-| `smallvec` | Stack-allocated small vectors for inner-loop optimisation |
+| `smallvec` | Stack-allocated small vectors for inner-loop optimization |
 | `rustc-hash` | Fast non-cryptographic hashing for internal hash maps |
 | `serde` | Serialization framework for checkpoint and topology export |
 | `bincode` | Binary serialization for `checkpoint.bin` and `.slice` files |

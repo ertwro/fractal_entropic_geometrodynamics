@@ -94,7 +94,7 @@ cargo run --release --bin feg_prism -- \
   --measure-lagrangian --batch-size 3 --seed 42
 ```
 
-The high-statistics version: 20 realisations at N=10M, 0.09% relative error
+The high-statistics version: 20 realizations at N=10M, 0.09% relative error
 (11x below target). 15.5 hours on a ThinkPad T480 (i5-8250U, 32 GB).
 The output directory will contain:
 
@@ -137,8 +137,9 @@ python FEG_prism/figures/make_figures.py \
 
 General relativity and quantum field theory are among the greatest intellectual
 achievements in human history. This engine does not replace them — it extends
-their reach by asking whether the constants they take as input can emerge from
-pure topology.
+their reach by demonstrating that the constants they take as input are not
+arbitrary tuning parameters, but inevitable combinatorial statistics of a
+random causal graph.
 
 A zero-parameter simulation Poisson-sprinkles 10 million events into a 4D
 causal diamond and recovers:
@@ -171,7 +172,7 @@ continuum QFT accepts as empirical inputs here arise from counting.
 | d_S (UV, sigma=1)       | 1.949 +/- 0.002      | Planck-scale d_S -> 2                |
 | d_S (IR, sigma=4)       | 4.956 +/- 0.001      | 4D continuum emerges                 |
 | Defect core d_S         | 9.10                 | Topological trapping                 |
-| Prisms per realisation  | 386,197              |                                      |
+| Prisms per realization  | 386,197              |                                      |
 | Gen1 / Gen2 / Gen3      | 2.1% / 84.9% / 13.0% | Exactly 3 (theorem)                  |
 | Mass gen1 / gen2 / gen3 | 1036 / 1436 / 1689   | Topological Planck units             |
 | Ratio m1 : m2 : m3      | 1 : 1.39 : 1.63      | N-independent invariant              |
@@ -305,7 +306,7 @@ FEG_prism/
 │   │   ├── m09_higgs.rs        Higgs drag coefficients
 │   │   └── m10_lagrangian.rs   SM Lagrangian card assembly
 │   ├── graph/               CSR sparse graph (directed + undirected)
-│   └── output/              CSV serialisation + terminal summary
+│   └── output/              CSV serialization + terminal summary
 ├── figures/                 Publication figure generator (Python)
 │   └── make_figures.py      --data <dir> --all
 ├── doc/                     Man page + LaTeX manual
@@ -313,7 +314,7 @@ FEG_prism/
 └── Cargo.toml
 ```
 
-Four phases per realisation:
+Four phases per realization:
 
 1. **Sprinkling** — Poisson-sprinkle N events into a 4D causal diamond
 2. **Kuratowski contraction** — Find K\_{2,n} bipartite defects; classify generations
@@ -357,7 +358,7 @@ python FEG_prism/figures/make_figures.py \
 
 ### Resume from checkpoint
 
-Runs checkpoint after every realisation. If interrupted:
+Runs checkpoint after every realization. If interrupted:
 
 ```bash
 cargo run --release --bin feg_prism -- \
@@ -367,9 +368,9 @@ cargo run --release --bin feg_prism -- \
 
 ### Disable early stopping
 
-The adaptive convergence (Welford on mass_gen1) may stop before M realisations
+The adaptive convergence (Welford on mass_gen1) may stop before M realizations
 due to reaching the desired $\epsilon$.
-To force all realisations:
+To force all realizations:
 
 ```bash
 cargo run --release --bin feg_prism -- \
@@ -389,7 +390,7 @@ All results in this repository were produced on an 8-year-old ThinkPad.
 Tested on Linux; strictly OS-agnostic — compiles natively on Windows/macOS via `cargo`.
 
 - **Minimum:** 8 GB RAM, any x86_64 with Rust 1.75+
-- **N=10^7:** ~6 GB per concurrent realisation; batch-size 3 needs ~20 GB
+- **N=10^7:** ~6 GB per concurrent realization; batch-size 3 needs ~20 GB
 - **Quick test:** N=50k runs in 30 seconds on anything
 
 ---
