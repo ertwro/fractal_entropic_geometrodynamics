@@ -19,8 +19,5 @@ fn main() {
         "cargo:rustc-env=GIT_DIRTY={}",
         if dirty { "dirty" } else { "clean" }
     );
-    println!(
-        "cargo:rustc-env=PROVENANCE_PREIMAGE={}",
-        "Juan Pablo Silva Alvarado:10.5281/zenodo.18733424:FEG-Kuratowski-2026"
-    );
+    println!("cargo:rustc-env=PROVENANCE_PREIMAGE=Juan Pablo Silva Alvarado:10.5281/zenodo.18733424:FEG-Kuratowski-2026");
 }
