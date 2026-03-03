@@ -74,7 +74,7 @@ C = {
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = Path(__file__).resolve().parents[2]  # data/scripts -> data -> repo root
 DATA_ROOT = REPO_ROOT / "data"
-ENSEMBLE_DIR = DATA_ROOT / "ensemble_10M"
+ENSEMBLE_DIR = DATA_ROOT / "ensemble_10M_final"
 FSS_DIR = DATA_ROOT / "fss_scaling"
 OUT = DATA_ROOT / "figures"
 OUT.mkdir(parents=True, exist_ok=True)

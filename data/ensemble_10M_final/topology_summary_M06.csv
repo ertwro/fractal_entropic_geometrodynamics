@@ -3,10 +3,10 @@
 # DOI: 10.5281/zenodo.18769707
 # Framework: Fractal Entropic Geometrodynamics
 # Provenance SHA-256: a4fee33737305b5eb78a16be2ff233bdce125bffa352127fcbcd997d018c05aa
-# Commit: 5b07174 (dirty)
-# Timestamp: 2026-02-24T21:21:57Z
+# Commit: 2a5c0a1 (dirty)
+# Timestamp: 2026-03-02T23:30:25Z
 # N: 10000000  M: 6 (converged=false, min=8, max=20)  mode: inmemory
-# epsilon: 0.06666666666666667  tmax: 100  walkers: 2250000
+# epsilon: 0.01  tmax: 15  walkers: 2250000
 # algorithm: forward-forward belly (children(u) ∩ parents(v))
 # seed: 42
 key,value

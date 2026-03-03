@@ -30,9 +30,9 @@ This script makes them explicit:
   Part 8 — Newton's constant from the causal set
 
 Reads:
-    data/ensemble_10M/results_M20.csv
-    data/ensemble_10M/mass_spectrum_M20.csv
-    data/ensemble_10M/topology_summary_M20.csv
+    data/ensemble_10M_final/results_M20.csv
+    data/ensemble_10M_final/mass_spectrum_M20.csv
+    data/ensemble_10M_final/topology_summary_M20.csv
 
 Usage:
     python data/scripts/jacobson_einstein.py
@@ -48,12 +48,12 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 
 def _find_data_root():
     for candidate in [SCRIPT_DIR / "data", SCRIPT_DIR.parent, SCRIPT_DIR / ".."]:
-        if (candidate / "ensemble_10M").exists():
+        if (candidate / "ensemble_10M_final").exists():
             return candidate.resolve()
     return None
 
 DATA_ROOT = _find_data_root()
-ENSEMBLE_DIR = DATA_ROOT / "ensemble_10M" if DATA_ROOT else None
+ENSEMBLE_DIR = DATA_ROOT / "ensemble_10M_final" if DATA_ROOT else None
 
 N_TOTAL = 10_000_000          # total sprinkled points
 MAX_HASSE_DEGREE = 15

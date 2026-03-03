@@ -9,8 +9,9 @@
 //! spectral dimension reflects the mean geometry rather than the mean of
 //! individually noisy d_S curves.
 //!
-//! When M > 1, a second pass computes the population standard deviation of
-//! each d_S(t) and flux(t) field across realisations for error bars.
+//! When M > 1, a second pass computes the sample standard deviation of
+//! each d_S(t) and flux(t) field across realisations for error bars
+//! (Bessel-corrected: divisor M-1).
 
 use crate::phase3::spectral::{spectral_dimension, SpectralOutput, WalkResult};
 
@@ -63,8 +64,9 @@ pub fn average_ensemble(
         }
     };
 
-    // ── Helper: std_dev of per-realisation d_S around ensemble mean ──
+    // ── Helper: sample std_dev of per-realisation d_S around ensemble mean ──
     // Recomputes d_S from each individual P(t) and measures variance.
+    // Uses Bessel's correction (mf - 1.0) for unbiased sample std_dev.
     let std_ds_field =
         |extract_p: &dyn Fn(&SpectralOutput) -> &[f64], mean_ds: &[f64]| -> Vec<f64> {
             if mean_ds.is_empty() || mf <= 1.0 {
@@ -83,12 +85,13 @@ pub fn average_ensemble(
                 }
             }
             for x in &mut acc {
-                *x = (*x / mf).sqrt();
+                *x = (*x / (mf - 1.0)).sqrt();
             }
             acc
         };
 
-    // ── Helper: std_dev of a raw field (flux values, not d_S) ────────
+    // ── Helper: sample std_dev of a raw field (flux values, not d_S) ──
+    // Uses Bessel's correction (mf - 1.0) for unbiased sample std_dev.
     let std_raw_field =
         |extract: &dyn Fn(&SpectralOutput) -> &[f64], mean: &[f64]| -> Vec<f64> {
             if mean.is_empty() || mf <= 1.0 {
@@ -103,7 +106,7 @@ pub fn average_ensemble(
                 }
             }
             for x in &mut acc {
-                *x = (*x / mf).sqrt();
+                *x = (*x / (mf - 1.0)).sqrt();
             }
             acc
         };

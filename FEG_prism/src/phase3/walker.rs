@@ -10,6 +10,35 @@
 //!
 //! All Monte Carlo accumulation uses `u64` integer arithmetic (Strict Finitism).
 //! The single `f64` division `count / W` occurs only at the final return.
+//!
+//! # Spectral structure of the lazy walk
+//!
+//! The lazy walk (50% stay, 50% random neighbor) has transition matrix:
+//!
+//! ```text
+//!   T = ½(I + D⁻¹A)
+//! ```
+//!
+//! where A is the adjacency matrix and D the degree matrix.  Eigenvalues
+//! of T lie in \[0, 1\] with λ₀ = 1 for the stationary mode.  The return
+//! probability decomposes as:
+//!
+//! ```text
+//!   P(t) = (1/N) Tr(T^t) = (1/N) Σ_k  λ_k^t
+//! ```
+//!
+//! Three eigenvalue bands contribute at different timescales:
+//!
+//! | Band | Eigenvalues | Decay timescale | Information |
+//! |------|-------------|-----------------|-------------|
+//! | Continuum | λ ≈ 1 | O(N^{2/d_s}) | P ~ t^{−d_s/2} (signal) |
+//! | Lattice | λ ≈ 1 − O(1/D_max) | O(D_max) = O(15) | Degree echoes, parity |
+//! | High-freq | λ ≈ 0 | O(1) | Irrelevant for t ≥ 2 |
+//!
+//! The d_S(t) plateau emerges at t ≈ D_max = 15 when lattice modes have
+//! decayed by ~1/e.  The full measurement schedule (t = 1..100) captures
+//! the short-time transient, the scaling plateau, and the approach to
+//! finite-size saturation P(t) → 1/N.
 
 use nalgebra::{DMatrix, SymmetricEigen};
 use rand::rngs::StdRng;
@@ -82,6 +111,63 @@ pub fn distribute_walkers(origins: &[usize], n_walkers: usize) -> Vec<usize> {
     starts
 }
 
+/// Distribute exactly `n_walkers` across `origins` with seeded shuffle.
+///
+/// Identical to [`distribute_walkers`] except the origin order is shuffled
+/// with a deterministic PRNG before the base+remainder round-robin.  This
+/// eliminates cell-sort bias: `build_hasse_direct` (N > 3k) produces nodes
+/// sorted by (qt, qx, qy, qz), so cycling in index order preferentially
+/// samples early time slices when W < N.  Shuffling ensures uniform temporal
+/// coverage regardless of index ordering.
+///
+/// **Deterministic**: seeded RNG, exact W invariant, reproducible.
+pub fn distribute_walkers_shuffled(
+    origins: &[usize], n_walkers: usize, seed: u64,
+) -> Vec<usize> {
+    if origins.is_empty() {
+        return vec![];
+    }
+    use rand::seq::SliceRandom;
+    let mut shuffled = origins.to_vec();
+    let mut rng = StdRng::seed_from_u64(seed);
+    shuffled.shuffle(&mut rng);
+
+    let k = shuffled.len();
+    let base = n_walkers / k;
+    let remainder = n_walkers % k;
+    let mut starts = Vec::with_capacity(n_walkers);
+    for (i, &node) in shuffled.iter().enumerate() {
+        let count = base + if i < remainder { 1 } else { 0 };
+        for _ in 0..count {
+            starts.push(node);
+        }
+    }
+    debug_assert_eq!(starts.len(), n_walkers, "distribute_walkers_shuffled: exact W invariant");
+    starts
+}
+
+/// Count how many walkers started in each category.
+///
+/// Given the `starts` array (walker origins) and a `category_map` (u8 bitmask
+/// per node), returns a `Vec<usize>` of length `n_categories` where entry `c`
+/// is the number of walkers whose resolved origin has bit `c` set.
+///
+/// Needed for the final `count / W_cat` division in the unified walk.
+pub fn count_category_walkers(
+    starts: &[usize], category_map: &[u8], n_categories: usize,
+) -> Vec<usize> {
+    let mut counts = vec![0usize; n_categories];
+    for &origin in starts {
+        let mask = category_map[origin];
+        for c in 0..n_categories {
+            if mask & (1u8 << c) != 0 {
+                counts[c] += 1;
+            }
+        }
+    }
+    counts
+}
+
 // ─── Ghost resolution ────────────────────────────────────────────────────────
 
 /// Resolve a node through the Kuratowski contraction map.
@@ -107,6 +193,12 @@ fn resolve(node: usize, merge: Option<&[usize]>) -> usize {
 // ─── Monte Carlo lazy-walk engine ────────────────────────────────────────────
 
 /// Run W independent lazy-walk walkers in parallel.
+///
+/// Implements the transition matrix T = ½(I + D⁻¹A) stochastically:
+/// at each step the walker stays with probability ½ or hops to a
+/// uniformly random neighbor with probability ½.  The return indicator
+/// X_i ∈ {0,1} at each measurement step is a Bernoulli(P(t)) variable;
+/// the CLT gives RSE = 1/√(W · P(t)), which drives the CRT budget.
 ///
 /// **Strict Finitism**: all internal accumulation uses `u64` integer
 /// arithmetic.  Each walker contributes exactly 0 or 1 (Kronecker delta)
@@ -172,6 +264,97 @@ pub fn run_walkers(
         );
 
     counts.iter().map(|&c| c as f64 / n_w as f64).collect()
+}
+
+/// Run W independent lazy-walk walkers with unified per-category binning.
+///
+/// Identical walk operator to [`run_walkers`] (T = ½(I + D⁻¹A)), but each
+/// walker's return is credited to **all** categories matching the origin's
+/// bitmask in `category_map`.  This allows a single walk on the full graph
+/// to produce P(t) for every sub-population simultaneously — no separate
+/// convergence loops, no redundant computation.
+///
+/// **Trap 2 fix**: the walker's origin is resolved through `merge_into`
+/// *before* category lookup, preventing ghost nodes from silently dropping
+/// returns.
+///
+/// **Strict Finitism**: all internal accumulation uses `u64` integer
+/// arithmetic.  The single `f64` division occurs only at the caller's
+/// discretion (not inside this function).
+///
+/// # Returns
+/// `(global_counts, per_category_counts)`:
+/// - `global_counts: Vec<u64>` — length `steps.len()`, total returns across all walkers
+/// - `per_category_counts: Vec<Vec<u64>>` — `n_categories` vectors, each length `steps.len()`
+pub fn run_walkers_unified(
+    adj_head: &[u32],
+    adj_data: &[u32],
+    starts: &[usize],
+    steps: &[u32],
+    base_seed: u64,
+    merge_into: Option<&[usize]>,
+    category_map: &[u8],
+    n_categories: usize,
+) -> (Vec<u64>, Vec<Vec<u64>>) {
+    let n_w = starts.len();
+    let n_s = steps.len();
+    if n_w == 0 {
+        return (vec![0u64; n_s], vec![vec![0u64; n_s]; n_categories]);
+    }
+    let max_t = *steps.last().unwrap_or(&0);
+
+    let (global, cats): (Vec<u64>, Vec<Vec<u64>>) = starts
+        .par_iter()
+        .enumerate()
+        .map(|(wi, &origin)| {
+            let mut rng = StdRng::seed_from_u64(base_seed.wrapping_add(wi as u64));
+            // Trap 2 fix: resolve origin before category lookup
+            let origin = resolve(origin, merge_into);
+            let mask = category_map[origin];
+            let mut pos = origin;
+            let mut g = vec![0u64; n_s];
+            let mut c = vec![vec![0u64; n_s]; n_categories];
+            let mut si = 0usize;
+
+            for t in 1..=max_t {
+                let start = adj_head[pos] as usize;
+                let end = adj_head[pos + 1] as usize;
+                let len = end - start;
+
+                if len > 0 && rng.gen_bool(0.5) {
+                    let next = adj_data[start + rng.gen_range(0..len)] as usize;
+                    pos = resolve(next, merge_into);
+                }
+                if si < n_s && t == steps[si] {
+                    if pos == origin {
+                        g[si] = 1;
+                        for cat in 0..n_categories {
+                            if mask & (1u8 << cat) != 0 {
+                                c[cat][si] = 1;
+                            }
+                        }
+                    }
+                    si += 1;
+                }
+            }
+            (g, c)
+        })
+        .reduce(
+            || (vec![0u64; n_s], vec![vec![0u64; n_s]; n_categories]),
+            |mut a, b| {
+                for i in 0..n_s {
+                    a.0[i] += b.0[i];
+                }
+                for cat in 0..n_categories {
+                    for i in 0..n_s {
+                        a.1[cat][i] += b.1[cat][i];
+                    }
+                }
+                a
+            },
+        );
+
+    (global, cats)
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -450,5 +633,95 @@ mod tests {
         assert_eq!(resolve(0, Some(&merge)), 2);
         assert_eq!(resolve(1, Some(&merge)), 2);
         assert_eq!(resolve(2, Some(&merge)), 2);
+    }
+
+    #[test]
+    fn distribute_walkers_shuffled_exact_count() {
+        let origins = vec![0, 1, 2, 3, 4];
+        let starts = distribute_walkers_shuffled(&origins, 13, 42);
+        assert_eq!(starts.len(), 13);
+        // Every origin should appear (13/5 = 2 base + 3 remainder)
+        for &o in &origins {
+            assert!(starts.contains(&o));
+        }
+    }
+
+    #[test]
+    fn distribute_walkers_shuffled_empty() {
+        let starts = distribute_walkers_shuffled(&[], 100, 0);
+        assert!(starts.is_empty());
+    }
+
+    #[test]
+    fn distribute_walkers_shuffled_deterministic() {
+        let origins: Vec<usize> = (0..100).collect();
+        let a = distribute_walkers_shuffled(&origins, 50, 999);
+        let b = distribute_walkers_shuffled(&origins, 50, 999);
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn count_category_walkers_basic() {
+        // 3 nodes: node 0 = cat 0+1, node 1 = cat 0, node 2 = cat 1
+        let cat_map = vec![0x03u8, 0x01, 0x02];
+        let starts = vec![0, 0, 1, 2, 2, 2];
+        let counts = count_category_walkers(&starts, &cat_map, 2);
+        // Cat 0: node 0 (×2) + node 1 (×1) = 3
+        assert_eq!(counts[0], 3);
+        // Cat 1: node 0 (×2) + node 2 (×3) = 5
+        assert_eq!(counts[1], 5);
+    }
+
+    #[test]
+    fn run_walkers_unified_triangle() {
+        let (rows, cols) = triangle_edges();
+        let (head, data) = build_adj_list(3, &rows, &cols);
+        let steps = [1, 2, 4, 8];
+        // Node 0,1 = cat 0 (0x01), node 2 = cat 1 (0x02), all = cat 0 (global)
+        let cat_map = vec![0x01u8, 0x01, 0x02];
+        let starts = vec![0, 0, 1, 1, 2, 2];
+        let (global, cats) = run_walkers_unified(
+            &head, &data, &starts, &steps, 42, None, &cat_map, 2,
+        );
+        assert_eq!(global.len(), 4);
+        assert_eq!(cats.len(), 2);
+        assert_eq!(cats[0].len(), 4);
+        assert_eq!(cats[1].len(), 4);
+        // Global counts should be >= sum of cat counts (a node may be in multiple cats)
+        // Actually global counts = total returns regardless of category
+        for i in 0..4 {
+            assert!(global[i] >= cats[0][i]);
+            assert!(global[i] >= cats[1][i]);
+        }
+    }
+
+    #[test]
+    fn run_walkers_unified_empty() {
+        let cat_map = vec![0x01u8];
+        let (global, cats) = run_walkers_unified(
+            &[0, 0], &[], &[], &[1, 2], 0, None, &cat_map, 1,
+        );
+        assert_eq!(global, vec![0u64; 2]);
+        assert_eq!(cats, vec![vec![0u64; 2]]);
+    }
+
+    #[test]
+    fn run_walkers_unified_ghost_resolution() {
+        // Triangle with merge: node 1 merged into node 0
+        let (rows, cols) = triangle_edges();
+        let (head, data) = build_adj_list(3, &rows, &cols);
+        let merge = vec![0, 0, 2]; // node 1 -> node 0
+        // Category: node 0 = cat 0, node 2 = cat 1
+        let cat_map = vec![0x01u8, 0x00, 0x02]; // ghost node 1 has no category
+        // Walker starts at ghost node 1 — should resolve to node 0, get cat 0
+        let starts = vec![1; 100];
+        let (global, cats) = run_walkers_unified(
+            &head, &data, &starts, &[2, 4], 77, Some(&merge), &cat_map, 2,
+        );
+        assert_eq!(global.len(), 2);
+        // All walkers resolved to node 0 (cat 0), so cat 0 should have returns
+        // and cat 1 should have zero (walkers start at node 0, not node 2)
+        // (cat 1 returns come only from walkers whose origin is node 2)
+        assert_eq!(cats[1], vec![0u64; 2]);
     }
 }

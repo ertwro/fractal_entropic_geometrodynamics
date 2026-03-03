@@ -5,12 +5,23 @@
 //! M6 — Quantum Measurement Theory (Decoherence + Born Rule)
 //!
 //! Environment = nodes connected to both poles but not part of the prism.
-//! Walkers accumulate modular phase g^S mod p on the symmetric vacuum CSR;
-//! coherence is measured as correlation between interior and environment
-//! intensities.  Directed path counting through prisms yields Born-rule
-//! |psi|^2 predictions verified against walker intensities.
 //!
-//! Calculo de Kuratowski, Vol I, section 8: modular phase decoherence.
+//! **Propagator**: Causal chain-counting DP on the Hasse DAG with NTT
+//! phase rotation.  The retarded wave (fwd) is seeded from prism
+//! intermediates and propagated forward; each hop multiplies by
+//! W = g^{(p-1)/4} mod p (90° per edge).  The advanced wave (bwd) is
+//! seeded from the future boundary (all out-degree-0 nodes) and
+//! propagated backward with W⁻¹.  The handshake fwd(v) × bwd(v),
+//! centered symmetrically in Z/pZ, gives the Born amplitude at each
+//! environment node — Cramer's transactional interpretation.
+//!
+//! **Observation**: K_{2,2} diamond counts at environment nodes (the
+//! geometric measurement events where wavefunction collapse occurs).
+//!
+//! **Statistic**: Pearson r between the predicted |ψ|² PMF and the
+//! observed K_{2,2} PMF — a scale-invariant shape comparison.
+//!
+//! Calculo de Kuratowski, Vol II, section 9: modular phase decoherence.
 
 use super::context::MeasureContext;
 use crate::output::CsvWriter;
@@ -18,22 +29,21 @@ use crate::phase2::defect::CausalPrism;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use rayon::prelude::*;
-use std::collections::HashSet;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::collections::{HashMap, HashSet};
 
 // ── Data Structures ──────────────────────────────────────────────────────────
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct PrismDecoherence {
     pub prism_idx: usize,
     pub generation: u8,
     pub n_intermediates: usize,
     pub environment_size: usize,
     pub phase_coherence: f64,
-    pub n_paths_through: u32,
+    pub amplitude_through: f64,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct DecoherenceBin {
     pub env_size_min: usize,
     pub env_size_max: usize,
@@ -41,19 +51,24 @@ pub struct DecoherenceBin {
     pub n_prisms: usize,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct BornBin {
     pub intensity: f64,
     pub observed_freq: f64,
     pub predicted_freq: f64,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct DecoherenceResult {
     pub per_prism: Vec<PrismDecoherence>,
     pub decoherence_curve: Vec<DecoherenceBin>,
     pub born_histogram: Vec<BornBin>,
-    pub born_chi_sq: f64,
+    pub born_r: f64,
+    pub born_r_chain: f64,
+    pub born_r_null_mean: f64,
+    pub born_r_null_std: f64,
+    pub born_r_percentile: f64,
+    pub born_r_chain_percentile: f64,
     pub n_detector_nodes: usize,
     pub mean_env_size: f64,
     pub coherence_decay_r: f64,
@@ -63,18 +78,16 @@ pub struct DecoherenceResult {
 
 // ── Utilities ────────────────────────────────────────────────────────────────
 
-fn pow_mod(mut base: u64, mut exp: u64, modulus: u64) -> u64 {
-    if modulus == 1 { return 0; }
-    let mut result: u64 = 1;
-    base %= modulus;
+#[inline]
+fn pow_mod(mut base: u64, mut exp: u64, modulo: u64) -> u64 {
+    let mut res: u64 = 1;
+    base %= modulo;
     while exp > 0 {
-        if exp & 1 == 1 {
-            result = ((result as u128 * base as u128) % modulus as u128) as u64;
-        }
-        exp >>= 1;
-        base = ((base as u128 * base as u128) % modulus as u128) as u64;
+        if exp % 2 == 1 { res = ((res as u128 * base as u128) % modulo as u128) as u64; }
+        base = ((base as u128 * base as u128) % modulo as u128) as u64;
+        exp /= 2;
     }
-    result
+    res
 }
 
 #[inline]
@@ -111,300 +124,536 @@ pub fn run(ctx: &MeasureContext) -> DecoherenceResult {
     let n = ctx.n_points;
     let p = ctx.modulo_config.prime;
     let g = ctx.modulo_config.root;
+
+    // ── Phase rotation period ──
+    // N = 4: 90° per hop. Matches the K_{2,2} 4-cycle geometry of the
+    // observation (diamond defects). High-frequency regime where quantum
+    // interference is maximally active.
+    let n_period: u64 = 4;
+    let w_fwd = pow_mod(g, (p - 1) / n_period, p);
+    let w_bwd = pow_mod(w_fwd, p - 2, p);
+
     let gen_lookup = build_gen_lookup(n, ctx);
     let merge = &ctx.defect.merge_map;
     let (sym_vac_head, sym_vac_data) = ctx.sym_vacuum.raw();
     let (vac_head, vac_data) = ctx.vacuum_csr.raw();
-    let n_walkers = ctx.walkers;
 
-    // Step 1: Build prism membership set for fast exclusion
-    let mut node_prism_idx: Vec<Option<usize>> = vec![None; n];
-    for (pi, prism) in ctx.prisms.iter().enumerate() {
-        if prism.origin < n { node_prism_idx[prism.origin] = Some(pi); }
-        if prism.destination < n { node_prism_idx[prism.destination] = Some(pi); }
-        for &w in &prism.intermediates {
-            if w < n { node_prism_idx[w] = Some(pi); }
-        }
-    }
+    // ── Global backward wave (position-independent) ─────────────────────
+    // topo_order is scoped so it drops after bwd_global is built (~80 MB freed).
+    let bwd_global: Vec<u64> = {
+        let mut topo_order: Vec<usize> = (0..n).collect();
+        topo_order.sort_by(|&a, &b|
+            ctx.pts[a][0].partial_cmp(&ctx.pts[b][0])
+                .unwrap_or(std::cmp::Ordering::Equal)
+        );
 
-    // Step 2: Per-prism environment size via sorted symmetric CSR intersection
-    struct PrismEnvInfo {
-        prism_idx: usize,
-        generation: u8,
-        n_inter: usize,
-        members: Vec<usize>,
-        environment: Vec<usize>,
-    }
-
-    let prism_envs: Vec<PrismEnvInfo> = ctx.prisms
-        .par_iter()
-        .enumerate()
-        .map(|(pi, prism)| {
-            let gen = classify_prism_generation(prism, &gen_lookup);
-            let origin = resolve(prism.origin, merge);
-            let dest = resolve(prism.destination, merge);
-
-            // Members of this prism
-            let mut members: HashSet<usize> = HashSet::new();
-            members.insert(origin);
-            members.insert(dest);
-            for &w in &prism.intermediates {
-                members.insert(resolve(w, merge));
+        let mut bwd = vec![0u64; n];
+        for v in 0..n {
+            let cs = vac_head[v] as usize;
+            let ce = vac_head[v + 1] as usize;
+            if cs == ce {
+                let rv = resolve(v, merge);
+                if rv < n { bwd[rv] = 1; }
             }
+        }
+        for &v in topo_order.iter().rev() {
+            let cs = vac_head[v] as usize;
+            let ce = vac_head[v + 1] as usize;
+            for &c in &vac_data[cs..ce] {
+                let rc = resolve(c as usize, merge);
+                if rc < n && bwd[rc] != 0 {
+                    let flux = (bwd[rc] as u128 * w_bwd as u128 % p as u128) as u64;
+                    bwd[v] = ((bwd[v] as u128 + flux as u128) % p as u128) as u64;
+                }
+            }
+        }
+        // topo_order dropped here
+        bwd
+    };
 
-            // 2-hop neighborhood of a node on symmetric CSR
-            let nbrs_2hop = |root: usize| -> Vec<usize> {
-                let mut set = HashSet::new();
-                if root >= n { return vec![]; }
-                let s1 = sym_vac_head[root] as usize;
-                let e1 = sym_vac_head[root + 1] as usize;
-                for &v in &sym_vac_data[s1..e1] {
-                    let vi = v as usize;
-                    set.insert(vi);
-                    if vi < n {
-                        let s2 = sym_vac_head[vi] as usize;
-                        let e2 = sym_vac_head[vi + 1] as usize;
-                        for &w in &sym_vac_data[s2..e2] {
-                            set.insert(w as usize);
+    // ── Fused streaming pass ────────────────────────────────────────────
+    //
+    // Merges the old Steps 1 (environment), 4 (localized wave + coherence),
+    // 5a (K22 diamonds), 5b (handshake amps), 5b' (chain counts) into a
+    // single fold/reduce.  Per-prism temporaries (environment vec, BFS
+    // reached set, fwd/fwd_count HashMaps) are freed after each prism.
+    //
+    // Memory: ~100 MB total (down from ~8.5 GB with collected vectors).
+    const K_HOPS: usize = 3;
+
+    type FoldState = (
+        Vec<PrismDecoherence>,  // per_prism
+        HashMap<usize, f64>,    // k22_count
+        f64,                    // total_k22
+        HashMap<usize, f64>,    // predicted_pairs (handshake amps)
+        f64,                    // sum_pairs
+        HashMap<usize, f64>,    // chain_pred (simple chain counts)
+        f64,                    // sum_chain
+    );
+
+    let fold_init = || -> FoldState {
+        (Vec::new(), HashMap::new(), 0.0, HashMap::new(), 0.0, HashMap::new(), 0.0)
+    };
+
+    let (per_prism, k22_count, total_k22, predicted_pairs, sum_pairs, chain_pred, sum_chain) =
+        ctx.prisms.par_iter().enumerate()
+            .fold(fold_init, |mut acc, (pi, prism)| {
+                let gen = classify_prism_generation(prism, &gen_lookup);
+                let origin = resolve(prism.origin, merge);
+                let dest = resolve(prism.destination, merge);
+                let half_p = p / 2;
+
+                // (a) Compute environment ─────────────────────────────────
+                let mut members: HashSet<usize> = HashSet::new();
+                members.insert(origin);
+                members.insert(dest);
+                for &w in &prism.intermediates {
+                    members.insert(resolve(w, merge));
+                }
+
+                let nbrs_2hop = |root: usize| -> Vec<usize> {
+                    let mut set = HashSet::new();
+                    if root >= n { return vec![]; }
+                    let s1 = sym_vac_head[root] as usize;
+                    let e1 = sym_vac_head[root + 1] as usize;
+                    for &v in &sym_vac_data[s1..e1] {
+                        let vi = v as usize;
+                        set.insert(vi);
+                        if vi < n {
+                            let s2 = sym_vac_head[vi] as usize;
+                            let e2 = sym_vac_head[vi + 1] as usize;
+                            for &w in &sym_vac_data[s2..e2] {
+                                set.insert(w as usize);
+                            }
+                        }
+                    }
+                    set.remove(&root);
+                    let mut v: Vec<usize> = set.into_iter().collect();
+                    v.sort_unstable();
+                    v
+                };
+
+                let origin_nbrs = nbrs_2hop(origin);
+                let dest_nbrs = nbrs_2hop(dest);
+
+                let mut both_poles: Vec<usize> = Vec::new();
+                {
+                    let (mut i, mut j) = (0, 0);
+                    while i < origin_nbrs.len() && j < dest_nbrs.len() {
+                        if origin_nbrs[i] == dest_nbrs[j] {
+                            both_poles.push(origin_nbrs[i]);
+                            i += 1;
+                            j += 1;
+                        } else if origin_nbrs[i] < dest_nbrs[j] {
+                            i += 1;
+                        } else {
+                            j += 1;
                         }
                     }
                 }
-                set.remove(&root);
-                let mut v: Vec<usize> = set.into_iter().collect();
-                v.sort_unstable();
-                v
-            };
 
-            let origin_nbrs = nbrs_2hop(origin);
-            let dest_nbrs = nbrs_2hop(dest);
+                let environment: Vec<usize> = both_poles
+                    .into_iter()
+                    .filter(|node| !members.contains(node))
+                    .collect();
 
-            // Intersection: nodes within 2 hops of both poles
-            let mut both_poles: Vec<usize> = Vec::new();
-            let (mut i, mut j) = (0, 0);
-            while i < origin_nbrs.len() && j < dest_nbrs.len() {
-                if origin_nbrs[i] == dest_nbrs[j] {
-                    both_poles.push(origin_nbrs[i]);
-                    i += 1;
-                    j += 1;
-                } else if origin_nbrs[i] < dest_nbrs[j] {
-                    i += 1;
-                } else {
-                    j += 1;
+                // Early exit: no environment → no measurements possible
+                if environment.is_empty() {
+                    acc.0.push(PrismDecoherence {
+                        prism_idx: pi,
+                        generation: gen,
+                        n_intermediates: prism.intermediates.len(),
+                        environment_size: 0,
+                        phase_coherence: 0.0,
+                        amplitude_through: 0.0,
+                    });
+                    return acc;
                 }
-            }
 
-            // Environment = both_poles MINUS prism_members
-            let environment: Vec<usize> = both_poles
-                .into_iter()
-                .filter(|node| !members.contains(node))
-                .collect();
-
-            let members_vec: Vec<usize> = members.into_iter().collect();
-
-            PrismEnvInfo {
-                prism_idx: pi,
-                generation: gen,
-                n_inter: prism.intermediates.len(),
-                members: members_vec,
-                environment,
-            }
-        })
-        .collect();
-
-    // Step 3: Global modular walkers (reuse M3 pattern)
-    let n_steps = ctx.modulo_config.steps;
-    let arrivals: Vec<AtomicU64> = (0..n).map(|_| AtomicU64::new(0)).collect();
-    let phase_acc: Vec<AtomicU64> = (0..n).map(|_| AtomicU64::new(0)).collect();
-
-    (0..n_walkers).into_par_iter().for_each(|wi| {
-        let mut rng = StdRng::seed_from_u64(ctx.seed.wrapping_add(wi as u64));
-        let mut pos = resolve(rng.gen_range(0..n), merge);
-        let mut s: u64 = 0;
-
-        for _t in 0..n_steps {
-            let start_idx = sym_vac_head[pos] as usize;
-            let end_idx = sym_vac_head[pos + 1] as usize;
-            let deg = end_idx - start_idx;
-
-            if deg > 0 && rng.gen_bool(0.5) {
-                let next = sym_vac_data[start_idx + rng.gen_range(0..deg)] as usize;
-                pos = resolve(next, merge);
-                s += 1;
-            }
-
-            let phase = pow_mod(g, s, p);
-            arrivals[pos].fetch_add(1, Ordering::Relaxed);
-            phase_acc[pos].fetch_add(phase, Ordering::Relaxed);
-        }
-    });
-
-    // Compute per-node modular intensity
-    let half_p = p / 2;
-    let mut node_intensity = vec![0.0f64; n];
-    for i in 0..n {
-        let arr = arrivals[i].load(Ordering::Relaxed);
-        if arr == 0 { continue; }
-        let pacc = phase_acc[i].load(Ordering::Relaxed);
-        let centered = pacc % p;
-        let sym = if centered > half_p {
-            centered as i64 - p as i64
-        } else {
-            centered as i64
-        };
-        node_intensity[i] = (sym as f64).powi(2) / (half_p as f64).powi(2);
-    }
-
-    // Step 5: Per-prism coherence + directed path counting
-    let per_prism: Vec<PrismDecoherence> = prism_envs
-        .par_iter()
-        .map(|info| {
-            // Coherence: variance ratio of interior vs environment intensities
-            let interior_ints: Vec<f64> = info.members.iter()
-                .filter_map(|&nd| if nd < n { Some(node_intensity[nd]) } else { None })
-                .collect();
-            let env_ints: Vec<f64> = info.environment.iter()
-                .filter_map(|&nd| if nd < n { Some(node_intensity[nd]) } else { None })
-                .collect();
-
-            let mean_of = |v: &[f64]| -> f64 {
-                if v.is_empty() { 0.0 } else { v.iter().sum::<f64>() / v.len() as f64 }
-            };
-            let var_of = |v: &[f64], m: f64| -> f64 {
-                if v.len() < 2 { 0.0 } else {
-                    v.iter().map(|&x| (x - m).powi(2)).sum::<f64>() / v.len() as f64
-                }
-            };
-
-            let int_mean = mean_of(&interior_ints);
-            let env_mean = mean_of(&env_ints);
-            let int_var = var_of(&interior_ints, int_mean);
-            let env_var = var_of(&env_ints, env_mean);
-
-            // Coherence = 1 - (env_var / int_var) if both > 0, else use correlation
-            let coherence = if int_var > 1e-15 && env_var > 1e-15 {
-                1.0 - (env_var / (int_var + env_var))
-            } else if !interior_ints.is_empty() && !env_ints.is_empty() {
-                let denom = int_mean.abs() + env_mean.abs();
-                if denom > 1e-15 { 1.0 - (int_mean - env_mean).abs() / denom } else { 0.0 }
-            } else {
-                0.0
-            };
-
-            // Directed path counting: length-2 paths origin->w->v where v is in environment
-            let prism = &ctx.prisms[info.prism_idx];
-            let env_set: HashSet<usize> = info.environment.iter().copied().collect();
-            let mut path_count: u32 = 0;
-
-            for &w in &prism.intermediates {
-                if w >= n { continue; }
-                let cs = vac_head[w] as usize;
-                let ce = vac_head[w + 1] as usize;
-                for &v in &vac_data[cs..ce] {
-                    if env_set.contains(&(v as usize)) {
-                        path_count += 1;
+                // (b) BFS forward from intermediates up to K_HOPS ─────────
+                // Builds node_to_local mapping for local-indexed arrays
+                let mut node_to_local: HashMap<usize, u32> = HashMap::new();
+                let mut reached_nodes: Vec<usize> = Vec::new();
+                let mut frontier: Vec<usize> = Vec::new();
+                for &w in &prism.intermediates {
+                    let rw = resolve(w, merge);
+                    if rw < n && !node_to_local.contains_key(&rw) {
+                        node_to_local.insert(rw, reached_nodes.len() as u32);
+                        reached_nodes.push(rw);
+                        frontier.push(rw);
                     }
                 }
-            }
-
-            PrismDecoherence {
-                prism_idx: info.prism_idx,
-                generation: info.generation,
-                n_intermediates: info.n_inter,
-                environment_size: info.environment.len(),
-                phase_coherence: coherence,
-                n_paths_through: path_count,
-            }
-        })
-        .collect();
-
-    // Step 6: Born rule verification
-    let mut detector_path_count: std::collections::HashMap<usize, u64> =
-        std::collections::HashMap::new();
-    let mut total_paths: u64 = 0;
-
-    for pd in &per_prism {
-        let prism = &ctx.prisms[pd.prism_idx];
-        let env = &prism_envs[pd.prism_idx].environment;
-        let env_set: HashSet<usize> = env.iter().copied().collect();
-
-        for &w in &prism.intermediates {
-            if w >= n { continue; }
-            let cs = vac_head[w] as usize;
-            let ce = vac_head[w + 1] as usize;
-            for &v in &vac_data[cs..ce] {
-                let vi = v as usize;
-                if env_set.contains(&vi) {
-                    *detector_path_count.entry(vi).or_insert(0) += 1;
-                    total_paths += 1;
+                for _ in 0..K_HOPS {
+                    let mut next = Vec::new();
+                    for &u in &frontier {
+                        let cs = vac_head[u] as usize;
+                        let ce = vac_head[u + 1] as usize;
+                        for &v in &vac_data[cs..ce] {
+                            let rv = resolve(v as usize, merge);
+                            if rv < n && !node_to_local.contains_key(&rv) {
+                                node_to_local.insert(rv, reached_nodes.len() as u32);
+                                reached_nodes.push(rv);
+                                next.push(rv);
+                            }
+                        }
+                    }
+                    frontier = next;
                 }
+                let n_reached = reached_nodes.len();
+
+                // Pre-build local adjacency (one-time cost per prism)
+                let mut local_adj: Vec<Vec<u32>> = vec![Vec::new(); n_reached];
+                for li in 0..n_reached {
+                    let u = reached_nodes[li];
+                    let cs = vac_head[u] as usize;
+                    let ce = vac_head[u + 1] as usize;
+                    for &v in &vac_data[cs..ce] {
+                        let rv = resolve(v as usize, merge);
+                        if let Some(&lv) = node_to_local.get(&rv) {
+                            local_adj[li].push(lv);
+                        }
+                    }
+                }
+
+                // (c) Local topo order + localized retarded wave ──────────
+                let mut local_order: Vec<u32> = (0..n_reached as u32).collect();
+                local_order.sort_unstable_by(|&a, &b|
+                    ctx.pts[reached_nodes[a as usize]][0]
+                        .partial_cmp(&ctx.pts[reached_nodes[b as usize]][0])
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                );
+
+                let mut fwd = vec![0u64; n_reached];
+                for &w in &prism.intermediates {
+                    let rw = resolve(w, merge);
+                    if let Some(&li) = node_to_local.get(&rw) {
+                        fwd[li as usize] = (fwd[li as usize] + 1) % p;
+                    }
+                }
+                for &li in &local_order {
+                    let f = fwd[li as usize];
+                    if f == 0 { continue; }
+                    let flux = (f as u128 * w_fwd as u128 % p as u128) as u64;
+                    for &lv in &local_adj[li as usize] {
+                        fwd[lv as usize] = ((fwd[lv as usize] as u128 + flux as u128) % p as u128) as u64;
+                    }
+                }
+
+                // Simple chain counting (no NTT phase) — Born rule test
+                let mut fwd_count = vec![0.0f64; n_reached];
+                for &w in &prism.intermediates {
+                    let rw = resolve(w, merge);
+                    if let Some(&li) = node_to_local.get(&rw) {
+                        fwd_count[li as usize] += 1.0;
+                    }
+                }
+                for &li in &local_order {
+                    let f = fwd_count[li as usize];
+                    if f == 0.0 { continue; }
+                    for &lv in &local_adj[li as usize] {
+                        fwd_count[lv as usize] += f;
+                    }
+                }
+
+                // (d) Coherence: mean resultant length of fwd phase at env nodes
+                let (mut sum_cos, mut sum_sin) = (0.0f64, 0.0f64);
+                let mut env_phase_count: usize = 0;
+                for &v in &environment {
+                    if let Some(&li) = node_to_local.get(&v) {
+                        let fv = fwd[li as usize];
+                        if fv != 0 {
+                            let theta = 2.0 * std::f64::consts::PI * (fv as f64) / (p as f64);
+                            sum_cos += theta.cos();
+                            sum_sin += theta.sin();
+                            env_phase_count += 1;
+                        }
+                    }
+                }
+                let coherence = if env_phase_count > 0 {
+                    let m = env_phase_count as f64;
+                    ((sum_cos / m).powi(2) + (sum_sin / m).powi(2)).sqrt()
+                } else {
+                    0.0
+                };
+
+                // (e) Handshake amplitude + accumulate into predicted_pairs
+                let mut amplitude: f64 = 0.0;
+                for &v in &environment {
+                    if let Some(&li) = node_to_local.get(&v) {
+                        let f = fwd[li as usize];
+                        let b = bwd_global[v];
+                        if f != 0 && b != 0 {
+                            let sf = if f > half_p { f as i64 - p as i64 } else { f as i64 };
+                            let sb = if b > half_p { b as i64 - p as i64 } else { b as i64 };
+                            let handshake = (sf as f64 / half_p as f64) * (sb as f64 / half_p as f64);
+                            if handshake != 0.0 {
+                                amplitude += handshake.abs();
+                                *acc.3.entry(v).or_insert(0.0) += handshake.abs();
+                                acc.4 += handshake.abs();
+                            }
+                        }
+                    }
+                }
+
+                // Accumulate chain counts into chain_pred
+                for &v in &environment {
+                    if let Some(&li) = node_to_local.get(&v) {
+                        let f = fwd_count[li as usize];
+                        if f > 0.0 {
+                            *acc.5.entry(v).or_insert(0.0) += f;
+                            acc.6 += f;
+                        }
+                    }
+                }
+
+                // (f) K22 diamonds at env nodes ───────────────────────────
+                let inter_nbrs: Vec<HashSet<usize>> = prism.intermediates.iter()
+                    .map(|&w| {
+                        let rw = resolve(w, merge);
+                        if rw >= n { return HashSet::new(); }
+                        let cs = vac_head[rw] as usize;
+                        let ce = vac_head[rw + 1] as usize;
+                        vac_data[cs..ce].iter()
+                            .map(|&x| resolve(x as usize, merge))
+                            .filter(|&x| x < n)
+                            .collect::<HashSet<_>>()
+                    })
+                    .collect();
+
+                for &v in &environment {
+                    let pointers: Vec<usize> = (0..inter_nbrs.len())
+                        .filter(|&i| inter_nbrs[i].contains(&v))
+                        .collect();
+
+                    if pointers.len() < 2 { continue; }
+
+                    let mut diamonds: u64 = 0;
+                    for i in 0..pointers.len() {
+                        for j in (i+1)..pointers.len() {
+                            let common = inter_nbrs[pointers[i]]
+                                .intersection(&inter_nbrs[pointers[j]])
+                                .filter(|&&w| w != v)
+                                .count();
+                            diamonds += common as u64;
+                        }
+                    }
+
+                    if diamonds > 0 {
+                        *acc.1.entry(v).or_insert(0.0) += diamonds as f64;
+                        acc.2 += diamonds as f64;
+                    }
+                }
+
+                // Push PrismDecoherence (22 bytes per prism — negligible)
+                acc.0.push(PrismDecoherence {
+                    prism_idx: pi,
+                    generation: gen,
+                    n_intermediates: prism.intermediates.len(),
+                    environment_size: environment.len(),
+                    phase_coherence: coherence,
+                    amplitude_through: amplitude,
+                });
+
+                // All per-prism temporaries freed here:
+                // environment, members, node_to_local, reached_nodes,
+                // local_adj, local_order, fwd, fwd_count, inter_nbrs
+                acc
+            })
+            .reduce(fold_init, |mut a, b| {
+                a.0.extend(b.0);
+                for (k, v) in b.1 { *a.1.entry(k).or_default() += v; }
+                a.2 += b.2;
+                for (k, v) in b.3 { *a.3.entry(k).or_default() += v; }
+                a.4 += b.4;
+                for (k, v) in b.5 { *a.5.entry(k).or_default() += v; }
+                a.6 += b.6;
+                a
+            });
+
+    // Step 5: Born rule verification — |ψ|² vs K_{2,2} measurement events
+
+    let n_detector_nodes = predicted_pairs.len();
+
+    // 5c. Born rule: Pearson r between normalized PMFs
+    //     Does |ψ|² predict where K_{2,2} defects form?
+    //     Both distributions normalized to sum=1 — pure shape comparison.
+    let mut born_histogram: Vec<BornBin> = Vec::new();
+    let born_r: f64;
+    let mut born_r_null_mean: f64 = 0.0;
+    let mut born_r_null_std: f64 = 0.0;
+    let mut born_r_percentile: f64 = 0.0;
+
+    if !predicted_pairs.is_empty() && sum_pairs > 0.0 && total_k22 > 0.0 {
+        let mut det_nodes: Vec<usize> = predicted_pairs.keys()
+            .filter(|&&v| k22_count.contains_key(&v))
+            .copied()
+            .collect();
+
+        if det_nodes.len() >= 3 {
+            let nf = det_nodes.len() as f64;
+
+            let mut mean_o = 0.0;
+            let mut mean_p = 0.0;
+            for &v in &det_nodes {
+                mean_o += k22_count[&v] / total_k22;
+                mean_p += predicted_pairs[&v] / sum_pairs;
             }
-        }
-    }
+            mean_o /= nf;
+            mean_p /= nf;
 
-    let n_detector_nodes = detector_path_count.len();
+            let mut num = 0.0;
+            let mut den_o = 0.0;
+            let mut den_p = 0.0;
+            for &v in &det_nodes {
+                let d_o = k22_count[&v] / total_k22 - mean_o;
+                let d_p = predicted_pairs[&v] / sum_pairs - mean_p;
+                num += d_o * d_p;
+                den_o += d_o * d_o;
+                den_p += d_p * d_p;
+            }
 
-    // Build Born histogram
-    let n_born_bins = 10usize;
-    let mut born_bins: Vec<(f64, f64, f64)> = Vec::new();
-
-    if total_paths > 0 && n_detector_nodes > 0 {
-        let mut det_data: Vec<(f64, f64)> = Vec::new();
-        let total_walker_arrivals: u64 = (0..n)
-            .map(|i| arrivals[i].load(Ordering::Relaxed))
-            .sum();
-
-        let sum_paths_sq: f64 = detector_path_count.values()
-            .map(|&pc| (pc as f64).powi(2))
-            .sum();
-
-        for (&node, &paths) in &detector_path_count {
-            let predicted = if sum_paths_sq > 0.0 {
-                (paths as f64).powi(2) / sum_paths_sq
+            born_r = if den_o > 0.0 && den_p > 0.0 {
+                num / (den_o.sqrt() * den_p.sqrt())
             } else {
                 0.0
             };
-            let observed = if total_walker_arrivals > 0 {
-                arrivals[node].load(Ordering::Relaxed) as f64 / total_walker_arrivals as f64
-            } else {
-                0.0
-            };
-            det_data.push((predicted, observed));
-        }
 
-        det_data.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
-        let bin_size = (det_data.len() + n_born_bins - 1) / n_born_bins;
-        for chunk in det_data.chunks(bin_size.max(1)) {
-            let mean_pred = chunk.iter().map(|d| d.0).sum::<f64>() / chunk.len() as f64;
-            let mean_obs = chunk.iter().map(|d| d.1).sum::<f64>() / chunk.len() as f64;
-            let intensity = (mean_pred + mean_obs) / 2.0;
-            born_bins.push((intensity, mean_obs, mean_pred));
+            // Permutation null model: shuffle predicted PMF, recompute Pearson r
+            // Invariant: mean-centered arrays have fixed variance under shuffle,
+            // so the denominator is precomputed once.  Only the covariance
+            // (numerator) changes per permutation.  Parallelised via Rayon.
+            if den_o > 0.0 && den_p > 0.0 {
+                let obs_c: Vec<f64> = det_nodes.iter()
+                    .map(|&v| k22_count[&v] / total_k22 - mean_o)
+                    .collect();
+                let pred_c: Vec<f64> = det_nodes.iter()
+                    .map(|&v| predicted_pairs[&v] / sum_pairs - mean_p)
+                    .collect();
+                let den = den_o.sqrt() * den_p.sqrt();
+
+                const N_PERM: usize = 200;
+                let base_seed = ctx.seed ^ 0xB0_4E;
+                let null_rs: Vec<f64> = (0..N_PERM).into_par_iter().map(|k| {
+                    let mut rng = StdRng::seed_from_u64(base_seed + k as u64);
+                    let mut shuffled = pred_c.clone();
+                    for i in (1..shuffled.len()).rev() {
+                        let j = rng.gen_range(0..=i);
+                        shuffled.swap(i, j);
+                    }
+                    let cov: f64 = obs_c.iter().zip(shuffled.iter())
+                        .map(|(&o, &p)| o * p).sum();
+                    cov / den
+                }).collect();
+
+                born_r_null_mean = null_rs.iter().sum::<f64>() / N_PERM as f64;
+                born_r_null_std = (null_rs.iter()
+                    .map(|&r| (r - born_r_null_mean).powi(2))
+                    .sum::<f64>() / N_PERM as f64).sqrt();
+                born_r_percentile = null_rs.iter()
+                    .filter(|&&r| r < born_r).count() as f64 / N_PERM as f64;
+            }
+
+            // 5d. Bin detector nodes into ~10 equal-count bins for histogram
+            det_nodes.sort_by(|&a, &b| {
+                let pa = predicted_pairs[&a] / sum_pairs;
+                let pb = predicted_pairs[&b] / sum_pairs;
+                pa.partial_cmp(&pb).unwrap_or(std::cmp::Ordering::Equal)
+            });
+
+            let n_target_bins = 10.min(det_nodes.len());
+            let bin_size = det_nodes.len() / n_target_bins;
+            let remainder = det_nodes.len() % n_target_bins;
+
+            let mut start = 0;
+            for i in 0..n_target_bins {
+                let this_bin = bin_size + if i < remainder { 1 } else { 0 };
+                let end = start + this_bin;
+                let slice = &det_nodes[start..end];
+
+                let mut sum_pred = 0.0;
+                let mut sum_obs = 0.0;
+                let mut sum_int = 0.0;
+                for &v in slice {
+                    sum_pred += predicted_pairs[&v] / sum_pairs;
+                    sum_obs += k22_count[&v] / total_k22;
+                    sum_int += predicted_pairs[&v] / sum_pairs;
+                }
+                let mean_int = sum_int / this_bin as f64;
+
+                born_histogram.push(BornBin {
+                    intensity: mean_int,
+                    observed_freq: sum_obs,
+                    predicted_freq: sum_pred,
+                });
+
+                start = end;
+            }
+        } else {
+            born_r = 0.0;
         }
+    } else {
+        born_r = 0.0;
     }
 
-    let born_histogram: Vec<BornBin> = born_bins
-        .iter()
-        .map(|&(intensity, obs, pred)| BornBin {
-            intensity,
-            observed_freq: obs,
-            predicted_freq: pred,
-        })
-        .collect();
-
-    // Chi-squared goodness-of-fit
-    let born_chi_sq = born_histogram
-        .iter()
-        .map(|b| {
-            if b.predicted_freq > 1e-15 {
-                (b.observed_freq - b.predicted_freq).powi(2) / b.predicted_freq
-            } else {
-                0.0
+    // 5c'. Chain-count Born r: does chain_count² predict K₂₂ density?
+    let mut born_r_chain_percentile: f64 = 0.0;
+    let born_r_chain: f64 = if sum_chain > 0.0 && total_k22 > 0.0 {
+        let chain_nodes: Vec<usize> = chain_pred.keys()
+            .filter(|&&v| k22_count.contains_key(&v))
+            .copied()
+            .collect();
+        if chain_nodes.len() >= 3 {
+            let nf = chain_nodes.len() as f64;
+            let sum_pred_sq: f64 = chain_nodes.iter()
+                .map(|v| chain_pred[v].powi(2)).sum();
+            let (mut mo, mut mp) = (0.0, 0.0);
+            for &v in &chain_nodes {
+                mo += k22_count[&v] / total_k22;
+                mp += chain_pred[&v].powi(2) / sum_pred_sq;
             }
-        })
-        .sum::<f64>();
+            mo /= nf; mp /= nf;
+            let (mut num, mut do2, mut dp2) = (0.0, 0.0, 0.0);
+            for &v in &chain_nodes {
+                let dv_o = k22_count[&v] / total_k22 - mo;
+                let dv_p = chain_pred[&v].powi(2) / sum_pred_sq - mp;
+                num += dv_o * dv_p;
+                do2 += dv_o * dv_o;
+                dp2 += dv_p * dv_p;
+            }
+            let r = if do2 > 0.0 && dp2 > 0.0 { num / (do2.sqrt() * dp2.sqrt()) } else { 0.0 };
 
-    // Step 7: Decoherence curve -- bin by environment size
-    let mut env_bins: std::collections::HashMap<usize, (f64, usize)> =
-        std::collections::HashMap::new();
+            // Permutation null model for chain prediction (parallelised)
+            if do2 > 0.0 && dp2 > 0.0 {
+                let obs_c: Vec<f64> = chain_nodes.iter()
+                    .map(|&v| k22_count[&v] / total_k22 - mo)
+                    .collect();
+                let pred_c: Vec<f64> = chain_nodes.iter()
+                    .map(|&v| chain_pred[&v].powi(2) / sum_pred_sq - mp)
+                    .collect();
+                let den = do2.sqrt() * dp2.sqrt();
+
+                const N_PERM: usize = 200;
+                let base_seed = ctx.seed ^ 0xC4_41;
+                let count_below: usize = (0..N_PERM).into_par_iter().map(|k| {
+                    let mut rng = StdRng::seed_from_u64(base_seed + k as u64);
+                    let mut shuffled = pred_c.clone();
+                    for i in (1..shuffled.len()).rev() {
+                        let j = rng.gen_range(0..=i);
+                        shuffled.swap(i, j);
+                    }
+                    let r_null: f64 = obs_c.iter().zip(shuffled.iter())
+                        .map(|(&o, &p)| o * p).sum();
+                    if r_null / den < r { 1usize } else { 0usize }
+                }).sum();
+                born_r_chain_percentile = count_below as f64 / N_PERM as f64;
+            }
+
+            r
+        } else { 0.0 }
+    } else { 0.0 };
+
+    // Step 6: Decoherence curve -- bin by environment size
+    let mut env_bins: HashMap<usize, (f64, usize)> = HashMap::new();
 
     let bin_width = 3usize;
     for pd in &per_prism {
@@ -461,7 +710,12 @@ pub fn run(ctx: &MeasureContext) -> DecoherenceResult {
         per_prism,
         decoherence_curve,
         born_histogram,
-        born_chi_sq,
+        born_r,
+        born_r_chain,
+        born_r_null_mean,
+        born_r_null_std,
+        born_r_percentile,
+        born_r_chain_percentile,
         n_detector_nodes,
         mean_env_size,
         coherence_decay_r,
@@ -483,7 +737,7 @@ pub fn aggregate(results: &[DecoherenceResult]) -> DecoherenceResult {
         if histograms.is_empty() {
             vec![]
         } else {
-            let n_bins = histograms[0].len();
+            let n_bins = histograms.iter().map(|h| h.len()).min().unwrap_or(0);
             let mh = histograms.len() as f64;
             (0..n_bins).map(|i| {
                 let sum_int: f64 = histograms.iter().map(|h| h[i].intensity).sum();
@@ -501,7 +755,12 @@ pub fn aggregate(results: &[DecoherenceResult]) -> DecoherenceResult {
         per_prism: vec![],
         decoherence_curve: vec![],
         born_histogram,
-        born_chi_sq: results.iter().map(|d| d.born_chi_sq).sum::<f64>() / m,
+        born_r: results.iter().map(|d| d.born_r).sum::<f64>() / m,
+        born_r_chain: results.iter().map(|d| d.born_r_chain).sum::<f64>() / m,
+        born_r_null_mean: results.iter().map(|d| d.born_r_null_mean).sum::<f64>() / m,
+        born_r_null_std: results.iter().map(|d| d.born_r_null_std).sum::<f64>() / m,
+        born_r_percentile: results.iter().map(|d| d.born_r_percentile).sum::<f64>() / m,
+        born_r_chain_percentile: results.iter().map(|d| d.born_r_chain_percentile).sum::<f64>() / m,
         n_detector_nodes: results.iter().map(|d| d.n_detector_nodes).sum(),
         mean_env_size: results.iter().map(|d| d.mean_env_size).sum::<f64>() / m,
         coherence_decay_r: results.iter().map(|d| d.coherence_decay_r).sum::<f64>() / m,
@@ -516,13 +775,13 @@ pub fn write_csv(result: &DecoherenceResult, w: &mut CsvWriter) {
     w.comment("M6 Quantum Decoherence (per-prism coherence)");
     w.header(&[
         "prism_idx", "generation", "n_intermediates",
-        "environment_size", "phase_coherence", "n_paths_through",
+        "environment_size", "phase_coherence", "amplitude_through",
     ]);
     for pd in &result.per_prism {
         w.row_fmt(format_args!(
-            "{},{},{},{},{:.6},{}",
+            "{},{},{},{},{:.6},{:.6}",
             pd.prism_idx, pd.generation, pd.n_intermediates,
-            pd.environment_size, pd.phase_coherence, pd.n_paths_through
+            pd.environment_size, pd.phase_coherence, pd.amplitude_through
         ));
     }
 }
@@ -530,6 +789,7 @@ pub fn write_csv(result: &DecoherenceResult, w: &mut CsvWriter) {
 /// Write Born rule verification histogram to a separate CSV.
 pub fn write_born_rule_csv(result: &DecoherenceResult, w: &mut CsvWriter) {
     w.comment("M6 Born Rule Verification (binned |psi|^2 vs observed)");
+    w.comment(&format!("born_r={:.6}  n_detector_nodes={}", result.born_r, result.n_detector_nodes));
     w.header(&["intensity", "observed_freq", "predicted_freq"]);
     for b in &result.born_histogram {
         w.row_fmt(format_args!("{:.15e},{:.15e},{:.15e}", b.intensity, b.observed_freq, b.predicted_freq));
@@ -542,7 +802,20 @@ pub fn print_summary(result: &DecoherenceResult) {
     println!("  [M6] Quantum Decoherence:");
     println!("    Detector nodes:  {}", result.n_detector_nodes);
     println!("    Mean env size:   {:.2}", result.mean_env_size);
-    println!("    Born chi^2:      {:.6}", result.born_chi_sq);
+    println!("    Born r(PMF):     {:.6}  (null: {:.3} +/- {:.3}, p={:.4})",
+        result.born_r, result.born_r_null_mean, result.born_r_null_std,
+        1.0 - result.born_r_percentile);
+    println!("    Born r(chain²):  {:.6}  (p={:.4})",
+        result.born_r_chain, 1.0 - result.born_r_chain_percentile);
+    if !result.per_prism.is_empty() {
+        let np = result.per_prism.len() as f64;
+        let mean_c: f64 = result.per_prism.iter()
+            .map(|pd| pd.phase_coherence).sum::<f64>() / np;
+        let var_c: f64 = result.per_prism.iter()
+            .map(|pd| (pd.phase_coherence - mean_c).powi(2))
+            .sum::<f64>() / np;
+        println!("    Coherence var:   {:.6}", var_c);
+    }
     println!("    Coherence r:     {:.4}", result.coherence_decay_r);
     println!("    NTT config:      p={}, g={}", result.prime, result.root);
 }

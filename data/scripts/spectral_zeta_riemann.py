@@ -50,8 +50,8 @@ Usage:
     python spectral_zeta_riemann.py
 
 Reads from:
-    data/ensemble_10M/mass_spectrum_M20.csv   (belly distribution f(n))
-    data/ensemble_10M/results_M20.csv         (return probabilities P(σ))
+    data/ensemble_10M_final/mass_spectrum_M20.csv   (belly distribution f(n))
+    data/ensemble_10M_final/results_M20.csv         (return probabilities P(σ))
 """
 import math
 import numpy as np
@@ -70,13 +70,13 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 def _find_data_root():
     """Locate data/ directory whether run from repo root or data/scripts/."""
     for candidate in [SCRIPT_DIR / "data", SCRIPT_DIR.parent]:
-        if (candidate / "ensemble_10M").exists():
+        if (candidate / "ensemble_10M_final").exists():
             return candidate
     return None
 
 
 DATA_ROOT = _find_data_root()
-ENSEMBLE_DIR = DATA_ROOT / "ensemble_10M" if DATA_ROOT else None
+ENSEMBLE_DIR = DATA_ROOT / "ensemble_10M_final" if DATA_ROOT else None
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -306,7 +306,7 @@ def main():
     # Load data
     # ------------------------------------------------------------------
     if ENSEMBLE_DIR is None:
-        raise FileNotFoundError("Cannot locate data/ensemble_10M/ directory.")
+        raise FileNotFoundError("Cannot locate data/ensemble_10M_final/ directory.")
 
     belly_dist = load_belly_distribution(ENSEMBLE_DIR / "mass_spectrum_M20.csv")
     steps, p_vac = load_return_probabilities(ENSEMBLE_DIR / "results_M20.csv")

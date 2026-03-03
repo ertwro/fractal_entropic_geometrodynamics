@@ -12,6 +12,7 @@
 //! Calculo de Kuratowski, Vol II, Def 3.1: topological mass = N.
 
 use super::context::MeasureContext;
+use crate::convergence::{AutoConverge, ConvergeState};
 use crate::output::CsvWriter;
 use crate::phase2::defect::CausalPrism;
 use crate::phase3::walker::distribute_walkers;
@@ -22,7 +23,7 @@ use std::collections::HashSet;
 
 // ── Data Structures ──────────────────────────────────────────────────────────
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct TraversalRecord {
     pub prism_idx: usize,
     pub generation: u8,
@@ -30,7 +31,7 @@ pub struct TraversalRecord {
     pub traversal_ticks: u32,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct TraversalMassResult {
     pub mean_traversal: [f64; 3],
     pub ratio_gen2_gen1: f64,
@@ -159,90 +160,126 @@ pub fn run(ctx: &MeasureContext) -> TraversalMassResult {
     // Cover time budget: O(N_belly * log(N_belly) * ambient_dilution).
     let max_cover_steps: u32 = 5000;
 
-    let starts = distribute_walkers(&origins, ctx.walkers);
     let num_def_nodes = sym_def_head.len() - 1;
 
-    let records: Vec<Vec<TraversalRecord>> = starts
-        .par_iter()
-        .enumerate()
-        .map(|(wi, &start_pos)| {
-            let mut rng = StdRng::seed_from_u64(ctx.seed.wrapping_add(wi as u64));
-            let mut pos = start_pos;
-            let mut local_records = Vec::new();
+    // Auto-convergence: batch walkers until mean traversal time stabilises
+    let ac = AutoConverge::new(origins.len() * 200, 2048, ctx.epsilon);
+    let mut conv_state = ConvergeState::new();
+    let mut all_records: Vec<TraversalRecord> = Vec::new();
 
-            let mut in_prism = false;
-            let mut current_prism_idx = 0usize;
-            let mut entry_tick = 0u32;
-            let mut visited_belly: HashSet<usize> = HashSet::new();
+    loop {
+        let starts = distribute_walkers(&origins, ac.batch_size);
+        let seed_offset = conv_state.total_walkers;
 
-            if let Some(pi) = node_to_prism[pos] {
-                if is_origin[pos] {
-                    in_prism = true;
-                    current_prism_idx = pi;
-                    entry_tick = 0;
-                    visited_belly.clear();
-                }
-            }
+        let batch_records: Vec<Vec<TraversalRecord>> = starts
+            .par_iter()
+            .enumerate()
+            .map(|(wi, &start_pos)| {
+                let mut rng = StdRng::seed_from_u64(
+                    ctx.seed.wrapping_add((seed_offset + wi) as u64),
+                );
+                let mut pos = start_pos;
+                let mut local_records = Vec::new();
 
-            for t in 1..=max_cover_steps {
-                let s = if pos < num_def_nodes { sym_def_head[pos] as usize } else { 0 };
-                let e = if pos < num_def_nodes { sym_def_head[pos + 1] as usize } else { 0 };
-                let deg = e - s;
+                let mut in_prism = false;
+                let mut current_prism_idx = 0usize;
+                let mut entry_tick = 0u32;
+                let mut visited_belly: HashSet<usize> = HashSet::new();
 
-                // Lazy walk with strict prism confinement
-                if deg > 0 && rng.gen_bool(0.5) {
-                    let candidate_next = sym_def_data[s + rng.gen_range(0..deg)] as usize;
-                    let resolved_next = resolve(candidate_next, merge);
-
-                    if in_prism {
-                        // Only step if destination node is in the SAME prism
-                        if node_to_prism.get(resolved_next) == Some(&Some(current_prism_idx)) {
-                            pos = resolved_next;
-                            // Track belly node visits
-                            let info = &prism_info[current_prism_idx];
-                            if pos != info.origin && pos != info.destination {
-                                visited_belly.insert(pos);
-                            }
-                        }
-                        // Otherwise: bounce (stay put)
-                    } else {
-                        pos = resolved_next;
-                    }
-                }
-
-                if in_prism {
-                    let info = &prism_info[current_prism_idx];
-                    let at_dest = pos == info.destination;
-
-                    if at_dest && visited_belly.len() >= info.belly {
-                        // Full cover achieved: all belly nodes visited AND at destination
-                        local_records.push(TraversalRecord {
-                            prism_idx: current_prism_idx,
-                            generation: info.generation,
-                            n_belly: info.belly,
-                            traversal_ticks: t - entry_tick,
-                        });
-                        in_prism = false;
-                        visited_belly.clear();
-                    } else if at_dest {
-                        // Reached destination before full coverage -- reflect back
-                        pos = info.origin;
-                    }
-                } else if let Some(pi) = node_to_prism.get(pos).copied().flatten() {
+                if let Some(pi) = node_to_prism[pos] {
                     if is_origin[pos] {
                         in_prism = true;
                         current_prism_idx = pi;
-                        entry_tick = t;
+                        entry_tick = 0;
                         visited_belly.clear();
                     }
                 }
+
+                for t in 1..=max_cover_steps {
+                    let s = if pos < num_def_nodes { sym_def_head[pos] as usize } else { 0 };
+                    let e = if pos < num_def_nodes { sym_def_head[pos + 1] as usize } else { 0 };
+                    let deg = e - s;
+
+                    // Lazy walk with strict prism confinement
+                    if deg > 0 && rng.gen_bool(0.5) {
+                        let candidate_next = sym_def_data[s + rng.gen_range(0..deg)] as usize;
+                        let resolved_next = resolve(candidate_next, merge);
+
+                        if in_prism {
+                            if node_to_prism.get(resolved_next) == Some(&Some(current_prism_idx)) {
+                                pos = resolved_next;
+                                let info = &prism_info[current_prism_idx];
+                                if pos != info.origin && pos != info.destination {
+                                    visited_belly.insert(pos);
+                                }
+                            }
+                        } else {
+                            pos = resolved_next;
+                        }
+                    }
+
+                    if in_prism {
+                        let info = &prism_info[current_prism_idx];
+                        let at_dest = pos == info.destination;
+
+                        if at_dest && visited_belly.len() >= info.belly {
+                            local_records.push(TraversalRecord {
+                                prism_idx: current_prism_idx,
+                                generation: info.generation,
+                                n_belly: info.belly,
+                                traversal_ticks: t - entry_tick,
+                            });
+                            in_prism = false;
+                            visited_belly.clear();
+                        } else if at_dest {
+                            pos = info.origin;
+                        }
+                    } else if let Some(pi) = node_to_prism.get(pos).copied().flatten() {
+                        if is_origin[pos] {
+                            in_prism = true;
+                            current_prism_idx = pi;
+                            entry_tick = t;
+                            visited_belly.clear();
+                        }
+                    }
+                }
+
+                local_records
+            })
+            .collect();
+
+        // Batch-only observable for Welford (independent sample)
+        let batch_obs = {
+            let batch_flat: Vec<&TraversalRecord> = batch_records.iter()
+                .flat_map(|v| v.iter()).collect();
+            if !batch_flat.is_empty() {
+                batch_flat.iter().map(|r| r.traversal_ticks as f64).sum::<f64>()
+                    / batch_flat.len() as f64
+            } else {
+                0.0
             }
+        };
 
-            local_records
-        })
-        .collect();
+        // Still extend cumulative records for final output
+        all_records.extend(batch_records.into_iter().flatten());
 
-    let all_records: Vec<TraversalRecord> = records.into_iter().flatten().collect();
+        // Guard: do not feed zero-traversal batches to Welford.  If no walker
+        // completes a traversal, batch_obs = 0.0.  Three consecutive zeros
+        // would collapse the variance to 0, triggering premature convergence
+        // with mean_traversal = [0,0,0].  Require at least one successful
+        // traversal before updating the convergence check.
+        if batch_obs > 0.0 {
+            if conv_state.update(batch_obs, &ac) { break; }
+        } else {
+            // Still count walkers dispatched so the cap fires correctly
+            conv_state.total_walkers += ac.batch_size;
+        }
+        if conv_state.at_limit(&ac) {
+            eprintln!("[M1] WARNING: {} walkers without convergence", conv_state.total_walkers);
+            break;
+        }
+    }
+    println!("  [M1] converged at {} walkers", conv_state.total_walkers);
 
     let mut sum = [0.0f64; 3];
     let mut count = [0usize; 3];

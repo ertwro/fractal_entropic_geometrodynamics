@@ -556,6 +556,10 @@ pub fn apply_defect(
         merge_into[i] = t;
     }
 
+    // Free rev_csr (1.18 GB at N=10M) — last used in threat detection above.
+    // Dropping before defect edge collection reduces Phase 2 peak by ~1.18 GB.
+    drop(rev_csr);
+
     // ====================================================================
     //  7. Build Defect CSR  (Zero-Copy)
     //

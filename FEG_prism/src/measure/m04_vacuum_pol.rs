@@ -2,309 +2,286 @@
 // Copyright (c) 2026 Juan Pablo Silva Alvarado
 // Fractal Entropic Geometrodynamics — DOI: 10.5281/zenodo.18769707
 
-//! M4 — Vacuum Polarization (K_{3,3} Screening)
+//! M4 — Combinatorial RG Flow: Q_topo(V) in Alexandrov Intervals
 //!
-//! For each Gen1 prism, gathers candidate neighbor nodes and checks whether
-//! connecting them would create a K_{3,3} subgraph (forbidden in planar graphs).
-//! The screening factor = fraction of candidates NOT blocked by K_{3,3}.
-//!
-//! Calculo de Kuratowski, Vol II, Thm 6.3: K_{3,3} obstruction as charge screening.
+//! Samples random Alexandrov intervals A(p,q) = {r : p ≺ r ≺ q} of varying
+//! volume V = |A(p,q)|, counts which prisms fall entirely inside each interval,
+//! and computes the local Q_topo(V).  This is the running coupling constant —
+//! purely combinatorial, zero free parameters.
 
 use super::context::MeasureContext;
+use crate::graph::grid::is_causal;
 use crate::output::CsvWriter;
-use crate::phase2::defect::CausalPrism;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use rayon::prelude::*;
-use std::collections::HashSet;
+
+/// Number of Alexandrov interval samples per realization.
+const N_SAMPLES: usize = 1000;
+
+/// Maximum random-walk depth when picking the future endpoint q.
+const MAX_DEPTH: usize = 15;
+
+/// Minimum interval volume to keep (skip degenerate intervals).
+const MIN_VOLUME: usize = 10;
 
 // ── Data Structures ──────────────────────────────────────────────────────────
 
-#[derive(Clone, Debug)]
-pub struct PrismScreening {
-    pub prism_idx: usize,
-    pub generation: u8,
-    pub n_attempted: usize,
-    pub n_rejected_k33: usize,
-    pub n_accepted: usize,
-    pub local_screening: f64,
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct AlexandrovSample {
+    pub volume: usize,
+    pub n_prisms: usize,
+    pub local_phase_sq: usize,
+    pub local_mass_sq: usize,
+    pub local_q: f64,
+    pub local_alpha: f64,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct VacuumPolResult {
-    pub per_prism: Vec<PrismScreening>,
-    pub total_attempted: usize,
-    pub total_rejected: usize,
-    pub total_accepted: usize,
-    pub mean_screening: f64,
-    pub bare_alpha: f64,
-    pub screened_alpha: f64,
+    pub samples: Vec<AlexandrovSample>,
+    pub n_sampled: usize,
+    pub global_q: f64,
+    pub global_alpha: f64,
+    pub mean_local_q: f64,
 }
 
-// ── Utilities ────────────────────────────────────────────────────────────────
+// ── Pre-computed prism info ──────────────────────────────────────────────────
 
-fn build_gen_lookup(n: usize, ctx: &MeasureContext) -> Vec<u8> {
-    let mut lookup = vec![0u8; n];
-    for &node in &ctx.defect.generations.gen1 {
-        if node < n { lookup[node] = 1; }
-    }
-    for &node in &ctx.defect.generations.gen2 {
-        if node < n { lookup[node] = 2; }
-    }
-    for &node in &ctx.defect.generations.gen3 {
-        if node < n { lookup[node] = 3; }
-    }
-    for &node in &ctx.defect.generations.anti1 {
-        if node < n { lookup[node] = 4; }
-    }
-    lookup
-}
-
-fn classify_prism_generation(prism: &CausalPrism, gen_lookup: &[u8]) -> u8 {
-    for &node in &prism.intermediates {
-        let g = gen_lookup[node];
-        if g >= 1 && g <= 3 { return g; }
-    }
-    let g = gen_lookup[prism.origin];
-    if g >= 1 && g <= 3 { return g; }
-    let g = gen_lookup[prism.destination];
-    if g >= 1 && g <= 3 { return g; }
-    0
-}
-
-/// Check if there is an edge between nodes c and x in either direction
-/// using both forward and reverse CSR (sorted, binary-searchable).
-fn has_edge_bidirectional(
-    c: usize,
-    x: usize,
-    fwd_head: &[u32],
-    fwd_data: &[u32],
-    rev_head: &[u32],
-    rev_data: &[u32],
-) -> bool {
-    let x32 = x as u32;
-    // Forward: c -> x
-    let fs = fwd_head[c] as usize;
-    let fe = fwd_head[c + 1] as usize;
-    if fwd_data[fs..fe].binary_search(&x32).is_ok() {
-        return true;
-    }
-    // Reverse: x -> c (c has predecessor x)
-    let rs = rev_head[c] as usize;
-    let re = rev_head[c + 1] as usize;
-    rev_data[rs..re].binary_search(&(x as u32)).is_ok()
+struct PrismInfo {
+    all_nodes: Vec<usize>,
+    phi_abs: usize,
+    n_inter: usize,
 }
 
 // ── Measurement ──────────────────────────────────────────────────────────────
 
 pub fn run(ctx: &MeasureContext) -> VacuumPolResult {
     let n = ctx.n_points;
-    let gen_lookup = build_gen_lookup(n, ctx);
+    let pts = ctx.pts;
     let (vac_head, vac_data) = ctx.vacuum_csr.raw();
-    let bare_alpha = ctx.topology.alpha_em;
 
-    // Build reverse CSR
-    let mut rev_deg = vec![0u32; n];
-    for u in 0..n {
-        let s = vac_head[u] as usize;
-        let e = vac_head[u + 1] as usize;
-        for &v in &vac_data[s..e] {
-            let vi = v as usize;
-            if vi < n {
-                rev_deg[vi] += 1;
-            }
-        }
-    }
+    // Global Q_topo from topology summary
+    let global_q = if ctx.topology.mass_sq_total > 0 {
+        ctx.topology.phase_sq_total as f64 / ctx.topology.mass_sq_total as f64
+    } else {
+        0.0
+    };
+    let global_alpha = global_q / (8.0 * std::f64::consts::PI);
 
-    let mut rev_head = vec![0u32; n + 1];
-    for i in 0..n {
-        rev_head[i + 1] = rev_head[i] + rev_deg[i];
-    }
-
-    let total_rev = rev_head[n] as usize;
-    let mut rev_data = vec![0u32; total_rev];
-    let mut rev_pos = rev_head[..n].to_vec();
-    for u in 0..n {
-        let s = vac_head[u] as usize;
-        let e = vac_head[u + 1] as usize;
-        for &v in &vac_data[s..e] {
-            let vi = v as usize;
-            if vi < n {
-                rev_data[rev_pos[vi] as usize] = u as u32;
-                rev_pos[vi] += 1;
-            }
-        }
-    }
-
-    // Sort reverse adjacency lists for binary search
-    for u in 0..n {
-        let s = rev_head[u] as usize;
-        let e = rev_head[u + 1] as usize;
-        rev_data[s..e].sort_unstable();
-    }
-
-    // Build prism membership set
-    let mut is_prism_member = vec![false; n];
-    for p in ctx.prisms {
-        if p.origin < n {
-            is_prism_member[p.origin] = true;
-        }
-        if p.destination < n {
-            is_prism_member[p.destination] = true;
-        }
-        for &i in &p.intermediates {
-            if i < n {
-                is_prism_member[i] = true;
-            }
-        }
-    }
-
-    // Identify Gen1 prisms with >= 3 intermediates
-    let gen1_prisms: Vec<(usize, &CausalPrism)> = ctx.prisms
-        .iter()
-        .enumerate()
-        .filter(|(_, p)| {
-            classify_prism_generation(p, &gen_lookup) == 1 && p.intermediates.len() >= 3
-        })
-        .collect();
-
-    if gen1_prisms.is_empty() {
+    if ctx.prisms.is_empty() {
         return VacuumPolResult {
-            per_prism: vec![],
-            total_attempted: 0,
-            total_rejected: 0,
-            total_accepted: 0,
-            mean_screening: 1.0,
-            bare_alpha,
-            screened_alpha: bare_alpha,
+            samples: vec![],
+            n_sampled: 0,
+            global_q,
+            global_alpha,
+            mean_local_q: 0.0,
         };
     }
 
-    // Process each Gen1 prism in parallel
-    let per_prism: Vec<PrismScreening> = gen1_prisms
-        .par_iter()
-        .map(|&(pi, prism)| {
-            // Gather all prism node indices
-            let prism_nodes: Vec<usize> = std::iter::once(prism.origin)
-                .chain(std::iter::once(prism.destination))
-                .chain(prism.intermediates.iter().copied())
-                .collect();
+    // ── Pre-compute prism info ───────────────────────────────────────────
+    let prism_info: Vec<PrismInfo> = ctx
+        .prisms
+        .iter()
+        .map(|p| {
+            let mut all_nodes = Vec::with_capacity(2 + p.intermediates.len());
+            all_nodes.push(p.origin);
+            all_nodes.push(p.destination);
+            all_nodes.extend_from_slice(&p.intermediates);
 
-            // Collect candidate neighbors (not prism members)
-            let mut candidates: HashSet<usize> = HashSet::new();
-            for &pn in &prism_nodes {
-                if pn >= n {
-                    continue;
-                }
-                // Forward neighbors
-                let fs = vac_head[pn] as usize;
-                let fe = vac_head[pn + 1] as usize;
-                for &v in &vac_data[fs..fe] {
-                    let vi = v as usize;
-                    if vi < n && !is_prism_member[vi] {
-                        candidates.insert(vi);
-                    }
-                }
-                // Reverse neighbors
-                let rs = rev_head[pn] as usize;
-                let re = rev_head[pn + 1] as usize;
-                for &v in &rev_data[rs..re] {
-                    let vi = v as usize;
-                    if vi < n && !is_prism_member[vi] {
-                        candidates.insert(vi);
-                    }
-                }
-            }
-
-            let n_attempted = candidates.len();
-            let mut n_rejected = 0usize;
-
-            let poles = [prism.origin, prism.destination];
-
-            for &c in &candidates {
-                // K_{3,3} check: C connects to both poles AND >= 3 intermediates
-                let connects_pole0 =
-                    has_edge_bidirectional(c, poles[0], vac_head, vac_data, &rev_head, &rev_data);
-                let connects_pole1 =
-                    has_edge_bidirectional(c, poles[1], vac_head, vac_data, &rev_head, &rev_data);
-
-                if connects_pole0 && connects_pole1 {
-                    let int_connections = prism
-                        .intermediates
-                        .iter()
-                        .filter(|&&i| {
-                            has_edge_bidirectional(
-                                c, i, vac_head, vac_data, &rev_head, &rev_data,
-                            )
-                        })
-                        .count();
-                    if int_connections >= 3 {
-                        n_rejected += 1;
-                    }
-                }
-            }
-
-            let n_accepted = n_attempted - n_rejected;
-            PrismScreening {
-                prism_idx: pi,
-                generation: 1,
-                n_attempted,
-                n_rejected_k33: n_rejected,
-                n_accepted,
-                local_screening: if n_attempted > 0 {
-                    n_accepted as f64 / n_attempted as f64
-                } else {
-                    1.0
-                },
+            let net_phase: i32 = p
+                .intermediates
+                .iter()
+                .map(|&w| ctx.momentum[w].signum())
+                .sum();
+            PrismInfo {
+                all_nodes,
+                phi_abs: net_phase.unsigned_abs() as usize,
+                n_inter: p.intermediates.len(),
             }
         })
         .collect();
 
-    let total_attempted: usize = per_prism.iter().map(|p| p.n_attempted).sum();
-    let total_rejected: usize = per_prism.iter().map(|p| p.n_rejected_k33).sum();
-    let total_accepted: usize = per_prism.iter().map(|p| p.n_accepted).sum();
-    let mean_screening = if !per_prism.is_empty() {
-        per_prism.iter().map(|p| p.local_screening).sum::<f64>() / per_prism.len() as f64
+    // ── Build node → prism index map ─────────────────────────────────────
+    let mut node_to_prisms: Vec<Vec<usize>> = vec![Vec::new(); n];
+    for (pi, info) in prism_info.iter().enumerate() {
+        for &node in &info.all_nodes {
+            if node < n {
+                node_to_prisms[node].push(pi);
+            }
+        }
+    }
+
+    // ── Pre-sort nodes by time coordinate ────────────────────────────────
+    let mut time_sorted: Vec<usize> = (0..n).collect();
+    time_sorted.sort_unstable_by(|&a, &b| {
+        pts[a][0].partial_cmp(&pts[b][0]).unwrap()
+    });
+
+    // Extract sorted time values for binary search
+    let sorted_times: Vec<f64> = time_sorted.iter().map(|&i| pts[i][0]).collect();
+
+    // ── Sample Alexandrov intervals in parallel ──────────────────────────
+    let samples: Vec<AlexandrovSample> = (0..N_SAMPLES)
+        .into_par_iter()
+        .filter_map(|sample_idx| {
+            let mut rng = StdRng::seed_from_u64(ctx.seed.wrapping_add(sample_idx as u64));
+
+            // Pick random starting node p
+            let p = rng.gen_range(0..n);
+
+            // Random walk forward to find q
+            let mut current = p;
+            let depth = rng.gen_range(1..=MAX_DEPTH);
+            for _ in 0..depth {
+                let s = vac_head[current] as usize;
+                let e = vac_head[current + 1] as usize;
+                if s == e {
+                    break; // no forward neighbors
+                }
+                current = vac_data[rng.gen_range(s..e)] as usize;
+            }
+            let q = current;
+            if q == p {
+                return None; // degenerate: couldn't move forward
+            }
+
+            // Verify p ≺ q (should hold by construction, but be safe)
+            if !is_causal(&pts[p], &pts[q]) {
+                return None;
+            }
+
+            let t_p = pts[p][0];
+            let t_q = pts[q][0];
+
+            // Binary search for time window [t_p, t_q] in sorted_times
+            let lo = sorted_times.partition_point(|&t| t <= t_p);
+            let hi = sorted_times.partition_point(|&t| t < t_q);
+
+            // Build interval membership set: r ∈ A(p,q) iff p ≺ r ≺ q
+            let mut interval: Vec<usize> = Vec::new();
+            for &idx in &time_sorted[lo..hi] {
+                if idx == p || idx == q {
+                    continue;
+                }
+                if is_causal(&pts[p], &pts[idx]) && is_causal(&pts[idx], &pts[q]) {
+                    interval.push(idx);
+                }
+            }
+
+            let volume = interval.len();
+            if volume < MIN_VOLUME {
+                return None;
+            }
+
+            // Build fast membership lookup
+            let mut in_interval = vec![false; n];
+            for &idx in &interval {
+                in_interval[idx] = true;
+            }
+            // Also include endpoints for prism containment check
+            in_interval[p] = true;
+            in_interval[q] = true;
+
+            // Collect candidate prism indices from interval nodes
+            let mut candidate_prisms: Vec<usize> = Vec::new();
+            for &idx in &interval {
+                candidate_prisms.extend_from_slice(&node_to_prisms[idx]);
+            }
+            // Also check prisms touching p and q
+            candidate_prisms.extend_from_slice(&node_to_prisms[p]);
+            candidate_prisms.extend_from_slice(&node_to_prisms[q]);
+            candidate_prisms.sort_unstable();
+            candidate_prisms.dedup();
+
+            // A prism is interior iff ALL its nodes are in the interval
+            let mut local_phase_sq: usize = 0;
+            let mut local_mass_sq: usize = 0;
+            let mut n_prisms: usize = 0;
+            for &pi in &candidate_prisms {
+                let info = &prism_info[pi];
+                if info.all_nodes.iter().all(|&nd| in_interval[nd]) {
+                    local_phase_sq += info.phi_abs * info.phi_abs;
+                    local_mass_sq += info.n_inter * info.n_inter;
+                    n_prisms += 1;
+                }
+            }
+
+            let local_q = if local_mass_sq > 0 {
+                local_phase_sq as f64 / local_mass_sq as f64
+            } else {
+                return None; // no prisms with mass
+            };
+            let local_alpha = local_q / (8.0 * std::f64::consts::PI);
+
+            Some(AlexandrovSample {
+                volume,
+                n_prisms,
+                local_phase_sq,
+                local_mass_sq,
+                local_q,
+                local_alpha,
+            })
+        })
+        .collect();
+
+    let n_sampled = samples.len();
+    let mean_local_q = if n_sampled > 0 {
+        samples.iter().map(|s| s.local_q).sum::<f64>() / n_sampled as f64
     } else {
-        1.0
+        0.0
     };
 
     VacuumPolResult {
-        per_prism,
-        total_attempted,
-        total_rejected,
-        total_accepted,
-        mean_screening,
-        bare_alpha,
-        screened_alpha: bare_alpha * mean_screening,
+        samples,
+        n_sampled,
+        global_q,
+        global_alpha,
+        mean_local_q,
     }
 }
 
 // ── Ensemble Aggregation ─────────────────────────────────────────────────────
 
 pub fn aggregate(results: &[VacuumPolResult]) -> VacuumPolResult {
-    let m = results.len() as f64;
-    let mean_scr = results.iter().map(|v| v.mean_screening).sum::<f64>() / m;
-    let bare_a = results.iter().map(|v| v.bare_alpha).sum::<f64>() / m;
+    let mut all_samples: Vec<AlexandrovSample> = Vec::new();
+    for r in results {
+        all_samples.extend(r.samples.iter().cloned());
+    }
+    let n_sampled = all_samples.len();
+    let mean_local_q = if n_sampled > 0 {
+        all_samples.iter().map(|s| s.local_q).sum::<f64>() / n_sampled as f64
+    } else {
+        0.0
+    };
+    let global_q = results.iter().map(|r| r.global_q).sum::<f64>() / results.len() as f64;
+    let global_alpha = global_q / (8.0 * std::f64::consts::PI);
+
     VacuumPolResult {
-        per_prism: vec![],
-        total_attempted: results.iter().map(|v| v.total_attempted).sum(),
-        total_rejected: results.iter().map(|v| v.total_rejected).sum(),
-        total_accepted: results.iter().map(|v| v.total_accepted).sum(),
-        mean_screening: mean_scr,
-        bare_alpha: bare_a,
-        screened_alpha: bare_a * mean_scr,
+        samples: all_samples,
+        n_sampled,
+        global_q,
+        global_alpha,
+        mean_local_q,
     }
 }
 
 // ── CSV Output ───────────────────────────────────────────────────────────────
 
 pub fn write_csv(result: &VacuumPolResult, w: &mut CsvWriter) {
-    w.comment("M4 Vacuum Polarization (K_3,3 screening)");
-    w.header(&["prism_idx", "generation", "n_attempted", "n_rejected_k33", "n_accepted", "local_screening"]);
-    for ps in &result.per_prism {
+    w.comment("M4 Combinatorial RG Flow (Q_topo in Alexandrov intervals)");
+    w.header(&[
+        "volume",
+        "n_prisms",
+        "local_phase_sq",
+        "local_mass_sq",
+        "local_q",
+        "local_alpha",
+    ]);
+    for s in &result.samples {
         w.row_fmt(format_args!(
-            "{},{},{},{},{},{:.6}",
-            ps.prism_idx, ps.generation, ps.n_attempted,
-            ps.n_rejected_k33, ps.n_accepted, ps.local_screening
+            "{},{},{},{},{:.6},{:.6}",
+            s.volume, s.n_prisms, s.local_phase_sq, s.local_mass_sq, s.local_q, s.local_alpha
         ));
     }
 }
@@ -312,13 +289,21 @@ pub fn write_csv(result: &VacuumPolResult, w: &mut CsvWriter) {
 // ── Terminal Summary ─────────────────────────────────────────────────────────
 
 pub fn print_summary(result: &VacuumPolResult) {
-    println!("  [M4] Vacuum Polarization:");
-    println!("    Attempted:       {}", result.total_attempted);
-    println!("    Rejected (K33):  {}", result.total_rejected);
-    println!("    Accepted:        {}", result.total_accepted);
-    println!("    Mean screening:  {:.6}", result.mean_screening);
-    println!("    Bare alpha:      {:.6}  (1/alpha={:.1})",
-        result.bare_alpha, if result.bare_alpha > 0.0 { 1.0 / result.bare_alpha } else { 0.0 });
-    println!("    Screened alpha:  {:.6}  (1/alpha={:.1})",
-        result.screened_alpha, if result.screened_alpha > 0.0 { 1.0 / result.screened_alpha } else { 0.0 });
+    println!("  [M4] Combinatorial RG Flow:");
+    println!("    Samples:         {}", result.n_sampled);
+    println!(
+        "    Global Q_topo:   {:.4}  (1/alpha = {:.1})",
+        result.global_q,
+        if result.global_alpha > 0.0 {
+            1.0 / result.global_alpha
+        } else {
+            0.0
+        }
+    );
+    println!("    Mean local Q:    {:.4}", result.mean_local_q);
+    if !result.samples.is_empty() {
+        let v_min = result.samples.iter().map(|s| s.volume).min().unwrap();
+        let v_max = result.samples.iter().map(|s| s.volume).max().unwrap();
+        println!("    Volume range:    [{}, {}]", v_min, v_max);
+    }
 }

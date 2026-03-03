@@ -23,6 +23,7 @@ pub struct MeasureContext<'a> {
     pub momentum: &'a [i32],
     pub topology: &'a TopologySummary,
     pub walkers: usize,
+    pub epsilon: f64,
     pub seed: u64,
     pub modulo_config: &'a ModuloConfig,
 }

@@ -38,8 +38,8 @@ Usage:
     python data/scripts/topological_chemistry.py
 
 Reads:
-    data/ensemble_10M/mass_spectrum_M20.csv
-    data/ensemble_10M/topology_summary_M20.csv
+    data/ensemble_10M_final/mass_spectrum_M20.csv
+    data/ensemble_10M_final/topology_summary_M20.csv
 """
 import math
 import numpy as np
@@ -53,12 +53,12 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 
 def _find_data_root():
     for candidate in [SCRIPT_DIR / "data", SCRIPT_DIR.parent, SCRIPT_DIR / ".."]:
-        if (candidate / "ensemble_10M").exists():
+        if (candidate / "ensemble_10M_final").exists():
             return candidate.resolve()
     return None
 
 DATA_ROOT = _find_data_root()
-ENSEMBLE_DIR = DATA_ROOT / "ensemble_10M" if DATA_ROOT else None
+ENSEMBLE_DIR = DATA_ROOT / "ensemble_10M_final" if DATA_ROOT else None
 
 
 # ══════════════════════════════════════════════════════════════════════════════

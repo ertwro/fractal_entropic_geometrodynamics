@@ -1,7 +1,11 @@
+import pathlib
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+DATA = REPO_ROOT / "data" / "ensemble_10M_final"
 
 # --- CONFIGURACIÓN ESTÉTICA (Physical Review Style) ---
 plt.style.use('seaborn-v0_8-paper')
@@ -19,9 +23,9 @@ plt.rcParams.update(params)
 
 def analyze_and_plot():
     print("[*] Leyendo telemetría completa...")
-    df_res = pd.read_csv('results.csv', comment='#')
-    df_mass = pd.read_csv('mass_spectrum.csv', comment='#')
-    df_top = pd.read_csv('topology_summary.csv', comment='#')
+    df_res = pd.read_csv(DATA / 'results.csv', comment='#')
+    df_mass = pd.read_csv(DATA / 'mass_spectrum.csv', comment='#')
+    df_top = pd.read_csv(DATA / 'topology_summary.csv', comment='#')
     top_dict = dict(zip(df_top['key'], df_top['value']))
 
     df_res['inv_alpha'] = df_res.apply(

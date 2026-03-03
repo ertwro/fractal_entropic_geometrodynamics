@@ -2,8 +2,8 @@
 """Unified figure generator for the FEG paper.
 
 Usage:
-    python FEG_prism/figures/make_figures.py --data data/ensemble_10M --all
-    python FEG_prism/figures/make_figures.py --data data/ensemble_10M --fig spectral mass
+    python FEG_prism/figures/make_figures.py --data data/ensemble_10M_final --all
+    python FEG_prism/figures/make_figures.py --data data/ensemble_10M_final --fig spectral mass
     python FEG_prism/figures/make_figures.py --list
 """
 

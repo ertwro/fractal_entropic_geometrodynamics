@@ -4,7 +4,7 @@ All results in this repository were produced on a **ThinkPad T480**
 (Intel i5-8250U, 4 cores / 8 threads, 16 GB RAM) running Arch Linux.
 No GPU, no cluster, no cloud.
 
-DOI: [10.5281/zenodo.18719775](https://doi.org/10.5281/zenodo.18719775)
+DOI: [10.5281/zenodo.18769707](https://doi.org/10.5281/zenodo.18769707)
 
 ---
 
@@ -12,10 +12,24 @@ DOI: [10.5281/zenodo.18719775](https://doi.org/10.5281/zenodo.18719775)
 
 ```
 data/
-├── ensemble_10M/                    Production N=10^7, M=20 ensemble
-│   ├── results_M20.csv              Per-step observables (62 rows × 31 columns)
-│   ├── topology_summary_M20.csv     Prism census and coupling constants
-│   └── mass_spectrum_M20.csv        Belly-size histogram (28 bins)
+├── ensemble_10M_final/              Production N=10^7, M=20 ensemble
+│   ├── results.csv                  Per-step observables (final, 62 rows × 31 cols)
+│   ├── results_M{03..20}.csv        Intermediate checkpoints (every 3 realisations)
+│   ├── topology_summary.csv         Prism census and coupling constants (final)
+│   ├── topology_summary_M{03..20}.csv  Intermediate checkpoints
+│   ├── mass_spectrum.csv            Belly-size histogram (final)
+│   ├── mass_spectrum_M{03..20}.csv  Intermediate checkpoints
+│   ├── traversal_mass.csv           M1: Cover-time mass per generation
+│   ├── half_life.csv                M2: Half-life census by belly size
+│   ├── modulo_interference.csv      M3: NTT path integral
+│   ├── vacuum_polarization.csv      M4: Alexandrov-interval RG flow
+│   ├── electroweak.csv              M5: Chirality and parity violation
+│   ├── decoherence.csv              M6: Coherence decay envelope
+│   ├── born_rule.csv                M6: Born rule validation per prism
+│   ├── neutrino.csv                 M7: Neutrino census
+│   ├── pmns.csv                     M8: PMNS mixing matrix
+│   ├── higgs.csv                    M9: Higgs drag coefficients
+│   └── accumulation.log             Welford convergence trace
 ├── fss_scaling/                     Finite-size scaling (4 lattice sizes)
 │   ├── N_100000/                    N=10^5, M=10
 │   │   ├── results.csv
@@ -70,7 +84,7 @@ data/
 |-----------|---------------|
 | Machine   | Lenovo ThinkPad T480 (2018) |
 | CPU       | Intel Core i5-8250U (4C/8T, 1.6 GHz base, 3.4 GHz boost) |
-| RAM       | 16 GB DDR4-2400 |
+| RAM       | 32 GB DDR4-2400 |
 | Storage   | 256 GB NVMe SSD |
 | OS        | Arch Linux, kernel 6.18.x |
 | Rust      | 1.75+ (stable) |
@@ -92,8 +106,8 @@ pip install numpy pandas matplotlib scipy
 ### Build the simulation
 
 ```bash
-cd prism_simulation
-cargo build --release --bin causal_set_sim
+cd FEG_prism
+cargo build --release --bin feg_prism
 ```
 
 ### Run the finite-size scaling suite
@@ -102,14 +116,14 @@ Each command below reproduces one lattice size. Expected runtimes on the ThinkPa
 
 | Lattice size | Command | Runtime |
 |---|---|---|
-| N=100,000 | `cargo run --release --bin causal_set_sim -- 100000 10 --inmemory --seed 42` | ~2 min |
-| N=500,000 | `cargo run --release --bin causal_set_sim -- 500000 10 --inmemory --seed 42` | ~10 min |
-| N=1,000,000 | `cargo run --release --bin causal_set_sim -- 1000000 10 --inmemory --seed 42` | ~25 min |
-| N=5,000,000 | `cargo run --release --bin causal_set_sim -- 5000000 10 --inmemory --seed 42` | ~2.5 h |
-| N=10,000,000 | `cargo run --release --bin causal_set_sim -- 10000000 20 --inmemory --seed 42` | ~4.5 h |
+| N=100,000 | `cargo run --release --bin feg_prism -- 100000 10 ../data/fss_scaling/N_100000 --inmemory --measure-lagrangian --seed 42` | ~2 min |
+| N=500,000 | `cargo run --release --bin feg_prism -- 500000 10 ../data/fss_scaling/N_500000 --inmemory --measure-lagrangian --seed 42` | ~10 min |
+| N=1,000,000 | `cargo run --release --bin feg_prism -- 1000000 10 ../data/fss_scaling/N_1000000 --inmemory --measure-lagrangian --seed 42` | ~25 min |
+| N=5,000,000 | `cargo run --release --bin feg_prism -- 5000000 10 ../data/fss_scaling/N_5000000 --inmemory --measure-lagrangian --seed 42` | ~2.5 h |
+| N=10,000,000 | `cargo run --release --bin feg_prism -- 10000000 20 ../data/ensemble_10M_final --inmemory --measure-lagrangian --batch-size 3 --seed 42` | ~15.5 h |
 
 The N=10^7 ensemble with M=20 realisations is the production run.
-All five sizes together take approximately 8 hours on the ThinkPad T480.
+All five sizes together take approximately 19 hours on the ThinkPad T480.
 
 ### Run FSS analysis
 
@@ -124,11 +138,10 @@ and `fss_table.tex`.
 ### Regenerate all figures
 
 ```bash
-python data/scripts/feg_analysis.py          # 8 individual figures
-python data/scripts/vacuum_polarization.py   # 4 vacuum polarization figures
-python data/scripts/make_composite_figure.py  # 4-panel composite
-python data/scripts/make_fss_composite.py     # 4-panel FSS composite
-python data/scripts/jacobson_einstein.py      # Bekenstein-Hawking factor of 4
+cd ..  # back to repo root
+python FEG_prism/figures/make_figures.py \
+  --data data/ensemble_10M_final --all \
+  --fss-json data/fss_scaling/fss_comprehensive_results.json
 ```
 
 ### Run the occupancy model analysis
@@ -234,18 +247,21 @@ Header comments include prime, root, total walkers, mean/max intensity, construc
 
 ### `vacuum_polarization.csv` (when `--measure-vacuum` is enabled)
 
-K₃,₃ screening at Gen1 prism free ports.
+Combinatorial RG flow via Alexandrov interval counting. For each belly size n,
+measures the effective topological charge by counting Alexandrov intervals
+(causal diamonds) within the prism structure. The running of Q_topo(n) with
+belly size provides an ab initio discrete renormalization group flow.
 
 | Column | Description |
 |--------|-------------|
-| `prism_idx` | Prism index |
-| `generation` | Generation number (always 1 for this measurement) |
-| `n_attempted` | Number of candidate nodes tested |
-| `n_rejected` | Number rejected as K₃,₃ threats |
-| `n_accepted` | Number accepted (no K₃,₃ threat) |
-| `local_screening` | n_accepted / n_attempted |
+| `belly_size` | Number of intermediate nodes n |
+| `n_prisms` | Number of prisms with this belly size |
+| `q_local` | Local topological charge at this scale |
+| `q_cumulative` | Cumulative Q_topo up to belly size n |
+| `alexandrov_count` | Number of Alexandrov intervals sampled |
+| `screening_frac` | Fraction of charge screened relative to i.i.d. prediction |
 
-Header comments include total counts, mean screening, bare and screened alpha.
+Header comments include total prisms, mean Q_topo, bare and screened alpha, RG flow parameters.
 
 ---
 
@@ -396,7 +412,7 @@ This independently confirms complex quantum mechanics (the imaginary unit *i*).
 ### Reproducing the RMT analysis
 
 ```bash
-cd prism_simulation
+cd FEG_prism
 
 # Build the RMT binary
 cargo build --release --bin fss_rmt

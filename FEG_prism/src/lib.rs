@@ -29,6 +29,7 @@
 
 pub mod provenance;
 pub mod config;
+pub mod convergence;
 pub mod graph;
 pub mod phase1;
 pub mod phase2;

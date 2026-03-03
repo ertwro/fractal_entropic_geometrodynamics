@@ -3,7 +3,7 @@
 Occupancy model for the mass hierarchy.
 
 Usage: python data/scripts/occupancy_model.py
-Reads from: data/ensemble_10M/mass_spectrum_M20.csv (belly distribution)
+Reads from: data/ensemble_10M_final/mass_spectrum_M20.csv (belly distribution)
 Outputs to: stdout (analysis results)
 
 The mass hierarchy m1 < m2 < m3 is a coupon-collector selection effect

@@ -1,6 +1,6 @@
 LICENSE
 1. Software License (MIT)
-The source code located in prism_simulation/ and data/scripts/ is licensed under the MIT License.
+The source code located in FEG_prism/ and data/scripts/ is licensed under the MIT License.
 Copyright (c) 2026 Juan Pablo Silva Alvarado
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
@@ -8,7 +8,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 2. Theory, Pedagogic Material & Documentation License (CC BY-SA 4.0)
 The written works located in pedagogic_booklets/ (Modulo Synthesis Volumes I & II,
 Kuratowski Calculus, and Emma’s Thought Experiments), the research papers in paper/,
-and the engine documentation in prism_simulation/doc/ are licensed under the
+and the engine documentation in FEG_prism/doc/ are licensed under the
 Creative Commons Attribution-ShareAlike 4.0 International License.
 Under this license, you are free to:
  * Share — copy and redistribute the material in any medium or format for any purpose,

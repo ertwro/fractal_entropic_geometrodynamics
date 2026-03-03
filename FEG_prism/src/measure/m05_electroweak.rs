@@ -18,7 +18,7 @@ use rayon::prelude::*;
 
 // ── Data Structures ──────────────────────────────────────────────────────────
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct PrismElectroweak {
     pub prism_idx: usize,
     pub generation: u8,
@@ -38,7 +38,7 @@ pub struct PrismElectroweak {
     pub transparency: f64,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct ElectroweakResult {
     pub per_prism: Vec<PrismElectroweak>,
     pub mean_chirality_imbalance: f64,

@@ -19,6 +19,7 @@ pub mod m10_lagrangian;
 pub use context::MeasureContext;
 
 /// Flags controlling which measurements to run.
+#[derive(Clone)]
 pub struct MeasureFlags {
     pub mass: bool,
     pub halflife: bool,
@@ -31,6 +32,8 @@ pub struct MeasureFlags {
     pub higgs: bool,
     pub lagrangian: bool,
     pub modulo_config: ModuloConfig,
+    /// Run M6 (decoherence) only every N-th realization.  Default: 1 (every).
+    pub decoherence_every: usize,
 }
 
 impl MeasureFlags {
@@ -50,6 +53,7 @@ pub struct ModuloConfig {
 }
 
 /// Aggregated measurement results for one realization.
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct MeasureResults {
     pub traversal: Option<m01_traversal::TraversalMassResult>,
     pub half_life: Option<m02_halflife::HalfLifeResult>,
@@ -60,41 +64,60 @@ pub struct MeasureResults {
     pub neutrino: Option<m07_neutrino::NeutrinoResult>,
     pub pmns: Option<m08_pmns::PMNSResult>,
     pub higgs: Option<m09_higgs::HiggsResult>,
+    /// M10 is computed post-hoc in main.rs after the ensemble finishes.
+    /// Skipped during checkpoint serialization (always None in checkpoints).
+    #[serde(skip)]
     pub lagrangian: Option<m10_lagrangian::LagrangianCard>,
 }
 
 /// Run all enabled measurements on a single realization.
+///
+/// Independent measurements (M1–M6, M9) run concurrently via
+/// `std::thread::scope`.  M7→M8 remains sequential (M8 depends on M7).
 pub fn run_all(flags: &MeasureFlags, ctx: &MeasureContext) -> MeasureResults {
-    let traversal = if flags.mass {
-        println!("  [M1] Traversal mass ratios (prism-confined)...");
-        Some(m01_traversal::run(ctx))
-    } else { None };
+    // ── Independent measurements — run concurrently ──────────────────
+    let (traversal, half_life, modulo, vacuum_pol, electroweak, decoherence, higgs) =
+        std::thread::scope(|s| {
+            let h1 = s.spawn(|| if flags.mass {
+                println!("  [M1] Traversal mass ratios (prism-confined)...");
+                Some(m01_traversal::run(ctx))
+            } else { None });
+            let h2 = s.spawn(|| if flags.halflife {
+                println!("  [M2] Half-life census...");
+                Some(m02_halflife::run(ctx))
+            } else { None });
+            let h3 = s.spawn(|| if flags.modulo {
+                println!("  [M3] Modulo path integral...");
+                Some(m03_modulo::run(ctx))
+            } else { None });
+            let h4 = s.spawn(|| if flags.vacuum {
+                println!("  [M4] Vacuum polarization...");
+                Some(m04_vacuum_pol::run(ctx))
+            } else { None });
+            let h5 = s.spawn(|| if flags.electroweak {
+                println!("  [M5] Electroweak sector...");
+                Some(m05_electroweak::run(ctx))
+            } else { None });
+            let h6 = s.spawn(|| if flags.decoherence {
+                println!("  [M6] Quantum decoherence...");
+                Some(m06_decoherence::run(ctx))
+            } else { None });
+            let h7 = s.spawn(|| if flags.higgs {
+                println!("  [M9] Higgs mechanism (topological drag)...");
+                Some(m09_higgs::run(ctx))
+            } else { None });
+            (
+                h1.join().unwrap(),
+                h2.join().unwrap(),
+                h3.join().unwrap(),
+                h4.join().unwrap(),
+                h5.join().unwrap(),
+                h6.join().unwrap(),
+                h7.join().unwrap(),
+            )
+        });
 
-    let half_life = if flags.halflife {
-        println!("  [M2] Half-life census...");
-        Some(m02_halflife::run(ctx))
-    } else { None };
-
-    let modulo = if flags.modulo {
-        println!("  [M3] Modulo path integral...");
-        Some(m03_modulo::run(ctx))
-    } else { None };
-
-    let vacuum_pol = if flags.vacuum {
-        println!("  [M4] Vacuum polarization...");
-        Some(m04_vacuum_pol::run(ctx))
-    } else { None };
-
-    let electroweak = if flags.electroweak {
-        println!("  [M5] Electroweak sector...");
-        Some(m05_electroweak::run(ctx))
-    } else { None };
-
-    let decoherence = if flags.decoherence {
-        println!("  [M6] Quantum decoherence...");
-        Some(m06_decoherence::run(ctx))
-    } else { None };
-
+    // ── Sequential: M7→M8 dependency chain ───────────────────────────
     let neutrino = if flags.neutrino || flags.pmns {
         println!("  [M7] Neutrino census...");
         Some(m07_neutrino::run(ctx))
@@ -105,11 +128,6 @@ pub fn run_all(flags: &MeasureFlags, ctx: &MeasureContext) -> MeasureResults {
             println!("  [M8] PMNS mixing matrix...");
             Some(m08_pmns::run(ctx, nu))
         } else { None }
-    } else { None };
-
-    let higgs = if flags.higgs {
-        println!("  [M9] Higgs mechanism (topological drag)...");
-        Some(m09_higgs::run(ctx))
     } else { None };
 
     MeasureResults {

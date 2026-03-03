@@ -17,6 +17,7 @@ use rand::SeedableRng;
 use rayon::prelude::*;
 
 use crate::config::ExecMode;
+use crate::convergence::{AutoConverge, ConvergeState};
 use crate::ensemble::averaging::average_ensemble;
 use crate::ensemble::checkpoint;
 use crate::graph::csr::{CsrGraph, Undirected};
@@ -49,6 +50,139 @@ fn fmt_duration(secs: f64) -> String {
     }
 }
 
+/// Run a single unified walk on a graph, producing global + per-category WalkResults.
+///
+/// Replaces the per-category convergence loops (`run_converge_loop` ×10) with
+/// a single walk that bins returns by origin category.  A walker dropped at
+/// any origin samples P(t) for all categories simultaneously — the
+/// thermodynamics of the random walk does not care about category labels.
+///
+/// **CRT budget**: W_bulk = ceil(1/(ε² · P_bulk)), where P_bulk = t_max^{-2}.
+/// Per-category P(t) is pure binning of the bulk walk; no separate convergence
+/// loop is needed.  Small categories receive RSE = ε × √(N/|S|) — honest
+/// statistical uncertainty, not a convergence failure.
+///
+/// **Trap 1 fix**: guards per-category division against W_cat = 0.
+/// **Trap 2 fix**: resolves walker origins through merge_map before category lookup.
+/// **Cell-sort fix**: shuffles origins to avoid temporal sampling bias.
+fn run_unified_walk(
+    adj_head: &[u32],
+    adj_data: &[u32],
+    all_origins: &[usize],
+    steps: &[u32],
+    seed: u64,
+    seed_offset: u64,
+    epsilon: f64,
+    tmax: usize,
+    merge_map: Option<&[usize]>,
+    category_map: &[u8],
+    n_categories: usize,
+    category_labels: &[&str],
+    label: &str,
+) -> (WalkResult, Vec<WalkResult>) {
+    if all_origins.is_empty() {
+        let empty = WalkResult::default();
+        return (empty, vec![WalkResult::default(); n_categories]);
+    }
+
+    // CRT bulk budget: W_bulk = ceil(1/(ε² · P_bulk(t_max)))
+    let p_bulk = (tmax as f64).powi(-2);
+    let w_bulk = (1.0 / (epsilon * epsilon * p_bulk)).ceil() as usize;
+    // 1.25× headroom for Welford k=3 consecutive-pass trigger
+    let max_walkers = ((w_bulk as f64) * 1.25).ceil() as usize;
+    let max_walkers = max_walkers.max(all_origins.len());
+    println!("  [Phase3] {label}: W_bulk = {max_walkers} (P_bulk = {p_bulk:.2e}, N = {})", all_origins.len());
+
+    let ac = AutoConverge::new(max_walkers, 2048, epsilon);
+    let mut state = ConvergeState::new();
+    let n_steps = steps.len();
+    let mut cum_global = vec![0u64; n_steps];
+    let mut cum_cats: Vec<Vec<u64>> = vec![vec![0u64; n_steps]; n_categories];
+
+    loop {
+        let starts = phase3::distribute_walkers_shuffled(
+            all_origins, ac.batch_size,
+            seed.wrapping_add(seed_offset).wrapping_add(state.total_walkers as u64),
+        );
+        let batch_seed = seed.wrapping_add(seed_offset)
+            .wrapping_add(state.total_walkers as u64)
+            .wrapping_add(0x1000_0000); // distinct seed space from shuffle
+
+        let (batch_global, batch_cats) = phase3::run_walkers_unified(
+            adj_head, adj_data, &starts, steps,
+            batch_seed, merge_map, category_map, n_categories,
+        );
+
+        // Accumulate u64 counts (Strict Finitism)
+        for i in 0..n_steps {
+            cum_global[i] += batch_global[i];
+        }
+        for c in 0..n_categories {
+            for i in 0..n_steps {
+                cum_cats[c][i] += batch_cats[c][i];
+            }
+        }
+
+        // Convergence tracking on global P(t_max)
+        let tmax_idx = steps.iter().rposition(|&s| (s as usize) <= tmax)
+            .unwrap_or(n_steps - 1);
+        let total_w = state.total_walkers + ac.batch_size;
+        let obs = batch_global[tmax_idx] as f64 / ac.batch_size as f64;
+        if state.update(obs, &ac) { break; }
+        if state.at_limit(&ac) {
+            eprintln!("[Phase3/{label}] WARNING: {total_w} walkers without convergence");
+            break;
+        }
+    }
+
+    let total_walkers = state.total_walkers;
+    println!("  [Phase3] {label} converged at {total_walkers} walkers");
+
+    // Count per-category walkers from all accumulated starts
+    // (approximated as total_walkers × population fraction)
+    // For exact counts, rebuild starts at the final total — but since
+    // distribute_walkers_shuffled preserves the W invariant per batch,
+    // the category fractions are deterministic.
+    let cat_walker_fracs: Vec<f64> = {
+        let sample = phase3::distribute_walkers_shuffled(all_origins, ac.batch_size.min(total_walkers), seed.wrapping_add(seed_offset));
+        let sample_counts = phase3::count_category_walkers(&sample, category_map, n_categories);
+        sample_counts.iter().map(|&c| c as f64 / sample.len() as f64).collect()
+    };
+
+    // Single f64 division (Strict Finitism: all accumulation was u64)
+    let global_p: Vec<f64> = cum_global.iter()
+        .map(|&c| c as f64 / total_walkers as f64)
+        .collect();
+    let global_ds = spectral_dimension(steps, &global_p);
+    let global_result = WalkResult { p: global_p, ds: global_ds, ds_std: vec![] };
+
+    // Per-category results with NaN guard (Trap 1 fix)
+    let cat_results: Vec<WalkResult> = (0..n_categories).map(|c| {
+        let w_cat = (cat_walker_fracs[c] * total_walkers as f64).round() as usize;
+        let cat_label = if c < category_labels.len() { category_labels[c] } else { "?" };
+        println!("    {cat_label}: W_cat ~ {w_cat} ({:.1}%)", cat_walker_fracs[c] * 100.0);
+        if w_cat == 0 {
+            // Trap 1: no walkers sampled this category — return zeros, not NaN
+            WalkResult {
+                p: vec![0.0; n_steps],
+                ds: vec![0.0; n_steps],
+                ds_std: vec![],
+            }
+        } else {
+            let w_cat_f = cat_walker_fracs[c] * total_walkers as f64;
+            let cat_p: Vec<f64> = cum_cats[c].iter()
+                .map(|&count| {
+                    if w_cat_f > 0.0 { count as f64 / w_cat_f } else { 0.0 }
+                })
+                .collect();
+            let cat_ds = spectral_dimension(steps, &cat_p);
+            WalkResult { p: cat_p, ds: cat_ds, ds_std: vec![] }
+        }
+    }).collect();
+
+    (global_result, cat_results)
+}
+
 /// Run Phases 1-3 for one Monte Carlo universe.
 ///
 /// Sprinkle -> Hasse -> Kuratowski -> spectral dimensions + generation walkers
@@ -57,9 +191,11 @@ fn run_realization(
     n_points: usize,
     seed: u64,
     steps: &[u32],
-    walkers: usize,
+    epsilon: f64,
+    tmax: usize,
     eigen_cutoff: usize,
     measure: &MeasureFlags,
+    realization_idx: usize,
 ) -> (SpectralOutput, TopologySummary, Option<MeasureResults>) {
     let mut rng = StdRng::seed_from_u64(seed);
 
@@ -85,7 +221,11 @@ fn run_realization(
     let sym_vac: CsrGraph<Undirected> = defect.vacuum_csr.symmetrize();
     let (sym_head, sym_data) = sym_vac.raw();
 
-    let (vac_walk, def_walk) = if n_points <= eigen_cutoff {
+    // CRT bulk budget (used by unified walk and flux circuit breaker)
+    let p_bulk = (tmax as f64).powi(-2);
+    let w_bulk = (1.0 / (epsilon * epsilon * p_bulk)).ceil() as usize;
+
+    let (vac_walk, def_walk, gen_walks, sterile_walk) = if n_points <= eigen_cutoff {
         // Eigendecomp path: reconstruct edge lists from symmetric CSR
         let mut vac_rows = Vec::new();
         let mut vac_cols = Vec::new();
@@ -114,41 +254,166 @@ fn run_realization(
         let (def_global, def_core) = phase3::compute_eigen(
             n_def, &def_rows, &def_cols, steps, &defect.defect_core,
         );
-        ((vac_global, vac_core), (def_global, def_core))
+        // Eigendecomp doesn't produce per-generation results — use defaults
+        let gen_walks = [WalkResult::default(), WalkResult::default(),
+                         WalkResult::default(), WalkResult::default()];
+        ((vac_global, vac_core), (def_global, def_core),
+         gen_walks, WalkResult::default())
     } else {
-        // Monte Carlo walkers
-        let mut rng_mc = StdRng::seed_from_u64(seed + 2);
-        let (vac_global, vac_core) = phase3::compute_monte_carlo_csr(
-            n_points, sym_head, sym_data, steps, &defect.vacuum_core,
-            walkers, &mut rng_mc,
-        );
-
+        // ── Unified Monte Carlo walk ────────────────────────────────────
+        //
+        // One walk per graph (vacuum, defect), binning returns by category.
+        // Replaces 10 separate convergence loops with 2 unified walks.
+        println!("  [Phase3] W_bulk = {w_bulk} (unified walk)");
+        let all_nodes: Vec<usize> = (0..n_points).collect();
         let n_def = defect.defect_csr.n_nodes();
         let (def_head, def_data) = defect.defect_csr.raw();
-        let (def_global, def_core) = if n_def <= eigen_cutoff {
-            println!("  [Defect graph <={eigen_cutoff}: using eigendecomp (exact, zero noise)]");
-            let mut def_rows = Vec::new();
-            let mut def_cols = Vec::new();
-            for u in 0..n_def {
-                for &v in defect.defect_csr.neighbors(u) {
-                    if (u as u32) < v {
-                        def_rows.push(u as u32);
-                        def_cols.push(v);
+
+        // Check if defect graph is small enough for eigendecomp
+        let def_eigen = n_def <= eigen_cutoff;
+
+        // ── Vacuum category map (2 bits) ────────────────────────────────
+        // Bit 0 (0x01): global — all nodes
+        // Bit 1 (0x02): core  — vacuum_core nodes
+        let mut vac_cat_map = vec![0x01u8; n_points]; // all nodes are global
+        for &ci in &defect.vacuum_core {
+            vac_cat_map[ci] |= 0x02;
+        }
+
+        // ── Defect category map (7 bits) ────────────────────────────────
+        // Bit 0 (0x01): def_global — all defect nodes
+        // Bit 1 (0x02): def_core   — defect_core nodes
+        // Bit 2 (0x04): gen1
+        // Bit 3 (0x08): gen2
+        // Bit 4 (0x10): gen3
+        // Bit 5 (0x20): anti1
+        // Bit 6 (0x40): sterile
+        let mut def_cat_map = vec![0x01u8; n_def]; // all defect nodes are global
+        for &ci in &defect.defect_core {
+            if ci < n_def { def_cat_map[ci] |= 0x02; }
+        }
+        for &ni in &defect.generations.gen1 {
+            let ri = defect.merge_map[ni];
+            if ri < n_def { def_cat_map[ri] |= 0x04; }
+        }
+        for &ni in &defect.generations.gen2 {
+            let ri = defect.merge_map[ni];
+            if ri < n_def { def_cat_map[ri] |= 0x08; }
+        }
+        for &ni in &defect.generations.gen3 {
+            let ri = defect.merge_map[ni];
+            if ri < n_def { def_cat_map[ri] |= 0x10; }
+        }
+        for &ni in &defect.generations.anti1 {
+            let ri = defect.merge_map[ni];
+            if ri < n_def { def_cat_map[ri] |= 0x20; }
+        }
+        for &ni in &defect.generations.sterile {
+            let ri = defect.merge_map[ni];
+            if ri < n_def { def_cat_map[ri] |= 0x40; }
+        }
+
+        let vac_labels: &[&str] = &["vac_global", "vac_core"];
+        let def_labels: &[&str] = &[
+            "def_global", "def_core", "gen1", "gen2", "gen3", "anti1", "sterile",
+        ];
+
+        // ── Unified walks: vacuum + defect concurrent ───────────────────
+        let (vac_results, def_results) = std::thread::scope(|s| {
+            let h_vac = s.spawn(|| {
+                run_unified_walk(
+                    sym_head, sym_data, &all_nodes, steps,
+                    seed, 2, epsilon, tmax,
+                    None, &vac_cat_map, 2, vac_labels, "vacuum",
+                )
+            });
+
+            let h_def = s.spawn(|| {
+                if def_eigen {
+                    None
+                } else {
+                    let all_def: Vec<usize> = (0..n_def).collect();
+                    Some(run_unified_walk(
+                        def_head, def_data, &all_def, steps,
+                        seed, 4, epsilon, tmax,
+                        None, &def_cat_map, 7, def_labels, "defect",
+                    ))
+                }
+            });
+
+            let (vac_global_result, vac_cat_results) = h_vac.join().unwrap();
+            let def_result = h_def.join().unwrap();
+
+            // Extract vacuum results
+            let vac_global = vac_global_result;
+            let vac_core = vac_cat_results.into_iter().nth(1)
+                .unwrap_or_else(|| vac_global.clone());
+
+            // Extract defect results
+            let (def_global, def_core, gen1, gen2, gen3, anti1, sterile_wr) = if def_eigen {
+                println!("  [Defect graph <={eigen_cutoff}: using eigendecomp (exact, zero noise)]");
+                let mut def_rows = Vec::new();
+                let mut def_cols = Vec::new();
+                for u in 0..n_def {
+                    for &v in defect.defect_csr.neighbors(u) {
+                        if (u as u32) < v {
+                            def_rows.push(u as u32);
+                            def_cols.push(v);
+                        }
                     }
                 }
-            }
-            phase3::compute_eigen(n_def, &def_rows, &def_cols, steps, &defect.defect_core)
-        } else {
-            phase3::compute_monte_carlo_csr(
-                n_def, def_head, def_data, steps, &defect.defect_core,
-                walkers, &mut rng_mc,
+                let (dg, dc) = phase3::compute_eigen(
+                    n_def, &def_rows, &def_cols, steps, &defect.defect_core,
+                );
+                // Eigendecomp doesn't give per-generation results — use defaults
+                (dg, dc,
+                 WalkResult::default(), WalkResult::default(),
+                 WalkResult::default(), WalkResult::default(),
+                 WalkResult::default())
+            } else {
+                let (def_global_result, mut def_cat_results) = def_result.unwrap();
+                // cat indices: 0=def_global, 1=def_core, 2=gen1, 3=gen2,
+                //              4=gen3, 5=anti1, 6=sterile
+                let sterile_wr = def_cat_results.pop().unwrap_or_default(); // 6
+                let anti1 = def_cat_results.pop().unwrap_or_default();      // 5
+                let gen3 = def_cat_results.pop().unwrap_or_default();       // 4
+                let gen2 = def_cat_results.pop().unwrap_or_default();       // 3
+                let gen1 = def_cat_results.pop().unwrap_or_default();       // 2
+                let def_core = def_cat_results.pop()                        // 1
+                    .unwrap_or_else(|| def_global_result.clone());
+                let _def_global_cat = def_cat_results.pop();               // 0 (redundant with global)
+                (def_global_result, def_core, gen1, gen2, gen3, anti1, sterile_wr)
+            };
+
+            (
+                (vac_global, vac_core),
+                (def_global, def_core, gen1, gen2, gen3, anti1, sterile_wr),
             )
-        };
-        ((vac_global, vac_core), (def_global, def_core))
+        });
+
+        let vac_global = vac_results.0;
+        let vac_core = vac_results.1;
+        let def_global = def_results.0;
+        let def_core = def_results.1;
+        let gen1 = def_results.2;
+        let gen2 = def_results.3;
+        let gen3 = def_results.4;
+        let anti1 = def_results.5;
+        let sterile = def_results.6;
+
+        ((vac_global, vac_core), (def_global, def_core),
+         [gen1, gen2, gen3, anti1], sterile)
     };
 
     // ── Measurements ──────────────────────────────────────────────────
     let meas = if measure.any_active() {
+        // Gate M6: only run on every N-th realization
+        let mut flags = measure.clone();
+        if measure.decoherence_every > 1 && realization_idx % measure.decoherence_every != 0 {
+            flags.decoherence = false;
+        }
+        // CRT bulk budget for MeasureContext (global walk, |S| = N → P_S = P_bulk)
+        let walkers = ((tmax as f64 / epsilon).powi(2)).ceil() as usize;
         let ctx = MeasureContext {
             n_points,
             pts: &pts,
@@ -159,43 +424,38 @@ fn run_realization(
             momentum: &momentum_clone,
             topology: &topology,
             walkers,
+            epsilon,
             seed,
-            modulo_config: &measure.modulo_config,
+            modulo_config: &flags.modulo_config,
         };
-        Some(measure::run_all(measure, &ctx))
+        let mut m = measure::run_all(&flags, &ctx);
+        // Free per-node M3 data (~440 MB at N=10M) — summary stats are sufficient
+        // for ensemble aggregation.  Without this, measure_vec accumulates
+        // 440 MB × M realizations → OOM.
+        if let Some(ref mut mod_result) = m.modulo {
+            mod_result.compact();
+        }
+        Some(m)
     } else {
         None
     };
 
-    // Phase 3b — generation walkers + causal flux
-    let (def_head, def_data) = defect.defect_csr.raw();
+    // Free sym_vac (2.28 GB at N=10M) — no longer needed after measurements.
+    // NLL: sym_head/sym_data borrows expired after thread::scope;
+    //      MeasureContext borrow expired after run_all returned.
+    drop(sym_vac);
 
-    let run_gen = |nodes: &[usize], seed_offset: u64| -> WalkResult {
-        if nodes.is_empty() {
-            return WalkResult::default();
-        }
-        let resolved: Vec<usize> = nodes.iter().map(|&n| defect.merge_map[n]).collect();
-        let starts = phase3::distribute_walkers(&resolved, walkers);
-        let p = phase3::run_walkers(
-            def_head, def_data, &starts, steps,
-            seed.wrapping_add(seed_offset), Some(&defect.merge_map),
-        );
-        let ds = spectral_dimension(steps, &p);
-        WalkResult { p, ds, ds_std: vec![] }
-    };
-
-    let gen0 = run_gen(&defect.generations.gen1, 100);
-    let gen1 = run_gen(&defect.generations.gen2, 200);
-    let gen2 = run_gen(&defect.generations.gen3, 300);
-    let gen3 = run_gen(&defect.generations.anti1, 400);
-
-    // Causal flux: directed adjacency (past -> future)
+    // Phase 3b — causal flux (auto-converged, unchanged)
+    // Build flux CSR (trivial, <1s)
+    let n_def = defect.defect_csr.n_nodes();
     let flux_csr = phase3::build_flux_csr(
         &defect.vacuum_csr, &pts, &defect.merge_map, n_points,
     );
+    // Free pts (320 MB at N=10M) — no longer needed after flux CSR construction.
+    drop(pts);
     let (flux_head, flux_data) = flux_csr.raw();
 
-    let flux_starts: Vec<usize> = defect.generations.gen1.iter()
+    let flux_origins: Vec<usize> = defect.generations.gen1.iter()
         .map(|&s| defect.merge_map[s])
         .collect();
     let flux_attr_targets: Vec<usize> = defect.generations.anti1.iter()
@@ -205,10 +465,54 @@ fn run_realization(
         .map(|&s| defect.merge_map[s])
         .collect();
 
-    let (flux_attr_p, flux_repu_p) = phase3::run_transmission_walkers(
-        flux_head, flux_data, &flux_starts, &flux_attr_targets, &flux_repu_targets,
-        steps, seed.wrapping_add(500), Some(&defect.merge_map),
-    );
+    // ── Flux walk (unchanged — different CSR, different semantics) ────
+    let (flux_attr_p, flux_repu_p) = if flux_origins.is_empty() {
+        (vec![0.0; steps.len()], vec![0.0; steps.len()])
+    } else {
+        // Trap 3 fix: flux circuit breaker = W_bulk × 50
+        let p_bulk = (tmax as f64).powi(-2);
+        let w_bulk = (1.0 / (epsilon * epsilon * p_bulk)).ceil() as usize;
+        let flux_circuit_breaker = w_bulk * 50;
+        let n_fl = flux_origins.len();
+        let p_s = p_bulk * (n_fl as f64) / (n_def.max(1) as f64);
+        let flux_max = (1.0 / (epsilon * epsilon * p_s)).ceil() as usize;
+        let flux_max = ((flux_max as f64) * 1.25).ceil() as usize;
+        let flux_max = flux_max.max(n_fl).min(flux_circuit_breaker);
+        println!("  [Phase3] flux: W_S = {flux_max} (P_S = {p_s:.2e}, |S| = {n_fl})");
+        let ac = AutoConverge::new(flux_max, 2048, epsilon);
+        let mut state = ConvergeState::new();
+        let mut cum_attr = vec![0.0f64; steps.len()];
+        let mut cum_repu = vec![0.0f64; steps.len()];
+        loop {
+            let starts = phase3::distribute_walkers(&flux_origins, ac.batch_size);
+            let batch_seed = seed.wrapping_add(500)
+                .wrapping_add(state.total_walkers as u64);
+            let (batch_attr, batch_repu) = phase3::run_transmission_walkers(
+                flux_head, flux_data, &starts,
+                &flux_attr_targets, &flux_repu_targets,
+                steps, batch_seed, Some(&defect.merge_map),
+            );
+            let prev = state.total_walkers;
+            let new_total = prev + ac.batch_size;
+            for i in 0..steps.len() {
+                cum_attr[i] = (cum_attr[i] * prev as f64
+                    + batch_attr[i] * ac.batch_size as f64) / new_total as f64;
+                cum_repu[i] = (cum_repu[i] * prev as f64
+                    + batch_repu[i] * ac.batch_size as f64) / new_total as f64;
+            }
+            let tmax_idx = steps.iter().rposition(|&s| (s as usize) <= tmax)
+                .unwrap_or(steps.len() - 1);
+            let obs = batch_attr[tmax_idx];
+            if state.update(obs, &ac) { break; }
+            if state.at_limit(&ac) {
+                eprintln!("[Phase3/flux] WARNING: {} walkers without convergence",
+                    state.total_walkers);
+                break;
+            }
+        }
+        println!("  [Phase3] flux converged at {} walkers", state.total_walkers);
+        (cum_attr, cum_repu)
+    };
 
     // Normalized flux (per-charge coupling)
     let n_attr = flux_attr_targets.len().max(1) as f64;
@@ -216,17 +520,14 @@ fn run_realization(
     let flux_attr_norm: Vec<f64> = flux_attr_p.iter().map(|&f| f / n_attr).collect();
     let flux_repu_norm: Vec<f64> = flux_repu_p.iter().map(|&f| f / n_repu).collect();
 
-    // Sterile walkers (Phi = 0)
-    let sterile = run_gen(&defect.generations.sterile, 600);
-
     // Compose SpectralOutput
     let spectral = SpectralOutput {
         vacuum: vac_walk.0,
         vac_core: vac_walk.1,
         defect: def_walk.0,
         def_core: def_walk.1,
-        generations: [gen0, gen1, gen2, gen3],
-        sterile,
+        generations: gen_walks,
+        sterile: sterile_walk,
         flux_attr: WalkResult {
             ds: spectral_dimension(steps, &flux_attr_p),
             p: flux_attr_p,
@@ -271,6 +572,8 @@ pub fn run_ensemble(
     output_dir: &str,
     resume: bool,
     force_all: bool,
+    epsilon: f64,
+    tmax: usize,
 ) -> EnsembleResult {
     if exec_mode == ExecMode::Streaming {
         eprintln!("ERROR: --stream mode is not yet implemented in FEG_prism.");
@@ -289,7 +592,7 @@ pub fn run_ensemble(
 
     let run_one = |i: usize| -> (SpectralOutput, TopologySummary, Option<MeasureResults>) {
         let seed = seed_base + i as u64;
-        let result = run_realization(n_points, seed, steps, walkers, eigen_cutoff, measure);
+        let result = run_realization(n_points, seed, steps, epsilon, tmax, eigen_cutoff, measure, i);
 
         let completed = done.fetch_add(1, Ordering::Relaxed) + 1;
         let elapsed = t0.elapsed().as_secs_f64();
@@ -329,8 +632,6 @@ pub fn run_ensemble(
 
     // ── Checkpoint: parameter fingerprint + try resume ──────────────
     let mode_str = if exec_mode == ExecMode::Streaming { "streaming" } else { "inmemory" };
-    let tmax = *steps.last().unwrap_or(&15) as usize;
-    let epsilon = (tmax as f64) / (walkers as f64).sqrt();
     let run_params = checkpoint::make_params(
         n_points, seed_base, epsilon, tmax, eigen_cutoff, mode_str,
     );
@@ -350,6 +651,7 @@ pub fn run_ensemble(
                 );
                 spectral_vec = ckpt.spectral_vec;
                 topo_vec = ckpt.topo_vec;
+                measure_vec = ckpt.measure_vec;
                 welford_mean = ckpt.welford_mean;
                 welford_m2 = ckpt.welford_m2;
                 done.store(ckpt.completed, Ordering::Relaxed);
@@ -418,7 +720,7 @@ pub fn run_ensemble(
             // Checkpoint after EACH realization (atomic write)
             if let Err(e) = checkpoint::save(
                 output_dir, &run_params, &spectral_vec, &topo_vec,
-                welford_mean, welford_m2,
+                &measure_vec, welford_mean, welford_m2,
             ) {
                 eprintln!("  [checkpoint] warning: {e}");
             }
@@ -516,11 +818,12 @@ pub fn run_ensemble(
                 &snap_topo.prism_histogram, &snap_meta,
             );
 
-            // Measurement snapshots
-            if !measure_vec.is_empty() {
-                let meas_agg = measure::aggregate_all(&measure_vec);
-                measure::write_all_csv(&meas_agg, output_dir, &snap_meta);
-            }
+            // Measurement snapshots — deferred to final output.
+            // aggregate_all() clones every MeasureResults via collect_and_agg(),
+            // and M3 (ModuloPathResult.nodes) holds one NodeInterference per
+            // node (~440 MB at N=10M).  Cloning M realizations mid-ensemble
+            // would spike to M × 440 MB, causing OOM at batch 2+.
+            // Spectral + topology snapshots (small) are still written above.
 
             println!(
                 "  [snapshot] wrote *_M{count:02}.csv ({count} realizations, {elapsed}s)",
@@ -532,6 +835,32 @@ pub fn run_ensemble(
 
     if !converged && current >= max_ensemble {
         println!("  [warning] Safety cap M={max_ensemble} reached before convergence");
+    }
+
+    // ── Write per-realization alpha values (Money Plot) ────────────
+    {
+        use std::io::Write;
+        let path = format!("{output_dir}/per_realization_alpha.csv");
+        if let Ok(mut f) = std::fs::File::create(&path) {
+            let _ = writeln!(f, "realization,phase_sq,mass_sq,q_topo,inv_alpha");
+            for (i, t) in topo_vec.iter().enumerate() {
+                let q = if t.mass_sq_total > 0 {
+                    t.phase_sq_total as f64 / t.mass_sq_total as f64
+                } else {
+                    0.0
+                };
+                let inv_a = if q > 0.0 { 8.0 * std::f64::consts::PI / q } else { 0.0 };
+                let _ = writeln!(
+                    f,
+                    "{},{},{},{:.8},{:.4}",
+                    i + 1,
+                    t.phase_sq_total,
+                    t.mass_sq_total,
+                    q,
+                    inv_a
+                );
+            }
+        }
     }
 
     // ── Final ensemble average ─────────────────────────────────────

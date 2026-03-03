@@ -176,7 +176,7 @@ FEG Prism provides ten observer measurements (M1–M10):
 ### Execution Paths
 
 **In-memory** (`--inmemory` or auto-selected when RAM is sufficient):
-All data structures live in RAM. Realisations run in parallel via Rayon with an auto-selected concurrency limit (4 threads, or 2 for N > 10M; overridable via `--threads`). Causal Prism detection uses O(N) 2-hop local candidate search. The vacuum and defect CSR graphs (`CsrGraph<Directed>`, `CsrGraph<Undirected>`) persist for the full Phase 1–3 pipeline.
+All data structures live in RAM. Realisations run in parallel via Rayon with an auto-selected concurrency limit (4 threads, or 2 for N > 10M; overridable via `--threads`). Causal Prism detection uses O(N) 2-hop local candidate search. Heavy structures are dropped as soon as they are no longer needed: `rev_csr` is freed after threat contraction (before defect edge collection), `sym_vac` is freed after measurements (before flux CSR construction), and `pts` is freed after flux CSR construction. The flux CSR itself is built via a two-pass in-place algorithm (degree count then direct fill) that avoids the 2× scratch overhead of edge-list collection. At N = 10M these optimisations reduce peak RSS from ~8.3 GB to ~5.7 GB per realisation, enabling batch-size 4 on 32 GB RAM.
 
 **Streaming** (`--stream` or auto-selected when RAM is insufficient):
 Uses `scan_edges_with_analysis()` for **single-pass** streaming: degree counting, core classification, and core-edge collection are merged into one scan over the edge generator. Causal Prism detection then operates on the core-induced CSR subgraph using the same 2-hop local search. RAM usage stays under ~1.3 GB per realisation even at N = 100M. Concurrency is auto-selected by CPU count (capped at 8; overridable via `--threads`).
@@ -242,7 +242,7 @@ Pure integer topology — zero floating-point. Core identification → Causal Pr
 - **`defect.rs`**: The core Phase 2 algorithm:
   1. **Core selection**: top 10% of nodes by Hasse degree.
   2. **Causal Prism detection (O(N) forward-forward 2-hop search)**: For each core node u, collect 2-hop candidates by traversing u → w → v through forward successors w (children of u) and their forward successors v (grandchildren of u, future pole candidates). **Minimum valence pruning**: nodes with out-degree < `MIN_PRISM_SHARED` (3) are skipped before the 2-hop traversal, and candidate poles v with in-degree < 3 are skipped before the belly intersection. Then count belly nodes |children(u) ∩ parents(v)| using the reverse CSR for parents(v). If ≥ 3, the pair forms a Prism with topological mass N = belly size. Greedy best-partner selection maximizes N per pole. **Complexity**: O(N_core × D³). With bounded Hasse degree D ≤ 15: O(10M × 3,375) ≈ 3.4 × 10¹⁰ operations at N = 100M — minutes instead of days. **Completeness**: If u and v are poles of a timelike K_{2,N}, then every belly node w_i satisfies u → w_i → v. The path u → w_i → v guarantees v appears as a candidate of u. The forward-forward 2-hop search is provably complete.
-  3. **K₅ threat absorption**: Any neighbor connected to both poles AND ≥ 2 intermediates of an existing Prism is absorbed into the nearest pole (vertex contraction via `merge_map`).
+  3. **K₅ threat absorption**: Any neighbor connected to both poles AND ≥ 2 intermediates of an existing Prism is absorbed into the nearest pole (vertex contraction via `merge_map`). The reverse CSR (`rev_csr`) is dropped after threat contraction and before defect edge collection, freeing ~1.18 GB at N = 10M.
   4. **Generation classification (Vol I phase)**: Causal Prisms classified by the Vol I phase function φ(w) = sign(bulk_momentum[w]). For each prism P with intermediates {w₁, ..., wₙ}: g(P) = |{φ(wᵢ)}| counts distinct phase values (generation number 1, 2, or 3), and Φ(P) = Σφ(wᵢ) gives the net phase (matter if Φ ≥ 0, antimatter if Φ < 0). Gen1 = g=1 ∧ Φ≥0, Gen2 = g=2, Gen3 = g=3, Anti1 = g=1 ∧ Φ<0.
 - **`topology.rs`**: `TopologySummary` (27 fields) aggregated across realisations. Includes prism counts, generation abundances, mass averages, dark/visible mass decomposition, coupling constants, phase census, and per-generation prism counts. `aggregate_topology()` combines per-realisation topology data into the ensemble summary.
 - **Key types**: `CausalPrism` (origin, destination, intermediates), `DefectOutput` (vacuum CSR, defect CSR, generation node lists), `GenerationSets` (gen1..3, anti1, sterile node sets).
@@ -259,6 +259,7 @@ Random walk return probability measurement.
 - **`walker.rs`**: Walker types and walk logic.
   - `make_symmetric()`: Converts a directed CSR (forward-only Hasse DAG) into an undirected adjacency list. Used to symmetrize the vacuum CSR before running spectral walkers, since the Hasse diagram stores only forward (past→future) edges but random walkers need to step in both directions.
 - **`flux.rs`**: Causal flux (directed walkers).
+  - `build_flux_csr()`: Two-pass in-place directed CSR construction from the vacuum CSR + merge map + coordinates. Pass 1 counts out-degrees after causal filter and Kuratowski contraction; pass 2 fills data directly into the pre-allocated array. Avoids the 2× scratch memory of collecting edge lists (saves ~2.2 GB at N = 10M).
   - `run_transmission_walkers()`: Directed walkers (mandatory move along causal arrow). Measures flux between particle generations. Same `u64` integer accumulation as `run_walkers`.
 - **Key types**: `SpectralOutput` (28+ fields: P(t), d_S(t), d_S_std(t) for vacuum, defect, gen1–3, anti1, sterile; flux attraction/repulsion raw and normalized; mass averages), `WalkResult` (P and d_S vectors).
 
@@ -274,7 +275,7 @@ Random walk return probability measurement.
 
 ### `ensemble/` — Adaptive Ensemble
 
-- **`runner.rs`**: `run_ensemble()` — the top-level orchestrator. Dispatches parallel batches, runs Phases 1–3 per realisation, accumulates Welford statistics, checks convergence, writes intermediate snapshots. Returns `EnsembleResult` containing the ensemble-averaged spectral output, topology summary, measurement results, actual realisation count, and convergence flag.
+- **`runner.rs`**: `run_ensemble()` — the top-level orchestrator. Dispatches parallel batches, runs Phases 1–3 per realisation, accumulates Welford statistics, checks convergence, writes intermediate snapshots. Returns `EnsembleResult` containing the ensemble-averaged spectral output, topology summary, measurement results, actual realisation count, and convergence flag. Per-realisation memory management: `sym_vac` (symmetrized vacuum CSR) is dropped after measurements, `pts` (coordinates) is dropped after flux CSR construction, reducing peak RSS by ~2.6 GB at N = 10M. Phase 3a walkers (Group A: vac_global, vac_core, def_global, def_core) and Phase 3b walkers (Group B: gen1–3, anti1, sterile, flux) run concurrently within `std::thread::scope` with auto-convergence via Welford batching.
 - **`averaging.rs`**: Welford online accumulation for mean and variance. `average_ensemble()` combines per-realisation `SpectralOutput` vectors using the P-first protocol: P(t) is averaged first, then d_S is recomputed from ⟨P⟩ (averaging P first is critical because d_S is non-linear in P).
 - **`checkpoint.rs`**: Serialization/deserialization of ensemble state to `checkpoint.bin` (bincode). Cross-fork rejection via embedded provenance hash. Supports `--resume`.
 
@@ -333,7 +334,7 @@ Detects available system RAM, estimates memory requirements, and recommends in-m
 - **`estimate_memory_bytes(n)`**: Heuristic for in-memory requirements. N ≤ 3k: O(N²) for dense eigendecomp. N ≤ 50k: ~2 KB/node. N > 50k: ~500 B/node (CSR-dominated).
 - **`estimate_streaming_memory_bytes(n)`**: For single-pass architecture: 13N + 100 MB. At N = 100M: ~1.3 GB per realisation, 2 concurrent = 2.6 GB.
 - **`recommend_mode()`**: Compares estimated need against RAM ceiling (auto-detected or from config). Returns recommendation.
-- **`max_concurrent_runs(n)`**: 4 threads for N ≤ 10M, 2 threads for N > 10M.
+- **`max_concurrent_runs(n)`**: 4 threads for N ≤ 10M, 2 threads for N > 10M. At N = 10M, peak RSS per realisation is ~5.7 GB after memory optimisations (early drops of `rev_csr`, `sym_vac`, `pts`; two-pass flux CSR). On 32 GB RAM: batch-size 4 fits comfortably (4 × 5.7 = 22.8 GB + OS overhead).
 
 ### `provenance.rs` — Provenance System
 
@@ -396,7 +397,7 @@ M8 (PMNS) automatically enables M7 (neutrino) as a dependency. Produces `neutrin
 cargo run --release --bin feg_prism -- 100000 20 --measure-decoherence
 ```
 
-Produces `decoherence.csv` and `born_rule.csv` with chi-squared goodness-of-fit and coherence decay curves.
+Produces `decoherence.csv` and `born_rule.csv` with Pearson r, 200-permutation null model p-value, and coherence decay curves.
 
 ### Higgs drag measurement
 
@@ -534,9 +535,9 @@ Causal Prisms are classified by the **Vol I phase function** φ(w) = sign(bulk_m
 
 | Generation | Physics Analogue | Classification | Topological Mass (N=10^7, M=20) |
 |-----------|------------------|----------------|-------------------------------|
-| Gen1 | Electron-like | g=1 ∧ Φ ≥ 0 | 4.555 (lightest) |
-| Gen2 | Muon-like | g=2 | 6.531 (medium) |
-| Gen3 | Tau-like | g=3 | 7.732 (heaviest) |
+| Gen1 | Electron-like | g=1 ∧ Φ ≥ 0 | 4.5547 (lightest) |
+| Gen2 | Muon-like | g=2 | 6.5312 (medium) |
+| Gen3 | Tau-like | g=3 | 7.7324 (heaviest) |
 | AntiGen1 | Positron-like | g=1 ∧ Φ < 0 | 4.45 (CPT ≈ Gen1, Δm/m = 2.3%) |
 
 At N=10^7 (M=20): Total prisms: 7,723,943. g=1: 63,278 (2.1%), g=2: 2,552,871 (84.9%), g=3: 391,039 (13.0%). Sterile (Φ=0): 400,986.
@@ -583,9 +584,31 @@ Directed walker transmission probabilities measure electromagnetic-like interact
 - **Repulsion**: Gen1 → Gen1 (same charge, lower transmission)
 - **Normalized flux** (`Flux_Attr_Norm`, `Flux_Repu_Norm`): Raw flux divided by target count, isolating intrinsic per-node coupling strength (per-charge definition; Vol II).
 
-### Born Rule (from M6)
+### Born Rule: Transactional Handshake (from M6)
 
-Chi-squared goodness-of-fit between |ψ|² (squared modular amplitude) and observed arrival frequencies. At N=50k, M=20: chi-squared p-value > 0.95, confirming Born rule compliance from pure topology. Coherence decay follows an exponential envelope with characteristic length proportional to the vacuum mean free path between prisms.
+M6 computes the Cramer transactional handshake: a retarded wave (fwd) seeded
+from prism intermediates and an advanced wave (bwd) from the future boundary,
+each hop rotating by W = g^{(p-1)/4} mod p.  The product fwd(v) × bwd(v)
+gives the predicted Born amplitude |ψ|² at each environment node.  The
+observation is the K_{2,2} diamond density — the geometric measurement events
+where wavefunction collapse occurs.
+
+Pearson r between the predicted |ψ|² PMF and the observed K_{2,2} PMF is
+validated against a 200-permutation null model that shuffles predictions
+across nodes.  p = fraction of null shuffles exceeding the real correlation.
+
+| N | born\_r | null mean ± std | p-value | Detector nodes |
+|---|---------|-----------------|---------|----------------|
+| 5,000 | 0.340 | −0.003 ± 0.029 | 0.0000 | 1,615 |
+| 50,000 | 0.184 | −0.000 ± 0.007 | 0.0000 | 27,337 |
+| 1,000,000 | 0.113 | −0.000 ± 0.001 | 0.0000 | 748,048 |
+| 10,000,000 | 0.101 | −0.000 ± 0.000 | 0.0000 | 170,243,136 |
+
+The chain-count control (no NTT phase rotation) gives p ≈ 0.57 at N = 5k and
+p ≈ 0.37 at N = 50k — consistent with noise, confirming the signal comes from
+the phase structure of the transactional handshake, not from trivial path
+counting.  Coherence decay follows an exponential envelope with characteristic
+length proportional to the vacuum mean free path between prisms.
 
 ### PMNS Mixing (from M8)
 
@@ -593,7 +616,7 @@ The 3×3 transition matrix T_ij (fraction of gen-i wavefront landing on gen-j pr
 
 ### Higgs Drag (from M9)
 
-Mean drag coefficient D = L_W / L_γ > 1 indicates chirality-confined walkers traverse longer paths than unconfined walkers. The CDF area ratio provides an integrated measure independent of path-length binning. At N=50k: D ≈ 1.3–1.5, consistent with W-boson mass generation from topological confinement.
+Mean drag coefficient D = L_W / L_γ > 1 indicates chirality-confined walkers traverse longer paths than unconfined walkers. The CDF area ratio provides an integrated measure independent of path-length binning. At N=10M (M=20): mean drag = 0.084 (8.4% chiral path lengthening). At N=50k: D ≈ 1.3–1.5, consistent with W-boson mass generation from topological confinement.
 
 ### Lagrangian Card Summary (from M10)
 
@@ -694,4 +717,4 @@ Performance note: Windows Defender may slow down file I/O during `.csv` generati
 
 This code is open-source under the [MIT License](../LICENSE).
 
-> "The universe is strictly computable, finite, and structurally homeostatic. The rest is just counting."
+> "We stand on the shoulders of giants. This engine, and the theory it represents, asks whether their constants can be derived from counting alone. If so, The universe is strictly computable, finite, and structurally homeostatic. The rest is just counting."

@@ -11,6 +11,7 @@
 //! Calculo de Kuratowski, Vol I, section 6: modular arithmetic on causal paths.
 
 use super::context::MeasureContext;
+use crate::convergence::{AutoConverge, ConvergeState};
 use crate::output::CsvWriter;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
@@ -19,7 +20,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 // ── Data Structures ──────────────────────────────────────────────────────────
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct NodeInterference {
     pub node_id: usize,
     pub n_arrivals: u64,
@@ -28,7 +29,7 @@ pub struct NodeInterference {
     pub coords: [f32; 4],
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct ModuloPathResult {
     pub nodes: Vec<NodeInterference>,
     pub total_walkers: usize,
@@ -40,24 +41,15 @@ pub struct ModuloPathResult {
     pub root: u64,
 }
 
-// ── Utilities ────────────────────────────────────────────────────────────────
-
-/// Modular exponentiation via repeated squaring: base^exp mod modulus.
-fn pow_mod(mut base: u64, mut exp: u64, modulus: u64) -> u64 {
-    if modulus == 1 {
-        return 0;
+impl ModuloPathResult {
+    /// Drop per-node detail, keeping only summary statistics.
+    /// Frees ~440 MB per realization at N=10M.
+    pub fn compact(&mut self) {
+        self.nodes = Vec::new();
     }
-    let mut result: u64 = 1;
-    base %= modulus;
-    while exp > 0 {
-        if exp & 1 == 1 {
-            result = ((result as u128 * base as u128) % modulus as u128) as u64;
-        }
-        exp >>= 1;
-        base = ((base as u128 * base as u128) % modulus as u128) as u64;
-    }
-    result
 }
+
+// ── Utilities ────────────────────────────────────────────────────────────────
 
 /// Chase the merge-into contraction map until reaching a fixed point.
 #[inline]
@@ -77,36 +69,92 @@ pub fn run(ctx: &MeasureContext) -> ModuloPathResult {
     let g = ctx.modulo_config.root;
     let merge = &ctx.defect.merge_map;
     let (sym_vac_head, sym_vac_data) = ctx.sym_vacuum.raw();
-    let n_walkers = ctx.walkers;
     let n_steps = ctx.modulo_config.steps;
 
     let arrivals: Vec<AtomicU64> = (0..n).map(|_| AtomicU64::new(0)).collect();
     let phase_acc: Vec<AtomicU64> = (0..n).map(|_| AtomicU64::new(0)).collect();
 
-    (0..n_walkers).into_par_iter().for_each(|wi| {
-        let mut rng = StdRng::seed_from_u64(ctx.seed.wrapping_add(wi as u64));
-        let mut pos = resolve(rng.gen_range(0..n), merge);
-        let mut s: u64 = 0;
+    // Auto-convergence: batch walkers until mean intensity stabilises
+    let ac = AutoConverge::new(ctx.walkers, 50_000, ctx.epsilon);
+    let mut conv_state = ConvergeState::new();
+    let half_p = p / 2;
+    let mut is_first_batch = true;
 
-        for _t in 0..n_steps {
-            let start_idx = sym_vac_head[pos] as usize;
-            let end_idx = sym_vac_head[pos + 1] as usize;
-            let deg = end_idx - start_idx;
+    loop {
+        // Snapshot cumulative intensity before batch (skip on first — all zeros)
+        let (pre_sum_int, pre_count) = if is_first_batch {
+            (0.0f64, 0usize)
+        } else {
+            (0..n).into_par_iter()
+                .fold(|| (0.0f64, 0usize), |(s, c), i| {
+                    let arr = arrivals[i].load(Ordering::Relaxed);
+                    if arr == 0 { return (s, c); }
+                    let pacc = phase_acc[i].load(Ordering::Relaxed) % p;
+                    let sym = if pacc > half_p {
+                        pacc as i64 - p as i64
+                    } else {
+                        pacc as i64
+                    };
+                    let intensity = (sym as f64).powi(2) / (half_p as f64).powi(2);
+                    (s + intensity, c + 1)
+                })
+                .reduce(|| (0.0, 0), |(s1, c1), (s2, c2)| (s1 + s2, c1 + c2))
+        };
 
-            if deg > 0 && rng.gen_bool(0.5) {
-                let next = sym_vac_data[start_idx + rng.gen_range(0..deg)] as usize;
-                pos = resolve(next, merge);
-                s += 1;
+        let base = conv_state.total_walkers;
+        (base..base + ac.batch_size).into_par_iter().for_each(|wi| {
+            let mut rng = StdRng::seed_from_u64(ctx.seed.wrapping_add(wi as u64));
+            let mut pos = resolve(rng.gen_range(0..n), merge);
+            let mut phase: u64 = 1; // g^0 mod p = 1
+
+            for _t in 0..n_steps {
+                let start_idx = sym_vac_head[pos] as usize;
+                let end_idx = sym_vac_head[pos + 1] as usize;
+                let deg = end_idx - start_idx;
+
+                if deg > 0 && rng.gen_bool(0.5) {
+                    let next = sym_vac_data[start_idx + rng.gen_range(0..deg)] as usize;
+                    pos = resolve(next, merge);
+                    phase = ((phase as u128 * g as u128) % p as u128) as u64;
+                }
+
+                arrivals[pos].fetch_add(1, Ordering::Relaxed);
+                phase_acc[pos].fetch_add(phase, Ordering::Relaxed);
             }
+        });
+        is_first_batch = false;
 
-            let phase = pow_mod(g, s, p);
-            arrivals[pos].fetch_add(1, Ordering::Relaxed);
-            phase_acc[pos].fetch_add(phase, Ordering::Relaxed);
+        // Snapshot cumulative intensity after batch, compute batch-only observable
+        let (post_sum_int, post_count) = (0..n).into_par_iter()
+            .fold(|| (0.0f64, 0usize), |(s, c), i| {
+                let arr = arrivals[i].load(Ordering::Relaxed);
+                if arr == 0 { return (s, c); }
+                let pacc = phase_acc[i].load(Ordering::Relaxed) % p;
+                let sym = if pacc > half_p {
+                    pacc as i64 - p as i64
+                } else {
+                    pacc as i64
+                };
+                let intensity = (sym as f64).powi(2) / (half_p as f64).powi(2);
+                (s + intensity, c + 1)
+            })
+            .reduce(|| (0.0, 0), |(s1, c1), (s2, c2)| (s1 + s2, c1 + c2));
+        let batch_obs = if post_count > pre_count {
+            (post_sum_int - pre_sum_int) / (post_count - pre_count) as f64
+        } else {
+            if post_count > 0 { post_sum_int / post_count as f64 } else { 0.0 }
+        };
+
+        if conv_state.update(batch_obs, &ac) { break; }
+        if conv_state.at_limit(&ac) {
+            eprintln!("[M3] WARNING: {} walkers without convergence", conv_state.total_walkers);
+            break;
         }
-    });
+    }
+    println!("  [M3] converged at {} walkers", conv_state.total_walkers);
+    let n_walkers = conv_state.total_walkers;
 
     // Collect per-node interference results
-    let half_p = p / 2;
     let mut nodes = Vec::new();
 
     for i in 0..n {

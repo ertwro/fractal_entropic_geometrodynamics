@@ -19,7 +19,7 @@ use rayon::prelude::*;
 
 // ── Data Structures ──────────────────────────────────────────────────────────
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct HiggsPairResult {
     pub origin_idx: usize,
     pub dest_idx: usize,
@@ -28,7 +28,7 @@ pub struct HiggsPairResult {
     pub drag: f64,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct HiggsResult {
     pub mean_drag: f64,
     pub median_drag: f64,

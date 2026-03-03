@@ -59,13 +59,13 @@ pub struct LagrangianCard {
     // ── Parity violation (from M5) ──
     pub left_fraction: f64,
 
-    // ── Vacuum polarization (from M4) ──
-    pub alpha_bare_inv: f64,
-    pub alpha_screened_inv: f64,
-    pub vp_screening: f64,
+    // ── Combinatorial RG flow (from M4) ──
+    pub global_alpha_inv: f64,
+    pub mean_local_alpha_inv: f64,
+    pub mean_local_q: f64,
 
     // ── Quantum mechanics (from M6) ──
-    pub born_chi_sq: f64,
+    pub born_r: f64,
     pub coherence_r: f64,
 
     // ── Dark sector (from TopologySummary) ──
@@ -120,7 +120,7 @@ pub fn run(meas: &super::MeasureResults, topo: &TopologySummary) -> LagrangianCa
                 t.ratio_gen2_gen1,
                 t.ratio_gen3_gen1,
                 if t.mean_traversal[0] > 0.0 {
-                    (t.mean_traversal[0] - t.mean_traversal[0]).abs() / t.mean_traversal[0]
+                    (t.mean_traversal[0] - t.mean_traversal[1]).abs() / t.mean_traversal[0]
                 } else {
                     0.0
                 },
@@ -160,21 +160,22 @@ pub fn run(meas: &super::MeasureResults, topo: &TopologySummary) -> LagrangianCa
         0.0
     };
 
-    // ── Vacuum polarization (from M4) ──
-    let (alpha_bare_inv, alpha_screened_inv, vp_screening) =
+    // ── Combinatorial RG flow (from M4) ──
+    let (global_alpha_inv, mean_local_alpha_inv, mean_local_q) =
         if let Some(ref vp) = meas.vacuum_pol {
+            let mean_local_alpha = vp.mean_local_q / (8.0 * std::f64::consts::PI);
             (
-                if vp.bare_alpha > 0.0 { 1.0 / vp.bare_alpha } else { 0.0 },
-                if vp.screened_alpha > 0.0 { 1.0 / vp.screened_alpha } else { 0.0 },
-                vp.mean_screening,
+                if vp.global_alpha > 0.0 { 1.0 / vp.global_alpha } else { 0.0 },
+                if mean_local_alpha > 0.0 { 1.0 / mean_local_alpha } else { 0.0 },
+                vp.mean_local_q,
             )
         } else {
             (0.0, 0.0, 0.0)
         };
 
     // ── Quantum mechanics (from M6) ──
-    let (born_chi_sq, coherence_r) = if let Some(ref dc) = meas.decoherence {
-        (dc.born_chi_sq, dc.coherence_decay_r)
+    let (born_r, coherence_r) = if let Some(ref dc) = meas.decoherence {
+        (dc.born_r, dc.coherence_decay_r)
     } else {
         (0.0, 0.0)
     };
@@ -246,10 +247,10 @@ pub fn run(meas: &super::MeasureResults, topo: &TopologySummary) -> LagrangianCa
         higgs_drag,
         higgs_area_ratio,
         left_fraction,
-        alpha_bare_inv,
-        alpha_screened_inv,
-        vp_screening,
-        born_chi_sq,
+        global_alpha_inv,
+        mean_local_alpha_inv,
+        mean_local_q,
+        born_r,
         coherence_r,
         omega_dark_vis,
         omega_energy,
@@ -301,11 +302,11 @@ pub fn write_csv(result: &LagrangianCard, w: &mut CsvWriter) {
     w.row_fmt(format_args!("higgs_area_ratio,{:.6}", result.higgs_area_ratio));
     w.row_fmt(format_args!("left_fraction,{:.6}", result.left_fraction));
 
-    w.row_fmt(format_args!("alpha_bare_inv,{:.4}", result.alpha_bare_inv));
-    w.row_fmt(format_args!("alpha_screened_inv,{:.4}", result.alpha_screened_inv));
-    w.row_fmt(format_args!("vp_screening,{:.6}", result.vp_screening));
+    w.row_fmt(format_args!("global_alpha_inv,{:.4}", result.global_alpha_inv));
+    w.row_fmt(format_args!("mean_local_alpha_inv,{:.4}", result.mean_local_alpha_inv));
+    w.row_fmt(format_args!("mean_local_q,{:.6}", result.mean_local_q));
 
-    w.row_fmt(format_args!("born_chi_sq,{:.6}", result.born_chi_sq));
+    w.row_fmt(format_args!("born_r_pmf,{:.6}", result.born_r));
     w.row_fmt(format_args!("coherence_r,{:.6}", result.coherence_r));
 
     w.row_fmt(format_args!("omega_dark_vis,{:.6}", result.omega_dark_vis));
@@ -341,9 +342,9 @@ pub fn print_summary(result: &LagrangianCard) {
     }
     println!("    Higgs drag:  {:.6}  area_ratio: {:.4}", result.higgs_drag, result.higgs_area_ratio);
     println!("    Left frac:   {:.4}", result.left_fraction);
-    println!("    VP:          bare_inv={:.1}  screened_inv={:.1}  screening={:.4}",
-        result.alpha_bare_inv, result.alpha_screened_inv, result.vp_screening);
-    println!("    Born chi^2:  {:.6}  coherence_r: {:.4}", result.born_chi_sq, result.coherence_r);
+    println!("    RG flow:     global_inv={:.1}  local_inv={:.1}  mean_Q={:.4}",
+        result.global_alpha_inv, result.mean_local_alpha_inv, result.mean_local_q);
+    println!("    Born r(PMF): {:.6}  coherence_r: {:.4}", result.born_r, result.coherence_r);
     println!("    Dark sector: Omega_DM/vis={:.4}  Omega_energy={:.4}", result.omega_dark_vis, result.omega_energy);
     println!("    Gen frac:    [{:.4}, {:.4}, {:.4}]",
         result.gen_fractions[0], result.gen_fractions[1], result.gen_fractions[2]);

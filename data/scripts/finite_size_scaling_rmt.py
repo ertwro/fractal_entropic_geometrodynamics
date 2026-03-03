@@ -44,10 +44,11 @@ M_ENSEMBLE = 10
 SEED = 42
 
 SCRIPT_DIR  = Path(__file__).resolve().parent
-PROJECT_DIR = SCRIPT_DIR
-BINARY      = PROJECT_DIR / "target" / "release" / "causal_set_sim"
-FSS_DIR     = Path("/mnt/data/fss_scaling")
-PROD_DIR    = Path("/mnt/data/PROD_10M_Ensemble")
+REPO_ROOT   = Path(__file__).resolve().parents[2]
+PROJECT_DIR = REPO_ROOT / "FEG_prism"
+BINARY      = PROJECT_DIR / "target" / "release" / "feg_prism"
+FSS_DIR     = REPO_ROOT / "data" / "fss_scaling"
+PROD_DIR    = REPO_ROOT / "data" / "ensemble_10M_final"
 
 # Physical target: Q_topo = 8π/137 for α⁻¹ = 137.036
 Q_TARGET = 8.0 * math.pi / 137.036  # ≈ 0.18344

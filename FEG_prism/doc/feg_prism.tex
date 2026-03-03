@@ -474,7 +474,11 @@ Three early-exit conditions accelerate the search:
 \begin{enumerate}
   \item \textbf{Degree cap} (\code{MAX\_HASSE\_DEGREE} $= 15$):
         A node with $\geq 15$ descendants has a fully populated causal shadow.
-        Further links are redundant.
+        Further links are redundant.  This bound also sets the
+        \emph{lattice mode decay timescale} for spectral dimension measurements:
+        local eigenvalues of the lazy-walk transition matrix near
+        $\lambda \approx 1 - 1/(2D)$ decay on a timescale
+        $t_{\text{lattice}} = D_{\max}$.
   \item \textbf{Alexandrov volume short-circuit}: If every causal candidate in
         a $\Delta t$ shell is transitively blocked (non-empty Alexandrov set
         between $u$ and $v$), further shells have strictly larger Alexandrov
@@ -555,7 +559,10 @@ encodes lattice dimensions derived from coordinate bounds.
 
 Key constants from \file{grid.rs}:
 \begin{itemize}
-  \item \code{MAX\_HASSE\_DEGREE = 15}: maximum out-degree in the Hasse diagram
+  \item \code{MAX\_HASSE\_DEGREE = 15}: maximum out-degree in the Hasse diagram.
+        Also sets the lattice mode decay timescale $t_{\text{lattice}} = D_{\max}$
+        for spectral dimension measurements and the CRT budget floor
+        $t_{\max} = D_{\max}$
   \item \code{MAX\_CAUSAL\_DEPTH}: maximum $\Delta t$ shells to search
   \item \code{MAX\_PROPER\_TIME\_SQ}: proper-time cutoff for causality
 \end{itemize}
@@ -711,9 +718,40 @@ diffusing particle at scale $t$:
 \[
   \dS(t) = -2\,\frac{d \ln P(t)}{d \ln t},
 \]
-where $P(t)$ is the return probability after $t$ diffusion steps on the graph.
-Centred finite differences are used for interior points; forward/backward
+where $P(t)$ is the return probability after $t$ lazy random walk steps on the
+graph.  Centred finite differences are used for interior points; forward/backward
 differences at endpoints.
+
+The lazy walk (50\% stay, 50\% hop to a random neighbour) has transition matrix
+\[
+  T = \tfrac{1}{2}(I + D^{-1}A),
+\]
+where $A$ is the adjacency matrix and $D$ the degree matrix.  Eigenvalues of $T$
+lie in $[0,\,1]$ with $\lambda_0 = 1$ for the stationary mode.  The return
+probability decomposes as
+\[
+  P(t) = \frac{1}{N}\operatorname{Tr}(T^t) = \frac{1}{N}\sum_{k} \lambda_k^{t}.
+\]
+Three eigenvalue bands contribute at different timescales:
+
+\begin{center}
+\begin{tabular}{lll}
+  \toprule
+  \textbf{Band} & \textbf{Eigenvalues} & \textbf{Decay timescale} \\
+  \midrule
+  Continuum & $\lambda \approx 1$ & $O(N^{2/\dS})$ \\
+  Lattice   & $\lambda \approx 1 - O(1/D_{\max})$ & $O(D_{\max}) = O(15)$ \\
+  High-freq & $\lambda \approx 0$ & $O(1)$ \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+After $t \approx D_{\max} = 15$ steps, the lattice modes have decayed by
+$\sim 1/e$ and $\dS(t)$ enters the continuum scaling plateau (the
+\textbf{lattice-to-continuum crossover}).  This is \emph{not} a mixing time in
+the coupon-collector sense (that would be $O(D \ln D) \approx 41$) --- it is the
+spectral decay timescale on which discrete graph artifacts (degree echoes,
+parity oscillations) damp below the continuum signal.
 
 \begin{definition}[WalkResult]
   Each walk category (vacuum, defect, per-generation, sterile, flux) returns:
@@ -739,30 +777,47 @@ differences at endpoints.
 \section{Tier 1: Eigendecomposition}
 
 For $N \leq$ \code{eigen\_cutoff} (default 3000), the function
-\func{compute\_eigen()} computes the full eigendecomposition of the graph
-Laplacian $L = D - A$ via \code{nalgebra}.  The return probability is then
+\func{compute\_eigen()} computes the full eigendecomposition of the symmetric
+normalised adjacency $S = D^{-1/2}AD^{-1/2}$ via \code{nalgebra}.  The
+return probability is then
 \[
-  P(t) = \frac{1}{N}\sum_{k=0}^{N-1} e^{-\lambda_k t},
+  P(t) = \frac{1}{N}\sum_{k=0}^{N-1} \lambda_k^{t},
 \]
-where $\lambda_k$ are the eigenvalues of the normalised Laplacian.
-Core walks restrict the sum to eigenvectors with support on core nodes.
+where $\lambda_k$ are the eigenvalues of $S$ (clamped to $[-1,1]$).
+Core walks restrict the sum to eigenvector-weighted contributions on core nodes.
 
 \section{Tier 2: Monte Carlo Walkers}
 
 Source: \file{phase3/walker.rs}
 
-For $N >$ \code{eigen\_cutoff}, random walkers simulate diffusion.  The number
-of walkers $W$ is set by the \textbf{Causal Resolution Theorem}:
+For $N >$ \code{eigen\_cutoff}, lazy random walkers simulate diffusion.  Each
+walker implements the transition matrix $T = \frac{1}{2}(I + D^{-1}A)$
+stochastically: at each step it stays with probability $\frac{1}{2}$ or hops to
+a uniformly random neighbour with probability $\frac{1}{2}$.  The return
+indicator $X_i \in \{0,1\}$ at each measurement step is a $\mathrm{Bernoulli}(P(t))$
+variable.  By the CLT, $\mathrm{RSE} = 1/\sqrt{W \cdot P(t)}$.
+
+The number of walkers $W$ is set by the \textbf{Causal Resolution Theorem}:
 \[
   W = \lceil (t_{\max} / \varepsilon)^2 \rceil,
 \]
 where $\varepsilon$ is the topological error tolerance (default 0.01) and
-$t_{\max}$ is the maximum diffusion time (default 15).  At $\varepsilon = 0.01$,
-$t_{\max} = 15$: $W = 2{,}250{,}000$ walkers.
+$t_{\max}$ is the maximum diffusion time (default $15 = D_{\max}$).  Setting
+$\mathrm{RSE} < \varepsilon$ with $P(t) \sim t^{-2}$ ($\dS = 4$) yields
+$W > t^2/\varepsilon^2$.  At $\varepsilon = 0.01$, $t_{\max} = 15$:
+$W = 2{,}250{,}000$ walkers.
 
-Each walker starts at a random node, takes $t$ steps along random edges of the
-symmetric CSR, and records whether it returns to its origin.  Return counts are
-accumulated as \code{u64} integers (strict finitism).
+\textbf{Why $t_{\max} = D_{\max} = 15$:} This is the \emph{lattice mode decay
+timescale} --- after $\sim D_{\max}$ steps, the discrete graph artifacts in
+$P(t)$ have damped by $\sim 1/e$ and the continuum scaling plateau begins.
+Calibrating at the plateau onset is optimal because $P(D_{\max})$ is the
+largest return probability in the scaling regime, yielding the smallest required
+$W$.  For $t > D_{\max}$, RSE degrades as $(t/D_{\max})\cdot\varepsilon$, but
+auto-convergence (Welford RSE $< 5\times 10^{-4}$, $k = 3$ consecutive batches)
+adds walker batches until the observable at $t \approx 36$ (midpoint of the step
+array, well inside the scaling plateau) stabilises.
+
+Return counts are accumulated as \code{u64} integers (strict finitism).
 
 \section{Causal Flux}
 
@@ -784,7 +839,17 @@ The measurement times are densely sampled near $t = 1$:
 \begin{verbatim}
   steps = (1..=30).chain((16..=50).map(|i| i * 2))
 \end{verbatim}
-giving steps 1--30 (unit spacing) and 32, 34, \ldots, 100 (stride 2).
+giving steps 1--30 (unit spacing) and 32, 34, \ldots, 100 (stride 2).  This
+covers three regimes:
+\begin{itemize}
+  \item $t \lesssim D_{\max} = 15$: short-time lattice transient (degree echoes,
+        parity oscillations from discrete graph structure)
+  \item $D_{\max} \lesssim t \lesssim N^{2/\dS}$: continuum scaling plateau
+        where $P(t) \sim t^{-\dS/2}$ and $\dS(t)$ is physically meaningful
+  \item $t \gtrsim N^{2/\dS}$: approach to finite-size saturation $P(t) \to 1/N$
+\end{itemize}
+The convergence observable is $\dS$ at the midpoint of the step array
+($t \approx 36$), which lies well within the scaling plateau.
 
 
 % ███████████████████████████████████████████████████████████████████████████████
@@ -993,18 +1058,22 @@ Source: \file{measure/m06\_decoherence.rs}
 
 Flag: \flag{measure-decoherence}
 
-Tests the emergence of the Born rule from modular path-integral interference.
-Walkers perform NTT paths and the probability distribution is compared to the
-quadratic law:
+Tests the emergence of the Born rule via the Cramer transactional handshake.
+A retarded wave (fwd) is seeded from prism intermediates and propagated forward
+with NTT phase rotation $W = g^{(p-1)/4} \bmod p$ (90° per edge); an advanced
+wave (bwd) is seeded from the future boundary and propagated backward with
+$W^{-1}$.  The handshake product, centered symmetrically in $\mathbb{Z}/p\mathbb{Z}$,
+gives the Born amplitude at each environment node:
 \[
-  P(d) = |K(s, d)|^2,
+  P(d) \;\propto\; \bigl|\,\text{fwd}(d) \times \text{bwd}(d)\,\bigr|^2.
 \]
-where $K(s, d)$ is the modular propagator from source $s$ to detector $d$.
-The double consistency (retarded $\times$ advanced) of the discrete path
-integral naturally produces the Born rule without postulation.
+$K_{2,2}$ diamond counts at environment nodes provide the observed detection
+events.  Pearson~$r$ between the predicted $|\psi|^2$ PMF and the observed
+$K_{2,2}$ PMF, validated against a permutation null model (1000~shuffles),
+measures Born rule compliance.
 
-Output: \file{decoherence.csv} and \file{born\_rule.csv} with measured vs.\
-predicted detection probabilities.
+Output: \file{decoherence.csv} and \file{born\_rule.csv} with Pearson~$r$,
+null model statistics, and per-bin predicted vs.\ observed frequencies.
 
 \section{M7: Neutrino Census}
 
@@ -1429,7 +1498,7 @@ crates, using \code{SystemTime::now()} and manual calendar arithmetic
   \textbf{Flag} & \textbf{Default} & \textbf{Description} \\
   \midrule
   \flag{epsilon} \code{<f64>}  & 0.01  & Topological error tolerance $\varepsilon$ \\
-  \flag{tmax} \code{<usize>}   & 15    & Maximum diffusion time \\
+  \flag{tmax} \code{<usize>}   & 15    & CRT budget calibration time ($= D_{\max}$, lattice mode decay timescale) \\
   \flag{seed} \code{<u64>}     & clock & Base seed (deterministic mode) \\
   \flag{eigen-cutoff} \code{<N>} & 3000 & Eigendecomp threshold \\
   \bottomrule
@@ -1596,7 +1665,10 @@ Continues from the last checkpoint in \file{./production/}.
   \begin{itemize}
     \item $\dS(t \to 0) \to 2$ (short-distance fractal)
     \item $\dS(t \to \infty) \to 4$ (long-distance manifold recovery)
-    \item The crossover occurs at $t \sim 5$--$10$ diffusion steps
+    \item The lattice-to-continuum crossover occurs at $t \sim D_{\max} = 15$
+          diffusion steps, consistent with the lattice mode decay timescale.
+          Below this, $\dS(t)$ exhibits lattice artifacts (degree echoes,
+          parity oscillations); above this, $P(t) \sim t^{-2}$ scaling emerges
     \item Defect $\dS$ is slightly reduced compared to vacuum
           (matter introduces topological shortcuts)
   \end{itemize}
@@ -1642,8 +1714,9 @@ Continues from the last checkpoint in \file{./production/}.
 \begin{result}
   Decoherence measurement (M6, $N = 5{,}000$, $M = 10$):
   \begin{itemize}
-    \item $P(d) \propto |K(s,d)|^2$ verified to within $5\%$
-    \item Fringe visibility $> 0.8$ at $t < 10$; decoheres for $t > 50$
+    \item Pearson~$r$ between predicted $|\psi|^2$ and observed $K_{2,2}$ PMF validates Born rule
+    \item Permutation null model (1000 shuffles) confirms significance
+    \item Coherence decay correlation vs $1/\sqrt{\text{env\_size}}$ measures decoherence rate
   \end{itemize}
 \end{result}
 
@@ -1669,8 +1742,11 @@ Continues from the last checkpoint in \file{./production/}.
   \item \textbf{Mass ratio convergence}: The cover-time ratios $m_\mu/m_e$ and
         $m_\tau/m_e$ converge slowly (as $N^{-1/4}$).  For precision to within
         $10\%$, use $N \geq 50{,}000$.
-  \item \textbf{Spectral dimension plateau}: The $\dS \to 4$ plateau may not be
-        reached at small $t_{\max}$.  Use $t_{\max} \geq 15$ for convergence.
+  \item \textbf{Spectral dimension plateau}: The $\dS \to 4$ plateau requires
+        $t \gtrsim D_{\max} = 15$ (lattice mode decay timescale).  The default
+        $t_{\max} = 15$ calibrates the CRT budget at the onset of this plateau;
+        the full step schedule extends to $t = 100$ and auto-convergence ensures
+        the observable at $t \approx 36$ stabilises.
   \item \textbf{Ensemble variance}: Some observables (e.g., $\alpha_{\text{EM}}$)
         have high variance across realisations.  Use $M \geq 25$ for reliable
         estimates.

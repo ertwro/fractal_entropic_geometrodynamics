@@ -16,7 +16,7 @@ use crate::phase2::defect::CausalPrism;
 
 // ── Data Structures ──────────────────────────────────────────────────────────
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct HalfLifeResult {
     pub prism_census: Vec<(usize, u8, usize, i32)>,  // (idx, gen, belly, phase)
     pub gen_counts: [usize; 4],                       // [gen1, gen2, gen3, anti1]

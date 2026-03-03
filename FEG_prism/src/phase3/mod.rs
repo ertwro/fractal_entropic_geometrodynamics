@@ -7,5 +7,9 @@ pub mod walker;
 pub mod flux;
 
 pub use spectral::{WalkResult, SpectralOutput, spectral_dimension};
-pub use walker::{run_walkers, distribute_walkers, compute_eigen, compute_monte_carlo_csr};
+pub use walker::{
+    run_walkers, distribute_walkers, distribute_walkers_shuffled,
+    run_walkers_unified, count_category_walkers,
+    compute_eigen, compute_monte_carlo_csr,
+};
 pub use flux::{build_flux_csr, run_transmission_walkers};

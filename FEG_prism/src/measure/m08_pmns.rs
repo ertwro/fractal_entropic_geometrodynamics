@@ -19,7 +19,7 @@ use std::collections::HashSet;
 
 // ── Data Structures ──────────────────────────────────────────────────────────
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct PMNSResult {
     pub transition_matrix: [[f64; 3]; 3],
     pub raw_counts: [[usize; 3]; 3],

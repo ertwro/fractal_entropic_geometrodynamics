@@ -146,7 +146,37 @@ The spectral dimension is defined as
 d\dS\u(t) = \-2\~d(ln\~P)/d(ln\~t)
 .RE
 .PP
-measured via undirected random walkers on the Hasse graph.  On a smooth
+measured via undirected lazy random walkers on the Hasse graph.  The lazy
+walk (50% stay, 50% hop to a random neighbour) has transition matrix
+T\~=\~\(12(I\~+\~D\u\-1\dA), whose eigenvalues lie in [0,\~1].  The
+return probability decomposes as
+.PP
+.RS
+P(t) = (1/N) \(*S\dk\u \(*l\dk\u\ut
+.RE
+.PP
+Three eigenvalue bands contribute at different timescales:
+.PP
+.RS
+.TS
+tab(|);
+l l l.
+Band|Eigenvalues|Decay timescale
+_
+Continuum|\(*l \(~~ 1|O(N\u2/d\dS\d\u)
+Lattice|\(*l \(~~ 1 \- O(1/D\dmax\u)|O(D\dmax\u) = O(15)
+High-freq|\(*l \(~~ 0|O(1)
+.TE
+.RE
+.PP
+After t\~\(~~\~D\dmax\u\~=\~15 steps, the lattice modes have decayed by
+\(~~1/e and d\dS\u(t) enters the continuum scaling plateau (the
+\fBlattice\-to\-continuum crossover\fR).  This is \fBnot\fR a mixing time in
+the coupon-collector sense (that would be O(D\~ln\~D)\~\(~~\~41) \(em it is
+the spectral decay timescale on which discrete graph artifacts (degree
+echoes, parity oscillations) damp below the continuum signal.
+.PP
+On a smooth
 4D manifold, d\dS\u\~\(->\~4.  On the Hasse graph the vacuum d\dS\u
 diverges (boundary saturation), while Causal Prism defects stabilise d\dS\u
 at a finite value \(em matter modifies the effective geometry.
@@ -429,7 +459,10 @@ O(occupied_cells).
 Three valves control the dt-shell search.
 .B "Valve 1 (Degree Cap):"
 A node with \(>=\~MAX_HASSE_DEGREE (15) descendants has fully populated
-its causal shadow; further links are redundant.
+its causal shadow; further links are redundant.  This bound also sets
+the lattice mode decay timescale for spectral dimension measurements:
+local eigenvalues of the lazy-walk transition matrix near
+\(*l\~\(~~\~1\~\-\~1/(2D) decay on a timescale t\dlattice\u\~=\~D\dmax\u.
 .B "Valve 2 (Alexandrov Short-Circuit):"
 If every causal candidate in a dt-shell is transitively blocked (the
 Alexandrov set between u and v is non-empty), further shells have
@@ -595,8 +628,13 @@ d\dS\u(t) = \-2\~d(ln\~P)/d(ln\~t) via centred finite differences.
 Forward/backward differences at the endpoints.
 .TP
 .BI "run_walkers(" head ", data, starts, steps, seed, merge) \(-> Vec<f64>"
-Run W independent lazy-walk walkers in parallel (50% stay, 50% move to
-random neighbour).  Parallel via Rayon.  Strict Finitism: all internal
+Run W independent lazy-walk walkers in parallel.  Implements the
+transition matrix T\~=\~\(12(I\~+\~D\u\-1\dA) stochastically: at each
+step the walker stays with probability \(12 or hops to a uniformly
+random neighbour with probability \(12.  The return indicator
+X\di\u\~\(*e\~{0,1} at each measurement step is a Bernoulli(P(t))
+variable; the CLT gives RSE\~=\~1/\(sr(W\~\(muP(t)), which drives the
+CRT budget.  Parallel via Rayon.  Strict Finitism: all internal
 accumulation uses u64 integer arithmetic; the single f64 division
 count\~/\~W occurs only at the final return.  Optional merge map
 resolves threat-contracted nodes to their canonical identity.
@@ -803,14 +841,17 @@ are weak-active.  Causal filtering: only origin-pole ports contribute
 Thm 6.3).  Per-generation chirality fractions measure parity violation.
 .TP
 .B "M6 \(em Quantum Decoherence (Born Rule Verification)"
-Environment = nodes within 2 hops of both poles but not part of the prism.
-Modular walkers (g\uS\d\~mod\~p on symmetric vacuum CSR) accumulate
-phase per-node via AtomicU64.  Coherence = variance ratio of interior vs
-environment modular intensities.  Directed path counting through prism
-intermediates to environment nodes yields Born-rule |\(*y|\u2\d
-predictions.  Binned comparison of predicted vs observed arrival
-probabilities gives \(*x\u2\d goodness-of-fit.  Coherence decay
-correlation vs 1/\(sr(env_size) measures decoherence rate.
+Environment = nodes connected to both poles but not part of the prism.
+Retarded wave (fwd) seeded from intermediates and propagated forward with
+NTT phase rotation W = g\u(p\-1)/4\d mod p (90\(de per edge); advanced
+wave (bwd) seeded from future boundary and propagated backward with
+W\u\-1\d.  Handshake fwd(v) \(mu bwd(v), centered symmetrically in
+Z/pZ, gives the Born amplitude at each environment node (Cramer
+transactional interpretation).  K\d2,2\u diamond counts at environment
+nodes provide the observed detection events.  Pearson r between predicted
+|\(*y|\u2\d PMF and observed K\d2,2\u PMF, validated against a
+permutation null model (1000 shuffles), measures Born rule compliance.
+Coherence decay correlation vs 1/\(sr(env_size) measures decoherence rate.
 .TP
 .B "M7 \(em Neutrino Census (Open Prisms)"
 Detect open prisms \(em high-degree core nodes whose forward belly fails
@@ -873,7 +914,7 @@ Mean drag \(*m, CDF area ratio.
 \(*W\ddark/vis\u, \(*W\denergy\u.
 .TP
 .B Quantum mechanics
-Born \(*x\u2\d, coherence decay r.
+Born Pearson r, coherence decay r.
 .RE
 .PP
 .B MeasureFlags
@@ -1201,10 +1242,19 @@ Maximum parallel realisations.  Default: auto (2 for N > 10M in-memory,
 .BI "\-\-epsilon " f64
 Topological error tolerance \(*e for the Causal Resolution Theorem.
 Default: 0.01.  Controls the number of spectral walkers:
-W = (t\dmax\u / \(*e)\u2\d.
+W\~=\~\(lc(t\dmax\u\~/\~\(*e)\u2\d\(rc.  The CLT on the Bernoulli return
+indicator gives RSE\~=\~1/\(sr(W\~\(muP(t)); setting RSE\~<\~\(*e with
+P(t)\~\(~~\~t\u\-2\d (d\dS\u\~=\~4) yields W\~>\~t\u2\d/\(*e\u2\d.
 .TP
 .BI "\-\-tmax " usize
-Maximum diffusion time.  Default: 15.  The step sampling extends
+Maximum diffusion time for the CRT budget.  Default: 15 (=\~MAX_HASSE_DEGREE).
+This is the \fBlattice mode decay timescale\fR: after \(~~D\dmax\u lazy-walk
+steps, discrete graph artifacts in P(t) have damped by \(~~1/e and the
+continuum scaling plateau begins.  Calibrating the CRT budget at the plateau
+onset is optimal because P(D\dmax\u) is the largest return probability in
+the scaling regime, yielding the smallest required W.  For t\~>\~D\dmax\u,
+auto-convergence (Welford RSE\~<\~5\(mu10\u\-4\d, k=3 consecutive
+batches) adds walker batches as needed.  The step sampling extends
 to step 100 (dense 1\(en30, then even steps 32\(en100).
 .TP
 .BI "\-\-eigen\-cutoff " N
@@ -1384,11 +1434,16 @@ Gen1 \(-> Gen1 (same charge, lower transmission).
 Normalised per-charge flux (Vol\~II definition) isolates the intrinsic
 coupling strength independent of target population size.
 .SS "Born Rule"
-The M6 Born rule verification computes a chi-squared goodness-of-fit
-between the predicted arrival probability (|number of directed paths|\u2\d
-normalised) and the observed walker arrival frequency at environment
-nodes.  Low chi-squared values validate that the discrete causal-set
-walk statistics reproduce the continuous quantum-mechanical Born rule.
+The M6 Born rule verification uses the Cramer transactional handshake:
+a retarded wave (fwd) seeded from prism intermediates and an advanced
+wave (bwd) from the future boundary, with NTT phase rotation.  The
+handshake product fwd(v) \(mu bwd(v) at each environment node predicts
+the Born amplitude |\(*y|\u2\d.  K\d2,2\u diamond counts at those nodes
+provide observed detection events.  Pearson r between the predicted and
+observed PMFs, validated against a permutation null model (1000 shuffles),
+measures Born rule compliance.  High Pearson r (with low null percentile)
+validates that the discrete transactional interference reproduces the
+continuous quantum-mechanical Born rule.
 .SS "PMNS Mixing"
 The M8 PMNS measurement produces a 3\(mu3 row-stochastic transition
 matrix |U\dPMNS\u|\u2\d from layered BFS wavefront propagation through

@@ -15,6 +15,7 @@
 //! Calculo de Kuratowski, Vol II, section 8: open prisms as massless chiral leptons.
 
 use super::context::MeasureContext;
+use crate::convergence::{AutoConverge, ConvergeState};
 use crate::output::CsvWriter;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
@@ -23,7 +24,7 @@ use std::collections::HashSet;
 
 // ── Data Structures ──────────────────────────────────────────────────────────
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct NeutrinoCandidate {
     pub origin: usize,
     pub belly_size: usize,
@@ -35,7 +36,7 @@ pub struct NeutrinoCandidate {
     pub effective_gen: u8,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct NeutrinoResult {
     pub candidates: Vec<NeutrinoCandidate>,
     pub total_count: usize,
@@ -56,7 +57,6 @@ pub fn run(ctx: &MeasureContext) -> NeutrinoResult {
     let n = ctx.n_points;
     let (vac_head, vac_data) = ctx.vacuum_csr.raw();
     let (sym_vac_head, sym_vac_data) = ctx.sym_vacuum.raw();
-    let n_walkers = ctx.walkers;
 
     // Step 1: Build is_placed from committed closed prisms
     let mut is_placed = vec![false; n];
@@ -184,10 +184,19 @@ pub fn run(ctx: &MeasureContext) -> NeutrinoResult {
     }
 
     let total_neutrinos = candidates_raw.len();
-    let walkers_per = (n_walkers / total_neutrinos).max(4);
 
-    // Step 5: Per-candidate measurements (parallel)
-    let candidates: Vec<NeutrinoCandidate> = candidates_raw
+    // Step 5a: Per-candidate chirality + precomputed belly structures (walker-free)
+    struct CandidatePrep {
+        origin: usize,
+        belly: Vec<usize>,
+        belly_set: HashSet<usize>,
+        belly_adj: Vec<Vec<usize>>,
+        max_conv: usize,
+        mean_chirality: f64,
+        effective_gen: u8,
+    }
+
+    let preps: Vec<CandidatePrep> = candidates_raw
         .par_iter()
         .map(|(origin, belly, max_conv)| {
             let belly_size = belly.len();
@@ -210,55 +219,13 @@ pub fn run(ctx: &MeasureContext) -> NeutrinoResult {
                 0.0
             };
 
-            // Escape time: walk on symmetric CSR, count steps to leave belly
             let belly_set: HashSet<usize> = belly.iter().copied().collect();
-            let mut escape_sum = 0.0f64;
-            let mut escape_count = 0usize;
-
-            for wi in 0..walkers_per {
-                let mut rng = StdRng::seed_from_u64(
-                    ctx.seed.wrapping_add(*origin as u64).wrapping_add(wi as u64),
-                );
-                let start = belly[rng.gen_range(0..belly_size)];
-                let mut pos = start;
-                let mut escaped = false;
-
-                for step in 1..=200u32 {
-                    let s = sym_vac_head[pos] as usize;
-                    let e = sym_vac_head[pos + 1] as usize;
-                    let deg = e - s;
-                    if deg == 0 { break; }
-
-                    let next = sym_vac_data[s + rng.gen_range(0..deg)] as usize;
-                    pos = next;
-
-                    if !belly_set.contains(&pos) {
-                        escape_sum += step as f64;
-                        escape_count += 1;
-                        escaped = true;
-                        break;
-                    }
-                }
-                if !escaped {
-                    escape_sum += 200.0;
-                    escape_count += 1;
-                }
-            }
-            let escape_time = if escape_count > 0 {
-                escape_sum / escape_count as f64
-            } else {
-                0.0
-            };
-
-            // Confined cover time: walk restricted to belly subgraph
-            let belly_vec: Vec<usize> = belly.clone();
-            let belly_idx: std::collections::HashMap<usize, usize> = belly_vec
+            let belly_idx: std::collections::HashMap<usize, usize> = belly
                 .iter()
                 .enumerate()
                 .map(|(i, &v)| (v, i))
                 .collect();
-
-            let belly_adj: Vec<Vec<usize>> = belly_vec
+            let belly_adj: Vec<Vec<usize>> = belly
                 .iter()
                 .map(|&w| {
                     let s = sym_vac_head[w] as usize;
@@ -270,61 +237,6 @@ pub fn run(ctx: &MeasureContext) -> NeutrinoResult {
                 })
                 .collect();
 
-            let mut cover_times = Vec::with_capacity(walkers_per);
-            let max_cover_steps = (belly_size as u32) * 50 + 100;
-
-            for wi in 0..walkers_per {
-                let mut rng = StdRng::seed_from_u64(
-                    ctx.seed.wrapping_add(*origin as u64)
-                        .wrapping_add(wi as u64)
-                        .wrapping_add(10000),
-                );
-                let start_bi = rng.gen_range(0..belly_size);
-                let mut pos_bi = start_bi;
-                let mut visited = vec![false; belly_size];
-                visited[pos_bi] = true;
-                let mut n_visited = 1usize;
-
-                for step in 1..=max_cover_steps {
-                    let nbrs = &belly_adj[pos_bi];
-                    if nbrs.is_empty() { break; }
-
-                    let next_bi = nbrs[rng.gen_range(0..nbrs.len())];
-                    pos_bi = next_bi;
-
-                    if !visited[pos_bi] {
-                        visited[pos_bi] = true;
-                        n_visited += 1;
-                    }
-
-                    if n_visited >= belly_size {
-                        cover_times.push(step as f64);
-                        break;
-                    }
-                }
-                if n_visited < belly_size {
-                    cover_times.push(max_cover_steps as f64);
-                }
-            }
-
-            let confined_cover_time = if !cover_times.is_empty() {
-                cover_times.iter().sum::<f64>() / cover_times.len() as f64
-            } else {
-                0.0
-            };
-            let confined_cover_std = if cover_times.len() > 1 {
-                let mean = confined_cover_time;
-                let var = cover_times
-                    .iter()
-                    .map(|&x| (x - mean).powi(2))
-                    .sum::<f64>()
-                    / cover_times.len() as f64;
-                var.sqrt()
-            } else {
-                0.0
-            };
-
-            // Effective generation from belly size
             let effective_gen = if belly_size < 3 {
                 0
             } else if belly_size <= 4 {
@@ -335,15 +247,180 @@ pub fn run(ctx: &MeasureContext) -> NeutrinoResult {
                 3
             };
 
-            NeutrinoCandidate {
+            CandidatePrep {
                 origin: *origin,
-                belly_size,
-                max_convergence: *max_conv,
+                belly: belly.clone(),
+                belly_set,
+                belly_adj,
+                max_conv: *max_conv,
                 mean_chirality,
+                effective_gen,
+            }
+        })
+        .collect();
+
+    // Step 5b: Auto-converged escape + cover time measurements
+    let ac = AutoConverge::new(ctx.walkers, 2048, ctx.epsilon);
+    let mut conv_state = ConvergeState::new();
+    let batch_per = (ac.batch_size / total_neutrinos).max(1);
+
+    // Per-candidate accumulators persist across batches
+    let mut escape_sums: Vec<f64> = vec![0.0; total_neutrinos];
+    let mut escape_counts: Vec<usize> = vec![0; total_neutrinos];
+    let mut cover_sums: Vec<f64> = vec![0.0; total_neutrinos];
+    // Welford online variance: track mean + M2 (sum of squared deviations
+    // from running mean).  Replaces naive E[X^2]-E[X]^2 which suffers
+    // catastrophic cancellation for large cover times (~500).
+    let mut cover_welford_mean: Vec<f64> = vec![0.0; total_neutrinos];
+    let mut cover_welford_m2: Vec<f64> = vec![0.0; total_neutrinos];
+    let mut cover_counts: Vec<usize> = vec![0; total_neutrinos];
+
+    loop {
+        let wi_offset = conv_state.total_walkers / total_neutrinos;
+
+        // Run batch_per more walkers per candidate (parallel across candidates)
+        let batch_results: Vec<(f64, usize, Vec<f64>, usize)> = preps
+            .par_iter()
+            .map(|prep| {
+                let belly_size = prep.belly.len();
+                let mut esc_sum = 0.0f64;
+                let mut esc_cnt = 0usize;
+                let mut cov_vals: Vec<f64> = Vec::with_capacity(batch_per);
+                let mut cov_cnt = 0usize;
+                let max_cover_steps = (belly_size as u32) * 50 + 100;
+
+                for wi in 0..batch_per {
+                    let global_wi = wi_offset + wi;
+
+                    // Escape walk
+                    let mut rng = StdRng::seed_from_u64(
+                        ctx.seed
+                            .wrapping_add(prep.origin as u64)
+                            .wrapping_add(global_wi as u64),
+                    );
+                    let start = prep.belly[rng.gen_range(0..belly_size)];
+                    let mut pos = start;
+                    let mut escaped = false;
+                    for step in 1..=200u32 {
+                        let s = sym_vac_head[pos] as usize;
+                        let e = sym_vac_head[pos + 1] as usize;
+                        let deg = e - s;
+                        if deg == 0 { break; }
+                        let next = sym_vac_data[s + rng.gen_range(0..deg)] as usize;
+                        pos = next;
+                        if !prep.belly_set.contains(&pos) {
+                            esc_sum += step as f64;
+                            esc_cnt += 1;
+                            escaped = true;
+                            break;
+                        }
+                    }
+                    if !escaped {
+                        esc_sum += 200.0;
+                        esc_cnt += 1;
+                    }
+
+                    // Confined cover walk
+                    let mut rng2 = StdRng::seed_from_u64(
+                        ctx.seed
+                            .wrapping_add(prep.origin as u64)
+                            .wrapping_add(global_wi as u64)
+                            .wrapping_add(10000),
+                    );
+                    let start_bi = rng2.gen_range(0..belly_size);
+                    let mut pos_bi = start_bi;
+                    let mut visited = vec![false; belly_size];
+                    visited[pos_bi] = true;
+                    let mut n_visited = 1usize;
+                    let mut ct = max_cover_steps as f64;
+
+                    for step in 1..=max_cover_steps {
+                        let nbrs = &prep.belly_adj[pos_bi];
+                        if nbrs.is_empty() { break; }
+                        let next_bi = nbrs[rng2.gen_range(0..nbrs.len())];
+                        pos_bi = next_bi;
+                        if !visited[pos_bi] {
+                            visited[pos_bi] = true;
+                            n_visited += 1;
+                        }
+                        if n_visited >= belly_size {
+                            ct = step as f64;
+                            break;
+                        }
+                    }
+                    cov_vals.push(ct);
+                    cov_cnt += 1;
+                }
+
+                (esc_sum, esc_cnt, cov_vals, cov_cnt)
+            })
+            .collect();
+
+        // Batch-only observable for Welford (independent sample)
+        let (batch_esc, batch_cnt): (f64, usize) = batch_results.iter()
+            .fold((0.0, 0), |(s, c), (es, ec, _, _)| (s + es, c + ec));
+        let batch_obs = if batch_cnt > 0 { batch_esc / batch_cnt as f64 } else { 0.0 };
+
+        // Accumulate into per-candidate totals for final output.
+        // Cover time variance uses Welford's online algorithm (numerically stable).
+        for (ci, (es, ec, cov_vals, _cc)) in batch_results.into_iter().enumerate() {
+            escape_sums[ci] += es;
+            escape_counts[ci] += ec;
+            for ct in cov_vals {
+                cover_counts[ci] += 1;
+                cover_sums[ci] += ct;
+                let delta = ct - cover_welford_mean[ci];
+                cover_welford_mean[ci] += delta / cover_counts[ci] as f64;
+                let delta2 = ct - cover_welford_mean[ci];
+                cover_welford_m2[ci] += delta * delta2;
+            }
+        }
+
+        // Correct walker accounting: update() adds ac.batch_size, but we
+        // dispatched batch_per * total_neutrinos walkers (may differ due to
+        // integer division truncation).
+        let actual_dispatched = batch_per * total_neutrinos;
+        let converged = conv_state.update(batch_obs, &ac);
+        conv_state.total_walkers = conv_state.total_walkers - ac.batch_size + actual_dispatched;
+        if converged { break; }
+        if conv_state.at_limit(&ac) {
+            eprintln!("[M7] WARNING: {} walkers without convergence", conv_state.total_walkers);
+            break;
+        }
+    }
+    println!("  [M7] converged at {} walkers", conv_state.total_walkers);
+
+    // Assemble final candidates
+    let candidates: Vec<NeutrinoCandidate> = preps
+        .iter()
+        .enumerate()
+        .map(|(ci, prep)| {
+            let escape_time = if escape_counts[ci] > 0 {
+                escape_sums[ci] / escape_counts[ci] as f64
+            } else {
+                0.0
+            };
+            let confined_cover_time = if cover_counts[ci] > 0 {
+                cover_sums[ci] / cover_counts[ci] as f64
+            } else {
+                0.0
+            };
+            let confined_cover_std = if cover_counts[ci] > 1 {
+                let var = cover_welford_m2[ci] / (cover_counts[ci] - 1) as f64;
+                var.max(0.0).sqrt()
+            } else {
+                0.0
+            };
+
+            NeutrinoCandidate {
+                origin: prep.origin,
+                belly_size: prep.belly.len(),
+                max_convergence: prep.max_conv,
+                mean_chirality: prep.mean_chirality,
                 escape_time,
                 confined_cover_time,
                 confined_cover_std,
-                effective_gen,
+                effective_gen: prep.effective_gen,
             }
         })
         .collect();

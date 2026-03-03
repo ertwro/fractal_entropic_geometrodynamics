@@ -2,7 +2,7 @@
 """
 plot_universe.py — Publication-quality figures for Modulo Synthesis / FEG.
 
-Reads the three CSV outputs from causal_set_sim and generates:
+Reads the three CSV outputs from feg_prism and generates:
   Figure 1: Emergent Metric      (spectral dimension d_S vs diffusion time t)
   Figure 2: Inertia Quantisation  (topological mass spectrum)
   Figure 3: Causal Flux Asymmetry (attraction vs repulsion)
@@ -52,12 +52,17 @@ PAL = {
     "repu":   "#4C72B0",
 }
 
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+DATA = REPO_ROOT / "data" / "ensemble_10M_final"
 HERE = pathlib.Path(__file__).resolve().parent
 
 
 def load_csv(name: str) -> pd.DataFrame:
-    """Load a CSV, skipping leading comment lines (# ...)."""
-    path = HERE / name
+    """Load a CSV from the ensemble data directory, skipping comment lines."""
+    import glob as g
+    stem = name.replace('.csv', '')
+    candidates = sorted(g.glob(str(DATA / f"{stem}_M*.csv")))
+    path = candidates[-1] if candidates else DATA / name
     return pd.read_csv(path, comment="#")
 
 

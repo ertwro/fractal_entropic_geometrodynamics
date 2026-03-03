@@ -11,13 +11,14 @@
 //! Provenance hash verification on load rejects checkpoints from
 //! incompatible forks (different DOI or author).
 
+use crate::measure::MeasureResults;
 use crate::phase2::topology::TopologySummary;
 use crate::phase3::SpectralOutput;
 use crate::provenance;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-const CHECKPOINT_VERSION: u32 = 3;
+const CHECKPOINT_VERSION: u32 = 4;
 
 /// Parameter fingerprint for validating checkpoint compatibility.
 ///
@@ -43,6 +44,7 @@ pub struct Checkpoint {
     pub completed: usize,
     pub spectral_vec: Vec<SpectralOutput>,
     pub topo_vec: Vec<TopologySummary>,
+    pub measure_vec: Vec<MeasureResults>,
     pub welford_mean: f64,
     pub welford_m2: f64,
 }
@@ -75,9 +77,31 @@ pub fn save(
     params: &RunParams,
     spectral_vec: &[SpectralOutput],
     topo_vec: &[TopologySummary],
+    measure_vec: &[MeasureResults],
     welford_mean: f64,
     welford_m2: f64,
 ) -> Result<(), String> {
+    // Clone and compact: drop O(N) per-node/per-prism vectors before serializing.
+    // These are only used for per-batch CSV output and are already empty in aggregated results.
+    let mut compact_measures = measure_vec.to_vec();
+    for m in &mut compact_measures {
+        // half_life: prism_census and occupancy_by_belly are O(prisms) not O(N),
+        // and aggregate() reads prism_census to recompute stability ratios.
+        // Leave them intact.
+        if let Some(ref mut r) = m.modulo {
+            r.nodes = vec![];
+        }
+        if let Some(ref mut r) = m.vacuum_pol {
+            r.samples = vec![];
+        }
+        if let Some(ref mut r) = m.electroweak {
+            r.per_prism = vec![];
+        }
+        if let Some(ref mut r) = m.decoherence {
+            r.per_prism = vec![];
+        }
+    }
+
     let ckpt = Checkpoint {
         version: CHECKPOINT_VERSION,
         provenance_hash: provenance::PROVENANCE_HASH,
@@ -85,6 +109,7 @@ pub fn save(
         completed: spectral_vec.len(),
         spectral_vec: spectral_vec.to_vec(),
         topo_vec: topo_vec.to_vec(),
+        measure_vec: compact_measures,
         welford_mean,
         welford_m2,
     };

@@ -33,7 +33,7 @@ causal_set.toml
 # ── Private / not for upload ──
 animations/
 paper/
-prism_simulation/
+FEG_prism/target/
 pedagogic_booklets/modulo_synthesis_kuratowski_calculus_en*
 
 # ── Excess data directories ──

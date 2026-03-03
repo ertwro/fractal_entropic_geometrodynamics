@@ -66,40 +66,55 @@ pub fn build_flux_csr(
     merge_map: &[usize],
     n_nodes: usize,
 ) -> CsrGraph<Directed> {
-    let mut rows = Vec::new();
-    let mut cols = Vec::new();
+    // Two-pass in-place construction: avoids 2.28 GB scratch (rows+cols)
+    // at N=10M by counting degrees first, then filling directly.
 
+    // Pass 1: count out-degrees after merge + causal filter
+    let mut deg = vec![0u32; n_nodes];
     for u in 0..n_nodes {
-        let neighbors = vacuum_csr.neighbors(u);
-        for &v in neighbors {
-            // Recover direction: u -> v if t(u) < t(v)
+        for &v in vacuum_csr.neighbors(u) {
             if pts[u][0] < pts[v as usize][0] {
-                let ri = merge_map[u] as u32;
-                let ci = merge_map[v as usize] as u32;
+                let ri = merge_map[u];
+                let ci = merge_map[v as usize];
                 if ri != ci {
-                    rows.push(ri); // forward: cause -> effect
-                    cols.push(ci);
+                    deg[ri] += 1;
                 }
             }
         }
     }
 
-    // Build directed CSR from collected edges
+    // Prefix sum → head
     let mut head = vec![0u32; n_nodes + 1];
-    for &r in &rows {
-        head[r as usize + 1] += 1;
-    }
     for i in 0..n_nodes {
-        head[i + 1] += head[i];
+        head[i + 1] = head[i] + deg[i];
     }
-    let mut data = vec![0u32; rows.len()];
-    let mut pos = head.clone();
-    for (&r, &c) in rows.iter().zip(&cols) {
-        data[pos[r as usize] as usize] = c;
-        pos[r as usize] += 1;
-    }
+    drop(deg);
 
-    // Sort each neighbor list for deterministic traversal
+    // Pass 2: fill data directly
+    let total_edges = head[n_nodes] as usize;
+    let mut data = vec![0u32; total_edges];
+    let mut pos = head[..n_nodes].to_vec();
+    for u in 0..n_nodes {
+        for &v in vacuum_csr.neighbors(u) {
+            if pts[u][0] < pts[v as usize][0] {
+                let ri = merge_map[u];
+                let ci = merge_map[v as usize] as u32;
+                if ri != ci as usize {
+                    data[pos[ri] as usize] = ci;
+                    pos[ri] += 1;
+                }
+            }
+        }
+    }
+    drop(pos);
+
+    // Sort each row for deterministic traversal.
+    //
+    // Path-weighted flux: duplicate merged edges are intentionally retained.
+    // When Kuratowski contraction folds multiple micro-paths into a single
+    // macro-link (A→B), the multiplicity equals the number of underlying
+    // causal histories.  Deduplicating would destroy the causal volume and
+    // violate conservation of probability in the sum-over-histories.
     for u in 0..n_nodes {
         let start = head[u] as usize;
         let end = head[u + 1] as usize;

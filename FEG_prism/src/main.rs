@@ -70,6 +70,7 @@ fn print_usage() {
     eprintln!("  --modulo-prime <u64> Prime modulus for M3 (default: 65537)");
     eprintln!("  --modulo-root <u64>  Primitive root for M3 (default: 3)");
     eprintln!("  --modulo-steps <N>   NTT walk steps for M3/M6 (default: 500)");
+    eprintln!("  --decoherence-every <N>  Run M6 every N-th realization (default: 1)");
     eprintln!("  --help               Show this help message");
 }
 
@@ -103,6 +104,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut parsed_modulo_prime: Option<u64> = None;
     let mut parsed_modulo_root: Option<u64> = None;
     let mut parsed_modulo_steps: Option<u32> = None;
+    let mut parsed_decoherence_every: Option<usize> = None;
 
     for pair in args.windows(2) {
         match pair[0].as_str() {
@@ -119,6 +121,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "--modulo-prime" => { parsed_modulo_prime = pair[1].parse().ok(); }
             "--modulo-root" => { parsed_modulo_root = pair[1].parse().ok(); }
             "--modulo-steps" => { parsed_modulo_steps = pair[1].parse().ok(); }
+            "--decoherence-every" => { parsed_decoherence_every = pair[1].parse().ok(); }
             _ => {}
         }
     }
@@ -128,6 +131,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "--epsilon", "--tmax", "--seed", "--threads", "--eigen-cutoff",
         "--batch-size", "--max-ensemble", "--min-ensemble", "--target-error",
         "--export-slice", "--modulo-prime", "--modulo-root", "--modulo-steps",
+        "--decoherence-every",
     ].iter().copied().collect();
 
     let mut positional: Vec<&str> = Vec::new();
@@ -173,6 +177,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             root: parsed_modulo_root.unwrap_or(3),
             steps: parsed_modulo_steps.unwrap_or(500),
         },
+        decoherence_every: parsed_decoherence_every.unwrap_or(1).max(1),
     };
 
     if measure.any_active() {
@@ -191,6 +196,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("  measurements: {}", active.join(", "));
         if measure.modulo {
             println!("  modulo config: p={}, g={}", measure.modulo_config.prime, measure.modulo_config.root);
+        }
+        if measure.decoherence && measure.decoherence_every > 1 {
+            println!("  decoherence gating: M6 runs every {} realizations", measure.decoherence_every);
         }
     }
 
@@ -276,13 +284,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // ── Walkers from Causal Resolution Theorem ──────────────────────────
+    //
+    // W = ⌈(t_max / ε)²⌉ derives from the CLT on the Bernoulli return
+    // indicator: each walker contributes X_i ∈ {0,1} with E[X_i] = P(t),
+    // giving RSE = 1/√(W · P(t)).  Setting RSE < ε and P(t) ~ t^{−2}
+    // (d_s = 4) yields W > t²/ε².
+    //
+    // t_max = D_max = 15 (MAX_HASSE_DEGREE) because that is the lattice
+    // mode decay timescale: after ~D_max lazy-walk steps, the discrete
+    // graph artifacts in P(t) have damped by ~1/e and the continuum
+    // scaling plateau begins.  Calibrating at the plateau onset is
+    // optimal because P(D_max) is the largest return probability in the
+    // scaling regime, yielding the smallest required W.
+    //
+    // For t > D_max, RSE degrades as (t/D_max) · ε.  Auto-convergence
+    // (convergence.rs, Welford RSE < 5×10⁻⁴, k=3 consecutive batches)
+    // adds walker batches until the observable at the midpoint of the
+    // step array (t ≈ 36) stabilizes.  The CRT budget is thus a floor,
+    // not a ceiling.
     let walkers: usize = ((tmax as f64 / epsilon).powi(2)).ceil() as usize;
     println!(
         "[Phase 3] Topological Error Tolerance \u{03b5} = {epsilon}. At t_max = {tmax},\n\
-         Causal Resolution Theorem: W = {walkers} spectral walkers.\n"
+         Causal Resolution Theorem: W_base = {walkers} (per-category dilution applied at runtime).\n"
     );
 
-    // Dense step sampling
+    // Dense step sampling: 1..30 (integer), then 32, 34, ..., 100 (even).
+    // Covers short-time lattice transient, scaling plateau, and approach
+    // to finite-size saturation P(t) → 1/N.
     let steps: Vec<u32> = (1..=30).chain((16..=50).map(|i| i * 2)).collect();
     let t0 = Instant::now();
 
@@ -311,6 +339,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         n_points, &steps, walkers, eigen_cutoff, &measure, exec_mode,
         seed_base, max_ensemble, min_ensemble, target_error,
         batch_size, max_concurrent_runs, &output_dir, resume, force_all,
+        epsilon, tmax,
     );
 
     // ── M10: Assemble SM Lagrangian card (post-hoc) ─────────────────────
