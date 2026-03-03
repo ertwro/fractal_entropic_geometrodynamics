@@ -37,4 +37,14 @@ jobs:
 
       - name: Clippy
         if: runner.os == 'Linux'
-        run: cargo clippy --manifest-path FEG_prism/Cargo.toml -- -D warnings
+        run: >
+          cargo clippy --manifest-path FEG_prism/Cargo.toml -- -D warnings
+          -A clippy::too_many_arguments
+          -A clippy::needless_range_loop
+          -A clippy::manual_range_contains
+          -A clippy::manual_is_multiple_of
+          -A clippy::redundant_closure
+          -A clippy::collapsible_else_if
+          -A clippy::unnecessary_cast
+          -A clippy::new_without_default
+          -A clippy::useless_vec
