@@ -393,6 +393,20 @@ Tested on Linux; strictly OS-agnostic — compiles natively on Windows/macOS via
 - **N=10^7:** ~6 GB per concurrent realization; batch-size 3 needs ~20 GB
 - **Quick test:** N=50k runs in 30 seconds on anything
 
+### Why Rust
+
+Equations are free. Papers are free. Claims about the universe are free.
+What is not free is a compiler that enforces correctness at every boundary:
+no null dereferences in your vacuum, no data races in your ensemble, no
+silent NaN poisoning your coupling constant. Every number in this repository
+passed `cargo test`, `cargo clippy`, and 15.5 hours of deterministic
+execution before it was written to disk.
+
+This is an open invitation. `cargo build --release` does not check your
+credentials, your affiliation, or your h-index. If the physics is wrong,
+the way to prove it is to fork the repo, change the axioms, and show that
+the numbers move. If they don't — that is the point.
+
 ---
 
 ## Repository Structure
