@@ -119,7 +119,7 @@ The output directory will contain:
 ### Quick test (30 seconds)
 
 ```bash
-cargo run --release --bin feg_prism -- 50000 10 ../data/quick_test --inmemory --measure-lagrangian --seed 42
+cargo run --release --bin feg_prism -- 50000 1 ../data/quick_test --inmemory --measure-lagrangian --seed 42
 ```
 
 ### Generate publication figures
@@ -395,12 +395,13 @@ Tested on Linux; strictly OS-agnostic — compiles natively on Windows/macOS via
 
 ### Why Rust
 
-Equations are free. Papers are free. Claims about the universe are free.
-What is not free is a compiler that enforces correctness at every boundary:
+I'm a nobody. Extraordinary claims require extraordinary evidence.
+Equations are cheap. Papers are cheap. Educated hypothesis about the universe are cheap.
+What is not cheap is a compiler that enforces correctness at every boundary:
 no null dereferences in your vacuum, no data races in your ensemble, no
 silent NaN poisoning your coupling constant. Every number in this repository
 passed `cargo test`, `cargo clippy`, and 15.5 hours of deterministic
-execution before it was written to disk.
+execution before it was written to disk. All blazingly fast and memory safe.
 
 This is an open invitation. `cargo build --release` does not check your
 credentials, your affiliation, or your h-index. If the physics is wrong,
@@ -461,7 +462,7 @@ Four volumes (pdf/tex) of the _Modulo Synthesis_ pedagogic project:
 }
 ```
 
-The mathematical framework underlying the Fractal Entropic Geometrodynamics (FEG) engine is strictly defined in the accompanying text. For a rigorous treatment of discrete modular phase arithmetic, causal subset projection, and the topological emergence of the Standard Model, please refer to:
+The mathematical framework underlying the Fractal Entropic Geometrodynamics (FEG) engine is strictly defined in the accompanying English text. For a rigorous treatment of discrete modular phase arithmetic, causal subset projection, and the topological emergence of the Standard Model, please refer to:
 
 **Silva Alvarado, Juan Pablo. _The Kuratowski Calculus_** (ISBN: 979-8249815400).
 
