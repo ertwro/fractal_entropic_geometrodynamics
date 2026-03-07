@@ -135,7 +135,17 @@ pub fn run(ctx: &MeasureContext) -> DecoherenceResult {
 
     let gen_lookup = build_gen_lookup(n, ctx);
     let merge = &ctx.defect.merge_map;
-    let (sym_vac_head, sym_vac_data) = ctx.sym_vacuum.raw();
+    let sym = match ctx.sym_vacuum {
+        Some(s) => s,
+        None => return DecoherenceResult {
+            per_prism: vec![], decoherence_curve: vec![], born_histogram: vec![],
+            born_r: 0.0, born_r_chain: 0.0, born_r_null_mean: 0.0,
+            born_r_null_std: 0.0, born_r_percentile: 0.0,
+            born_r_chain_percentile: 0.0, n_detector_nodes: 0,
+            mean_env_size: 0.0, coherence_decay_r: 0.0, prime: p, root: g,
+        },
+    };
+    let (sym_vac_head, sym_vac_data) = sym.raw();
     let (vac_head, vac_data) = ctx.vacuum_csr.raw();
 
     // ── Global backward wave (position-independent) ─────────────────────
@@ -143,8 +153,7 @@ pub fn run(ctx: &MeasureContext) -> DecoherenceResult {
     let bwd_global: Vec<u64> = {
         let mut topo_order: Vec<usize> = (0..n).collect();
         topo_order.sort_by(|&a, &b|
-            ctx.pts[a][0].partial_cmp(&ctx.pts[b][0])
-                .unwrap_or(std::cmp::Ordering::Equal)
+            ctx.sorted_coords[a][0].total_cmp(&ctx.sorted_coords[b][0])
         );
 
         let mut bwd = vec![0u64; n];
@@ -318,9 +327,8 @@ pub fn run(ctx: &MeasureContext) -> DecoherenceResult {
                 // (c) Local topo order + localized retarded wave ──────────
                 let mut local_order: Vec<u32> = (0..n_reached as u32).collect();
                 local_order.sort_unstable_by(|&a, &b|
-                    ctx.pts[reached_nodes[a as usize]][0]
-                        .partial_cmp(&ctx.pts[reached_nodes[b as usize]][0])
-                        .unwrap_or(std::cmp::Ordering::Equal)
+                    ctx.sorted_coords[reached_nodes[a as usize]][0]
+                        .total_cmp(&ctx.sorted_coords[reached_nodes[b as usize]][0])
                 );
 
                 let mut fwd = vec![0u64; n_reached];

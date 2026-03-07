@@ -56,7 +56,16 @@ pub fn run(ctx: &MeasureContext) -> NeutrinoResult {
 
     let n = ctx.n_points;
     let (vac_head, vac_data) = ctx.vacuum_csr.raw();
-    let (sym_vac_head, sym_vac_data) = ctx.sym_vacuum.raw();
+    let sym = match ctx.sym_vacuum {
+        Some(s) => s,
+        None => return NeutrinoResult {
+            candidates: vec![], total_count: 0, mean_belly_size: 0.0,
+            mean_chirality: 0.0, mean_escape_time: 0.0,
+            mean_confined_cover: 0.0, mean_confined_std: 0.0,
+            gen_counts: [0; 4], ratio_to_closed: 0.0,
+        },
+    };
+    let (sym_vac_head, sym_vac_data) = sym.raw();
 
     // Step 1: Build is_placed from committed closed prisms
     let mut is_placed = vec![false; n];

@@ -31,7 +31,7 @@ pub fn sprinkle(n: usize, rng: &mut impl Rng) -> (Vec<[f64; 4]>, f64) {
             pts.push([t, x, y, z]);
         }
     }
-    (pts, big_t)
+    (pts, half_t)
 }
 
 /// Poisson-sprinkle points into a time-slab [t_min, t_max].

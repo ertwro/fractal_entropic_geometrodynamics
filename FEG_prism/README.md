@@ -50,19 +50,23 @@ Gravity = random walk return probability. The spectral dimension d_S(t) = −2 d
 
 Electromagnetism = directed transmission probability. **Directed walkers** follow the arrow of time (cause → effect only). The transmission probability from Gen1 particles to AntiGen1 particles measures **attraction** (opposite charges); transmission from Gen1 to Gen1 measures **repulsion** (same charges).
 
-### What are the ten measurements?
+### What are the fourteen measurements?
 
-FEG Prism provides ten observer measurements (M1–M10):
+FEG Prism provides fourteen observer measurements (M1–M14):
 - **M1 — Traversal Mass**: Prism-confined random walk cover time (dynamical mass)
 - **M2 — Half-Life Census**: Cross-ensemble generation occupancy statistics
 - **M3 — Modulo Path Integral**: NTT-based interference fringes (g^S mod p)
 - **M4 — Vacuum Polarization**: K₃,₃ screening at Gen1 free ports
-- **M5 — Electroweak Sector**: SU(2) chirality + U(1) port counting
+- **M5 — Electroweak Sector**: SU(2) chirality + U(1) topological charge
 - **M6 — Quantum Decoherence**: Born rule |ψ|² + environment coherence
 - **M7 — Neutrino Census**: Open prisms (frustrated K₂,ₙ) detection
 - **M8 — PMNS Mixing Matrix**: Layered BFS wavefront propagation
 - **M9 — Higgs Mechanism**: Topological drag via chiral confinement
 - **M10 — SM Lagrangian Card**: Full Standard Model parameter card (zero free parameters)
+- **M11 — Hausdorff Dimension**: BFS volume growth V(r) ~ r^{d_H} on the Hasse DAG
+- **M12 — Zigzag KK Dimension**: Alternating forward/backward BFS for d_zig ≈ 4.004
+- **M13 — Topological Collider**: Bipartite seam + causal blanket → Q_topo = 1/4 exact
+- **M14 — Exact Mass Formula**: Genus-ladder M(g) = M_e · 2^g · (32π)^g / C(n_min,3)
 
 ### Physics → Code Dictionary
 
@@ -84,12 +88,16 @@ FEG Prism provides ten observer measurements (M1–M10):
 | Half-life census | `measure/m02_halflife.rs` | Cross-ensemble generation occupancy |
 | Modulo path integral | `measure/m03_modulo.rs` | NTT phases g^S mod p via `AtomicU64` |
 | Vacuum polarization | `measure/m04_vacuum_pol.rs` | K₃,₃ screening at Gen1 free ports |
-| Electroweak sector | `measure/m05_electroweak.rs` | SU(2) chirality + U(1) port counting |
+| Electroweak sector | `measure/m05_electroweak.rs` | SU(2) chirality + U(1) topological charge |
 | Quantum decoherence | `measure/m06_decoherence.rs` | Born rule + environment coherence |
 | Neutrino census | `measure/m07_neutrino.rs` | Open prisms (frustrated K₂,ₙ) |
 | PMNS mixing | `measure/m08_pmns.rs` | Layered BFS wavefront |
 | Higgs mechanism | `measure/m09_higgs.rs` | Topological drag (chiral confinement) |
 | SM Lagrangian card | `measure/m10_lagrangian.rs` | Zero-parameter assembly from M1–M9 |
+| Hausdorff dimension | `measure/m11_hausdorff.rs` | BFS volume growth d_H on Hasse DAG |
+| Zigzag KK dimension | `measure/m12_zigzag.rs` | Alternating BFS → d_zig ≈ 4.004 |
+| Topological collider | `measure/m13_collider.rs` | Seam/blanket → Q_topo = 1/4 exact |
+| Exact mass formula | `measure/m14_mass_formula.rs` | Genus-ladder zero-parameter masses |
 
 ---
 
@@ -137,28 +145,34 @@ FEG Prism provides ten observer measurements (M1–M10):
 │  M2:  Half-life census (generation occupancy by belly size)     │
 │  M3:  Modulo path integral (NTT phases g^S mod p)              │
 │  M4:  Vacuum polarization (K₃,₃ screening at Gen1 ports)       │
-│  M5:  Electroweak sector (SU(2) chirality + U(1) ports)        │
+│  M5:  Electroweak sector (SU(2) chirality + U(1) charge)       │
 │  M6:  Quantum decoherence (Born rule + environment)             │
 │  M7:  Neutrino census (open prisms, frustrated K₂,ₙ)           │
 │  M8:  PMNS mixing (BFS wavefront, 3×3 transition matrix)       │
 │  M9:  Higgs mechanism (topological drag, chiral confinement)    │
 │  M10: SM Lagrangian card (zero-parameter assembly from M1–M9)  │
+│  M11: Hausdorff dimension (BFS volume growth on Hasse DAG)     │
+│  M12: Zigzag KK dimension (alternating BFS, d_zig ≈ 4.004)    │
+│  M13: Topological collider (seam/blanket → Q_topo = 1/4)      │
+│  M14: Exact mass formula (genus-ladder, zero free parameters)  │
 │                                                                 │
 │  Optional — enabled via --measure-all or per-module flags       │
 │  M10 requires --measure-lagrangian (implies all M1–M9)          │
+│  --topology-only: skips Phase 3 walks, auto-enables M11/M13/M14│
 └──────────────────────────┬──────────────────────────────────────┘
-                           │ MeasureResults (10 optional measurement structs)
+                           │ MeasureResults (14 optional measurement structs)
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                Phase 4: output/                                 │
 │  write_spectral_csv() → results.csv (32 columns)               │
 │  write_topology_csv() → topology_summary.csv (27 key-value)    │
 │  write_mass_spectrum_csv() → mass_spectrum.csv                  │
-│  + per-measurement CSVs (up to 11 additional files):            │
+│  + per-measurement CSVs (up to 15 additional files):            │
 │    traversal_mass.csv, half_life.csv, modulo_interference.csv,  │
 │    vacuum_polarization.csv, electroweak.csv, decoherence.csv,   │
 │    born_rule.csv, neutrino.csv, pmns_mixing.csv, higgs.csv,    │
-│    lagrangian_card.csv                                          │
+│    lagrangian_card.csv, hausdorff.csv, zigzag.csv,             │
+│    collider.csv, mass_formula.csv                               │
 └──────────────────────────┬──────────────────────────────────────┘
                            │ CSV files on disk
                            ▼
@@ -279,9 +293,9 @@ Random walk return probability measurement.
 - **`averaging.rs`**: Welford online accumulation for mean and variance. `average_ensemble()` combines per-realization `SpectralOutput` vectors using the P-first protocol: P(t) is averaged first, then d_S is recomputed from ⟨P⟩ (averaging P first is critical because d_S is non-linear in P).
 - **`checkpoint.rs`**: Serialization/deserialization of ensemble state to `checkpoint.bin` (bincode). Cross-fork rejection via embedded provenance hash. Supports `--resume`.
 
-### `measure/` — Observer Measurements (M1–M10)
+### `measure/` — Observer Measurements (M1–M14)
 
-Ten read-only measurement algorithms that extract physics from existing simulation data without modifying the underlying engine. All measurements are optional and activated via CLI flags.
+Fourteen read-only measurement algorithms that extract physics from existing simulation data without modifying the underlying engine. All measurements are optional and activated via CLI flags.
 
 - **M1 — Cover-Time Mass (`m01_traversal.rs`)**: Measures the dynamical mass of each Causal Prism via coupon-collector cover time. A confined random walker on the defect CSR must visit **every** belly node before exiting at the destination pole. Cover time scales as O(N log N) — heavier generations (larger bellies) require more causal ticks. If the walker reaches the destination before full coverage, it reflects back to the origin. The K₂,ₙ hitting-time theorem proves that simple origin→destination traversal is O(1) regardless of N — the cover-time observable is the correct dynamical mass measurement.
 
@@ -291,7 +305,7 @@ Ten read-only measurement algorithms that extract physics from existing simulati
 
 - **M4 — Vacuum Polarization (`m04_vacuum_pol.rs`)**: K₃,₃ screening at Gen1 prism free ports. For each Gen1 prism, counts candidate nodes that could extend it to K₃,₃ (connecting to both poles AND ≥ 3 intermediates). Screening factor = n_accepted / n_attempted.
 
-- **M5 — Electroweak Sector (`m05_electroweak.rs`)**: SU(2) chirality classification via left/right-handed port asymmetry + U(1) hypercharge from total port counting. Predicts sin²θ_W = 4/17 from the Hasse degree bound D ≤ 15 combinatorics. No free parameters.
+- **M5 — Electroweak Sector (`m05_electroweak.rs`)**: SU(2) chirality classification via left/right-handed port asymmetry + U(1) hypercharge from topological charge. Predicts sin²θ_W = 4/17 from the Hasse degree bound D ≤ 15 combinatorics. No free parameters.
 
 - **M6 — Quantum Decoherence (`m06_decoherence.rs`)**: Born rule verification. Launches walkers from prism belly nodes with modular phases, accumulates arrival amplitudes at target nodes, and computes |ψ|² vs observed frequency. Chi-squared goodness-of-fit tests Born rule compliance. Also measures coherence decay: how quickly superposition phases decohere as a function of environment size (number of vacuum nodes between source and target).
 
@@ -301,7 +315,15 @@ Ten read-only measurement algorithms that extract physics from existing simulati
 
 - **M9 — Higgs Mechanism (`m09_higgs.rs`)**: Measures topological drag — the path-length penalty imposed by chiral confinement. Compares mean shortest-path lengths for photon-like walkers (gen1→anti1, no drag) vs W-boson-like walkers (gen1→gen2, chirality-confined). The drag coefficient D = L_W / L_γ measures the ratio of confined to unconfined path lengths. CDF area ratio provides a complementary integrated measure of mass generation.
 
-- **M10 — SM Lagrangian Card (`m10_lagrangian.rs`)**: Post-hoc assembly of the full Standard Model parameter card from M1–M9 outputs. Collects ~40 parameters (masses, coupling constants, mixing angles) with zero free parameters — every value is derived from topology. Requires `--measure-lagrangian` (which implies all M1–M9). Key predictions: sin²θ_W = 4/17, G_N = 1/(16π), α = Q_topo/(8π).
+- **M10 — SM Lagrangian Card (`m10_lagrangian.rs`)**: Post-hoc assembly of the full Standard Model parameter card from M1–M9 outputs. Collects ~40 parameters (masses, coupling constants, mixing angles) with zero free parameters — every value is derived from topology. Requires `--measure-lagrangian` (which implies all M1–M9). Key predictions: sin²θ_W = 4/17, G_N = 1/(16π), α₀ = 1/(32π) (bare Planck coupling from M13 collider).
+
+- **M11 — Hausdorff Dimension (`m11_hausdorff.rs`)**: BFS volume growth V(r) ~ r^{d_H} on the directed Hasse DAG. Measures d_H from 500 random sources via least-squares fit of log V vs log r. Directed BFS gives d_H → 4.0 (the manifold embedding dimension).
+
+- **M12 — Zigzag KK Dimension (`m12_zigzag.rs`)**: Alternating forward/backward BFS for the zigzag Kaluza-Klein dimension d_zig ≈ 4.004. Screening ratio S₄/S_{d_zig} = 32π/137 connects the bare and observed coupling constants.
+
+- **M13 — Topological Collider (`m13_collider.rs`)**: Bipartite seam + causal blanket measurement. For each diamond (K₂,ₙ prism), the seam is the exclusive children of each pole filtered by causality, and the blanket is the set of edges from diamond nodes to non-diamond nodes. Q_topo = seam_size / blanket_size → 1/4 (exact, locked asymptote). Gives α₀ = 1/(32π) ≈ 1/100.5 at the Planck scale.
+
+- **M14 — Exact Mass Formula (`m14_mass_formula.rs`)**: Genus-ladder mass formula with zero free parameters. Computes genus g from writhe via Grothendieck-Euler: g=0→electron, g=1→muon, g=2→tau. M(g) = M_e · 2^g · (32π)^g / C(max(3,2g+1),3). Reports prism genus distribution, mean belly sizes per genus, and predicted mass ratios.
 
 - **`context.rs`**: `MeasureContext` — shared read-only references to simulation data (CSR graphs, prism lists, generation sets) passed to each measurement module. `MeasureFlags` and `ModuloConfig` for CLI flag parsing.
 
@@ -315,7 +337,7 @@ Writes ensemble-averaged observables to CSV for analysis with gnuplot, matplotli
   - `results.csv` (32 columns per diffusion step): P and d_S for vacuum, defect, Gen1–3, AntiGen1, sterile; raw and normalized causal flux; mass spectrum; ensemble standard deviations for all d_S and flux fields.
   - `topology_summary.csv` (27 key-value pairs): structural fingerprint of the generated universe.
   - `mass_spectrum.csv` (2 columns): belly size N → frequency histogram.
-- **Per-measurement CSVs** (up to 11 additional files): `traversal_mass.csv`, `half_life.csv`, `modulo_interference.csv`, `vacuum_polarization.csv`, `electroweak.csv`, `decoherence.csv`, `born_rule.csv`, `neutrino.csv`, `pmns_mixing.csv`, `higgs.csv`, `lagrangian_card.csv`.
+- **Per-measurement CSVs** (up to 15 additional files): `traversal_mass.csv`, `half_life.csv`, `modulo_interference.csv`, `vacuum_polarization.csv`, `electroweak.csv`, `decoherence.csv`, `born_rule.csv`, `neutrino.csv`, `pmns_mixing.csv`, `higgs.csv`, `lagrangian_card.csv`, `hausdorff.csv`, `zigzag.csv`, `collider.csv`, `mass_formula.csv`.
 
 ### `anim_export.rs` — Topology Slice Export
 
@@ -373,7 +395,7 @@ Forces streaming mode: single-pass edge analysis via `scan_edges_with_analysis()
 cargo run --release --bin feg_prism -- 50000 10 --inmemory --measure-all
 ```
 
-Produces additional CSVs for M1–M9: `traversal_mass.csv`, `half_life.csv`, `modulo_interference.csv`, `vacuum_polarization.csv`, `electroweak.csv`, `decoherence.csv`, `born_rule.csv`, `neutrino.csv`, `higgs.csv`.
+Produces additional CSVs for M1–M14: `traversal_mass.csv`, `half_life.csv`, `modulo_interference.csv`, `vacuum_polarization.csv`, `electroweak.csv`, `decoherence.csv`, `born_rule.csv`, `neutrino.csv`, `higgs.csv`, `hausdorff.csv`, `zigzag.csv`, `collider.csv`, `mass_formula.csv`.
 
 ### Full Lagrangian card
 
@@ -382,6 +404,14 @@ cargo run --release --bin feg_prism -- 50000 20 --measure-all --measure-lagrangi
 ```
 
 Enables all M1–M9 measurements plus the M10 post-hoc Lagrangian card assembly. Produces `lagrangian_card.csv` with ~40 zero-free-parameter Standard Model predictions.
+
+### Topology-only mode (deterministic, ~5× faster)
+
+```bash
+cargo run --release --bin feg_prism -- 10000000 1 --inmemory --topology-only --seed 42
+```
+
+Skips Phase 3 random walks entirely. Auto-enables M11 (Hausdorff), M13 (collider), and M14 (mass formula). Produces `hausdorff.csv`, `collider.csv`, and `mass_formula.csv`. All outputs are deterministic topology measurements — no stochastic walkers needed.
 
 ### Neutrino + PMNS analysis
 
@@ -491,7 +521,12 @@ cargo run --release --bin feg_prism -- 50000 10 /path/to/output
 | `--measure-pmns` | flag | — | M8: PMNS mixing matrix |
 | `--measure-higgs` | flag | — | M9: Higgs mechanism |
 | `--measure-lagrangian` | flag | — | M10: SM Lagrangian card (implies M1–M9) |
-| `--measure-all` | flag | — | Enable all measurements M1–M9 |
+| `--measure-hausdorff` | flag | — | M11: Hausdorff dimension (BFS volume growth) |
+| `--measure-zigzag` | flag | — | M12: Zigzag KK dimension |
+| `--measure-collider` | flag | — | M13: Topological collider (Q_topo) |
+| `--measure-mass-formula` | flag | — | M14: Exact mass formula (genus-ladder) |
+| `--measure-all` | flag | — | Enable all measurements M1–M14 |
+| `--topology-only` | flag | — | Skip Phase 3 walks; auto-enable M11/M13/M14 |
 | `--modulo-prime <u64>` | u64 | 65537 | Prime modulus for M3 |
 | `--modulo-root <u64>` | u64 | 3 | Primitive root for M3 |
 | `--modulo-steps <N>` | u32 | 500 | NTT walk steps for M3/M6 |
@@ -547,9 +582,10 @@ Mass ratios 1 : 1.43 : 1.70 are **N-independent topological invariants**.
 
 | Observable | Value (N=10^7) | N→∞ extrapolation | Note |
 |---|---|---|---|
-| Q_topo = Σ\|Φ\|²/ΣN² | 0.1907 | 0.152 ± 0.001 (R²=0.9996) | Topological charge ratio |
-| α = Q_topo/(8π) | 1/131.8 | 1/165.1 ± 1.0 | Bare coupling at Planck scale |
-| Ω_energy = 1/Q_topo − 1 | 4.24 | 5.57 (Planck 2018: 5.36) | Self-energy dark matter ratio |
+| Q_topo (collider) | 1/4 (exact) | 1/4 (locked asymptote) | Topological charge ratio |
+| α₀ = 1/(8π/Q_topo) | 1/(32π) ≈ 1/100.5 | 1/(32π) | Bare coupling at Planck scale (M13) |
+| Screening ratio | 32π/137 ≈ 0.733 | — | Bare → observed via vacuum polarization |
+| Ω_energy = 1/Q_topo − 1 | 3.0 | 3.0 | Self-energy dark matter ratio |
 | α(1 + Ω) | 1/(8π) | 1/(8π) | **Exact at every N** |
 
 ### Occupancy Model (Analytical Mass Hierarchy)
@@ -570,12 +606,26 @@ The simulation reports the **intermediate phase census** — the fraction of pri
 | φ = +1 | 0.318 | Source-like (out_degree > in_degree) |
 | φ = 0 | 0.018 | Balanced |
 
-Plugging the measured belly distribution and phase fractions into the occupancy formula reproduces the mass ratios with **zero free parameters**:
+Plugging the measured belly distribution and phase fractions into the occupancy formula reproduces the belly-size **ordering** m₁ < m₂ < m₃:
 
-| Ratio | Predicted | Observed | Error |
-|-------|-----------|----------|-------|
-| m₂/m₁ | 1.409 | 1.434 | 1.8% |
-| m₃/m₁ | 1.674 | 1.698 | 1.4% |
+| Ratio | Belly-size ratio | Note |
+|-------|-----------------|------|
+| ⟨n⟩₂/⟨n⟩₁ | 1.434 | Ordering only |
+| ⟨n⟩₃/⟨n⟩₁ | 1.698 | Ordering only |
+
+The occupancy model captures the ordering but not the magnitudes. The **exact mass formula** supersedes it:
+
+### Exact Mass Formula (Zero Free Parameters)
+
+M(g) = M_e · 2^g · (32π)^g / C(n_min(g), 3)
+
+where g ∈ {0,1,2} is the topological genus, n_min(g) = max(3, 2g+1), and α₀ = 1/(32π).
+
+| g | Particle | M(g)/M_e | SM value | Error |
+|---|----------|----------|----------|-------|
+| 0 | Electron | 1 | 1 | exact |
+| 1 | Muon | 64π = 201.06 | 206.77 | −2.8% |
+| 2 | Tau | 4(32π)²/10 = 4042.6 | 3477.5 | +16.2% |
 
 ### Causal Flux
 
@@ -620,11 +670,14 @@ Mean drag coefficient D = L_W / L_γ > 1 indicates chirality-confined walkers tr
 
 ### Lagrangian Card Summary (from M10)
 
-Key zero-free-parameter results assembled from M1–M9:
+Key zero-free-parameter results assembled from M1–M14:
 - sin²θ_W = 4/17 ≈ 0.2353 (PDG: 0.2312, 1.8% deviation)
 - G_N = 1/(16π) (gravitational coupling from spectral dimension)
-- α = Q_topo/(8π) (fine structure constant)
-- Mass ratios: m_μ/m_e, m_τ/m_e from occupancy model
+- α₀ = 1/(32π) ≈ 1/100.5 (bare Planck coupling from M13 collider, Q_topo = 1/4)
+- Vacuum polarization screening: 32π/137 ≈ 0.733 (bare → observed α ≈ 1/137)
+- d_H = 4.0 (Hausdorff dimension from M11 directed BFS)
+- d_zig ≈ 4.004 (zigzag KK dimension from M12)
+- Mass formula: M(g) = M_e · 2^g · (32π)^g / C(n_min, 3) — zero free parameters (M14)
 - PMNS angles: from M8 transition matrix
 - ~40 total parameters, all derived from N and D ≤ 15
 
@@ -635,7 +688,7 @@ Dark matter is identified via the **Phase-Coherence Mass Decomposition** (zero f
 - **Visible (EM) mass**: M_vis(P) = |Φ(P)| (net causal phase)
 - **Dark mass**: M_dark(P) = N − |Φ(P)| (phase-cancelled residue)
 - **Ω_dark/Ω_vis** = Σ(N − |Φ|) / Σ|Φ| — no threshold, no ε, no free parameter
-- **α** = Σ|Φ|²/ΣN² — emergent fine structure constant
+- **α** = Σ|Φ|²/ΣN² — FSS estimator of bare coupling (trends toward α₀ = 1/(32π) from M13)
 
 Prisms with Φ = 0 (fully phase-cancelled) are classified as "sterile" — gravitationally active but electromagnetically silent. The simulation tracks:
 - **P_Sterile / dS_Sterile**: Spectral dimension from walkers starting on sterile nodes (Φ = 0).

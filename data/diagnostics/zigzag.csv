@@ -1,0 +1,37 @@
+# FEG Kuratowski Calculus Engine (FEG_prism)
+# Author: Juan Pablo Silva Alvarado
+# DOI: 10.5281/zenodo.18769707
+# Framework: Fractal Entropic Geometrodynamics
+# Provenance SHA-256: a4fee33737305b5eb78a16be2ff233bdce125bffa352127fcbcd997d018c05aa
+# Commit: ad4f708 (dirty)
+# Timestamp: 2026-03-06T09:48:53Z
+# N: 10000000  M: 1 (converged=false, min=8, max=1)  mode: in-memory
+# epsilon: 0.01  tmax: 15  walkers: 2250000
+# algorithm: forward-forward belly (children(u) ∩ parents(v))
+# seed: 42
+# M12 Zigzag Kaluza-Klein Dimension
+key,value
+d_zig,4.003688
+screening_ratio,0.998671
+n_sources,500
+V_zig_d0,1.00
+V_zig_d1,30.02
+V_zig_d2,453.27
+V_zig_d3,2473.66
+V_zig_d4,9019.06
+V_zig_d5,21732.85
+V_zig_d6,49501.03
+V_zig_d7,88652.18
+V_zig_d8,161761.65
+V_zig_d9,246437.71
+V_zig_d10,391979.67
+V_zig_d11,539831.30
+V_zig_d12,782593.42
+V_zig_d13,1004741.31
+V_zig_d14,1362990.06
+V_zig_d15,1663297.26
+V_zig_d16,2148146.35
+V_zig_d17,2521634.61
+V_zig_d18,3130393.55
+V_zig_d19,3562243.12
+V_zig_d20,4269124.36

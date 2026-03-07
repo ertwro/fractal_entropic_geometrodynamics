@@ -22,7 +22,11 @@ _FSS_TABLE = {
 
 
 def _load_fss_q(fss_json):
-    """Load Q_topo vs N from FSS JSON, or fall back to paper table."""
+    """Load Q_topo vs N from FSS JSON, or fall back to paper table.
+
+    Returns (N, Q, fits, Q_collider) where Q_collider is the exact
+    collider asymptote (0.25) if available, else None.
+    """
     if fss_json is not None:
         p = pathlib.Path(fss_json)
         if p.exists():
@@ -32,11 +36,13 @@ def _load_fss_q(fss_json):
             N = np.array([d["N"] for d in dp], dtype=float)
             Q = np.array([d["Q_topo"] for d in dp])
             fits = fss.get("fits", {}).get("Q_topo", {})
-            return N, Q, fits
+            derived = fss.get("derived", {})
+            Q_collider = derived.get("Q_inf_collider", None)
+            return N, Q, fits, Q_collider
     # Fallback
     return (np.array(_FSS_TABLE["N"]),
             np.array(_FSS_TABLE["Q"]),
-            {})
+            {}, 0.25)
 
 
 def vp_mass_vs_charge(data, out):
@@ -156,7 +162,7 @@ def vp_mu_effective(data, out):
 
 def vp_q_running(data, out, *, fss_json=None):
     r"""Q_topo vs N with N^{-1/4} fit."""
-    N, Q, fits = _load_fss_q(fss_json)
+    N, Q, fits, Q_collider = _load_fss_q(fss_json)
 
     fig, ax = plt.subplots(figsize=(7, 4.5))
 
@@ -165,34 +171,36 @@ def vp_q_running(data, out, *, fss_json=None):
     ax.plot(x, Q, "o", color=C["vac"], markersize=7, zorder=5,
             label=r"Simulation $\mathcal{Q}_{\mathrm{topo}}(N)$")
 
-    # Fit line
+    # Power-law fit (shown faded — superseded by collider)
     if "O_inf" in fits and "a" in fits:
-        Q_inf = fits["O_inf"]
+        Q_inf_fit = fits["O_inf"]
         a = fits["a"]
         R2 = fits.get("R_sq", 0)
     else:
-        # Linear fit to x = N^{-1/4} vs Q
         slope, intercept = np.polyfit(x, Q, 1)
-        Q_inf = intercept
+        Q_inf_fit = intercept
         a = slope
-        ss_res = np.sum((Q - (Q_inf + a * x)) ** 2)
+        ss_res = np.sum((Q - (Q_inf_fit + a * x)) ** 2)
         ss_tot = np.sum((Q - Q.mean()) ** 2)
         R2 = 1 - ss_res / ss_tot
 
     x_fit = np.linspace(0, x.max() * 1.1, 100)
-    ax.plot(x_fit, Q_inf + a * x_fit, "--", color=C["fit"], lw=1.2,
-            label=rf"$N^{{-1/4}}$ fit ($R^2 = {R2:.4f}$)", zorder=3)
-    ax.plot(0, Q_inf, "s", color=C["def"], markersize=8, zorder=6, clip_on=False,
-            label=rf"$\mathcal{{Q}}_\infty = {Q_inf:.3f}$")
+    ax.plot(x_fit, Q_inf_fit + a * x_fit, "--", color=C["fit"], lw=1.0,
+            alpha=0.4, zorder=3,
+            label=rf"$N^{{-1/4}}$ fit: ${Q_inf_fit:.3f}$")
 
-    ax.axhline(Q_inf, color="grey", ls=":", lw=0.5, alpha=0.5, zorder=1)
+    # Collider exact asymptote (supersedes power-law)
+    Q_inf = Q_collider if Q_collider is not None else Q_inf_fit
+    ax.axhline(Q_inf, color=C["def"], ls="-.", lw=1.2, alpha=0.8, zorder=4,
+               label=rf"Collider: $\mathcal{{Q}}_\infty = 1/4$ (exact)")
+    ax.plot(0, Q_inf, "s", color=C["def"], markersize=8, zorder=6, clip_on=False)
 
     ax.set_xlabel(r"$N^{-1/4}$")
     ax.set_ylabel(r"$\mathcal{Q}_{\mathrm{topo}}$")
     ax.set_title(r"Running of $\mathcal{Q}_{\mathrm{topo}}$ with Lattice Size")
     ax.legend(loc="upper right", frameon=True, framealpha=0.9, edgecolor="0.85")
     ax.set_xlim(-0.005, x.max() * 1.15)
-    ax.set_ylim(Q_inf * 0.85, Q.max() * 1.08)
+    ax.set_ylim(min(Q_inf_fit, Q.min()) * 0.85, Q.max() * 1.08)
 
     # Add N labels on top x-axis
     ax_top = ax.twiny()
@@ -214,7 +222,7 @@ def vp_q_running(data, out, *, fss_json=None):
 
 def vp_inv_alpha(data, out, *, fss_json=None):
     r"""alpha^{-1} = 8pi/Q_topo vs N."""
-    N, Q, fits = _load_fss_q(fss_json)
+    N, Q, fits, Q_collider = _load_fss_q(fss_json)
 
     inv_alpha = 8 * np.pi / Q
 
@@ -225,20 +233,16 @@ def vp_inv_alpha(data, out, *, fss_json=None):
     ax.plot(x, inv_alpha, "o", color=C["vac"], markersize=7, zorder=5,
             label=r"$\alpha^{-1} = 8\pi / \mathcal{Q}_{\mathrm{topo}}$")
 
-    # Fit: transform from Q fit
-    if "O_inf" in fits and "a" in fits:
-        Q_inf = fits["O_inf"]
-    else:
-        slope, intercept = np.polyfit(x, Q, 1)
-        Q_inf = intercept
-
+    # Collider exact value (supersedes power-law extrapolation)
+    Q_inf = Q_collider if Q_collider is not None else fits.get("O_inf", 0.25)
     inv_alpha_inf = 8 * np.pi / Q_inf
 
     # Reference lines
     ax.axhline(137.036, color="gold", ls="--", lw=1.5,
                label=r"$1/\alpha_{\mathrm{SM}} = 137.036$", zorder=3)
     ax.axhline(inv_alpha_inf, color=C["def"], ls="-.", lw=1.2,
-               label=rf"FSS $\to {inv_alpha_inf:.1f}$ (bare Planck)", zorder=3)
+               label=rf"Collider: $32\pi \approx {inv_alpha_inf:.1f}$ (bare Planck)",
+               zorder=3)
 
     ax.plot(0, inv_alpha_inf, "s", color=C["def"], markersize=8,
             zorder=6, clip_on=False)

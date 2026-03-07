@@ -9,6 +9,8 @@
 //! -- it is pure post-processing.  Missing measurements fall back to 0.0 so
 //! the card is always produced.
 //!
+//! Bifurcated β-functions: gauge (z3 mod 3^b) and grav (z5 mod 5^c).
+//!
 //! Calculo de Kuratowski: all coupling constants derive from the causal set
 //! topology with zero free parameters.
 
@@ -79,6 +81,46 @@ pub struct LagrangianCard {
     // ── Modulo path integral (from M3) ──
     pub interference_mean: f64,
     pub constructive_frac: f64,
+
+    // ── Running coupling β-functions (bifurcated: gauge + grav) ──
+    pub beta_gauge: Vec<GaugeBetaPoint>,
+    pub beta_grav: Vec<GravBetaPoint>,
+}
+
+#[derive(Clone, Debug)]
+pub struct GaugeBetaPoint {
+    pub b: u32,
+    pub q: f64,
+    pub alpha_em: f64,
+    pub alpha_em_inv: f64,
+    pub e_charge: f64,
+    pub sin2_theta_w: f64,
+    pub cos2_theta_w: f64,
+    pub g1: f64,
+    pub g2: f64,
+    pub mw_mz_ratio: f64,
+    pub n_resolved_m4: usize,
+    pub n_resolved_m5: usize,
+    pub left_fraction: f64,
+    pub mean_doublets: f64,
+}
+
+#[derive(Clone, Debug)]
+pub struct GravBetaPoint {
+    pub c: u32,
+    pub q: f64,
+    pub alpha_em: f64,
+    pub alpha_em_inv: f64,
+    pub e_charge: f64,
+    pub sin2_theta_w: f64,
+    pub cos2_theta_w: f64,
+    pub g1: f64,
+    pub g2: f64,
+    pub mw_mz_ratio: f64,
+    pub n_resolved_m4: usize,
+    pub n_resolved_m5: usize,
+    pub left_fraction: f64,
+    pub mean_doublets: f64,
 }
 
 // ── Measurement ──────────────────────────────────────────────────────────────
@@ -222,6 +264,90 @@ pub fn run(meas: &super::MeasureResults, topo: &TopologySummary) -> LagrangianCa
         (0.0, 0.0)
     };
 
+    // ── β-function assembly (bifurcated: gauge + grav) ─────────────
+    let sin2tw: f64 = 4.0 / 17.0;
+    let cos2tw: f64 = 13.0 / 17.0;
+
+    // Gauge track: join M4 gauge_bins and M5 ew_gauge_bins by b
+    let beta_gauge = {
+        let m4_gauge = meas.vacuum_pol.as_ref().map(|v| &v.gauge_bins[..]).unwrap_or(&[]);
+        let m5_gauge = meas.electroweak.as_ref().map(|e| &e.ew_gauge_bins[..]).unwrap_or(&[]);
+
+        m4_gauge.iter().filter_map(|m4b| {
+            if m4b.n_resolved == 0 { return None; }
+            let q_k = m4b.q;
+            let alpha_k = m4b.alpha;
+            let alpha_inv = if alpha_k > 0.0 { 1.0 / alpha_k } else { 0.0 };
+            let e_k = (4.0 * PI * alpha_k).sqrt();
+            let g1_k = e_k / cos2tw.sqrt();
+            let g2_k = e_k / sin2tw.sqrt();
+            let mw_mz = cos2tw.sqrt();
+
+            let (lf, md, nr_m5) = if let Some(m5b) = m5_gauge.iter().find(|x| x.b == m4b.b) {
+                (m5b.left_fraction, m5b.mean_doublets, m5b.n_resolved)
+            } else {
+                (0.0, 0.0, 0)
+            };
+
+            Some(GaugeBetaPoint {
+                b: m4b.b,
+                q: q_k,
+                alpha_em: alpha_k,
+                alpha_em_inv: alpha_inv,
+                e_charge: e_k,
+                sin2_theta_w: sin2tw,
+                cos2_theta_w: cos2tw,
+                g1: g1_k,
+                g2: g2_k,
+                mw_mz_ratio: mw_mz,
+                n_resolved_m4: m4b.n_resolved,
+                n_resolved_m5: nr_m5,
+                left_fraction: lf,
+                mean_doublets: md,
+            })
+        }).collect::<Vec<_>>()
+    };
+
+    // Grav track: join M4 grav_bins and M5 ew_grav_bins by c
+    let beta_grav = {
+        let m4_grav = meas.vacuum_pol.as_ref().map(|v| &v.grav_bins[..]).unwrap_or(&[]);
+        let m5_grav = meas.electroweak.as_ref().map(|e| &e.ew_grav_bins[..]).unwrap_or(&[]);
+
+        m4_grav.iter().filter_map(|m4b| {
+            if m4b.n_resolved == 0 { return None; }
+            let q_k = m4b.q;
+            let alpha_k = m4b.alpha;
+            let alpha_inv = if alpha_k > 0.0 { 1.0 / alpha_k } else { 0.0 };
+            let e_k = (4.0 * PI * alpha_k).sqrt();
+            let g1_k = e_k / cos2tw.sqrt();
+            let g2_k = e_k / sin2tw.sqrt();
+            let mw_mz = cos2tw.sqrt();
+
+            let (lf, md, nr_m5) = if let Some(m5b) = m5_grav.iter().find(|x| x.c == m4b.c) {
+                (m5b.left_fraction, m5b.mean_doublets, m5b.n_resolved)
+            } else {
+                (0.0, 0.0, 0)
+            };
+
+            Some(GravBetaPoint {
+                c: m4b.c,
+                q: q_k,
+                alpha_em: alpha_k,
+                alpha_em_inv: alpha_inv,
+                e_charge: e_k,
+                sin2_theta_w: sin2tw,
+                cos2_theta_w: cos2tw,
+                g1: g1_k,
+                g2: g2_k,
+                mw_mz_ratio: mw_mz,
+                n_resolved_m4: m4b.n_resolved,
+                n_resolved_m5: nr_m5,
+                left_fraction: lf,
+                mean_doublets: md,
+            })
+        }).collect::<Vec<_>>()
+    };
+
     LagrangianCard {
         gauge_group,
         n_bosons,
@@ -258,6 +384,8 @@ pub fn run(meas: &super::MeasureResults, topo: &TopologySummary) -> LagrangianCa
         phase_fractions,
         interference_mean,
         constructive_frac,
+        beta_gauge,
+        beta_grav,
     }
 }
 
@@ -319,6 +447,46 @@ pub fn write_csv(result: &LagrangianCard, w: &mut CsvWriter) {
 
     w.row_fmt(format_args!("interference_mean,{:.6}", result.interference_mean));
     w.row_fmt(format_args!("constructive_frac,{:.6}", result.constructive_frac));
+
+    // Gauge β-function table
+    if !result.beta_gauge.is_empty() {
+        w.comment("Gauge beta-function (z3 mod 3^b, M4+M5 gauge bins)");
+        w.header(&[
+            "b",
+            "q", "alpha_em", "alpha_em_inv", "e_charge",
+            "sin2_theta_w", "cos2_theta_w", "g1", "g2", "mw_mz_ratio",
+            "n_resolved_m4", "n_resolved_m5", "left_fraction", "mean_doublets",
+        ]);
+        for bp in &result.beta_gauge {
+            w.row_fmt(format_args!(
+                "{},{:.6},{:.8},{:.4},{:.8},{:.8},{:.8},{:.8},{:.8},{:.8},{},{},{:.6},{:.4}",
+                bp.b,
+                bp.q, bp.alpha_em, bp.alpha_em_inv, bp.e_charge,
+                bp.sin2_theta_w, bp.cos2_theta_w, bp.g1, bp.g2, bp.mw_mz_ratio,
+                bp.n_resolved_m4, bp.n_resolved_m5, bp.left_fraction, bp.mean_doublets
+            ));
+        }
+    }
+
+    // Grav β-function table
+    if !result.beta_grav.is_empty() {
+        w.comment("Gravity beta-function (z5 mod 5^c, M4+M5 grav bins)");
+        w.header(&[
+            "c",
+            "q", "alpha_em", "alpha_em_inv", "e_charge",
+            "sin2_theta_w", "cos2_theta_w", "g1", "g2", "mw_mz_ratio",
+            "n_resolved_m4", "n_resolved_m5", "left_fraction", "mean_doublets",
+        ]);
+        for bp in &result.beta_grav {
+            w.row_fmt(format_args!(
+                "{},{:.6},{:.8},{:.4},{:.8},{:.8},{:.8},{:.8},{:.8},{:.8},{},{},{:.6},{:.4}",
+                bp.c,
+                bp.q, bp.alpha_em, bp.alpha_em_inv, bp.e_charge,
+                bp.sin2_theta_w, bp.cos2_theta_w, bp.g1, bp.g2, bp.mw_mz_ratio,
+                bp.n_resolved_m4, bp.n_resolved_m5, bp.left_fraction, bp.mean_doublets
+            ));
+        }
+    }
 }
 
 // ── Terminal Summary ─────────────────────────────────────────────────────────
@@ -351,4 +519,26 @@ pub fn print_summary(result: &LagrangianCard) {
     println!("    Phase frac:  [{:.4}, {:.4}, {:.4}]",
         result.phase_fractions[0], result.phase_fractions[1], result.phase_fractions[2]);
     println!("    Interference: mean={:.6}  constructive={:.4}", result.interference_mean, result.constructive_frac);
+    if !result.beta_gauge.is_empty() {
+        println!("    β_gauge (z3 mod 3^b):");
+        for bp in &result.beta_gauge {
+            println!(
+                "      b={}: Q={:.4}, 1/α={:.1}, e={:.4}, g1={:.4}, g2={:.4}, L={:.4}, doub={:.2}  (M4:{}, M5:{})",
+                bp.b,
+                bp.q, bp.alpha_em_inv, bp.e_charge, bp.g1, bp.g2,
+                bp.left_fraction, bp.mean_doublets, bp.n_resolved_m4, bp.n_resolved_m5
+            );
+        }
+    }
+    if !result.beta_grav.is_empty() {
+        println!("    β_grav (z5 mod 5^c):");
+        for bp in &result.beta_grav {
+            println!(
+                "      c={}: Q={:.4}, 1/α={:.1}, e={:.4}, g1={:.4}, g2={:.4}, L={:.4}, doub={:.2}  (M4:{}, M5:{})",
+                bp.c,
+                bp.q, bp.alpha_em_inv, bp.e_charge, bp.g1, bp.g2,
+                bp.left_fraction, bp.mean_doublets, bp.n_resolved_m4, bp.n_resolved_m5
+            );
+        }
+    }
 }

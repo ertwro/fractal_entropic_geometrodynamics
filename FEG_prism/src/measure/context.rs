@@ -15,9 +15,9 @@ use super::ModuloConfig;
 /// state.  The context is constructed once per realisation in `run_all`.
 pub struct MeasureContext<'a> {
     pub n_points: usize,
-    pub pts: &'a [[f64; 4]],
+    pub sorted_coords: &'a [[f64; 4]],
     pub vacuum_csr: &'a CsrGraph<Directed>,
-    pub sym_vacuum: &'a CsrGraph<Undirected>,
+    pub sym_vacuum: Option<&'a CsrGraph<Undirected>>,
     pub defect: &'a DefectOutput,
     pub prisms: &'a [CausalPrism],
     pub momentum: &'a [i32],

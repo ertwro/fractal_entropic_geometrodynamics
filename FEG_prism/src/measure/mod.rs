@@ -15,6 +15,10 @@ pub mod m07_neutrino;
 pub mod m08_pmns;
 pub mod m09_higgs;
 pub mod m10_lagrangian;
+pub mod m11_hausdorff;
+pub mod m12_zigzag;
+pub mod m13_collider;
+pub mod m14_mass_formula;
 
 pub use context::MeasureContext;
 
@@ -31,6 +35,10 @@ pub struct MeasureFlags {
     pub pmns: bool,
     pub higgs: bool,
     pub lagrangian: bool,
+    pub hausdorff: bool,
+    pub zigzag: bool,
+    pub collider: bool,
+    pub mass_formula: bool,
     pub modulo_config: ModuloConfig,
     /// Run M6 (decoherence) only every N-th realization.  Default: 1 (every).
     pub decoherence_every: usize,
@@ -41,6 +49,7 @@ impl MeasureFlags {
         self.mass || self.halflife || self.modulo || self.vacuum
             || self.electroweak || self.decoherence || self.neutrino
             || self.pmns || self.higgs || self.lagrangian
+            || self.hausdorff || self.zigzag || self.collider || self.mass_formula
     }
 }
 
@@ -68,6 +77,10 @@ pub struct MeasureResults {
     /// Skipped during checkpoint serialization (always None in checkpoints).
     #[serde(skip)]
     pub lagrangian: Option<m10_lagrangian::LagrangianCard>,
+    pub hausdorff: Option<m11_hausdorff::HausdorffResult>,
+    pub zigzag: Option<m12_zigzag::ZigzagResult>,
+    pub collider: Option<m13_collider::ColliderResult>,
+    pub mass_formula: Option<m14_mass_formula::MassFormulaResult>,
 }
 
 /// Run all enabled measurements on a single realization.
@@ -75,8 +88,16 @@ pub struct MeasureResults {
 /// Independent measurements (M1–M6, M9) run concurrently via
 /// `std::thread::scope`.  M7→M8 remains sequential (M8 depends on M7).
 pub fn run_all(flags: &MeasureFlags, ctx: &MeasureContext) -> MeasureResults {
+    // Build reverse CSR once if M12 (zigzag) or M13 (collider) needs it
+    let rev_csr = if flags.zigzag || flags.collider {
+        Some(ctx.vacuum_csr.reverse())
+    } else {
+        None
+    };
+
     // ── Independent measurements — run concurrently ──────────────────
-    let (traversal, half_life, modulo, vacuum_pol, electroweak, decoherence, higgs) =
+    let (traversal, half_life, modulo, vacuum_pol, electroweak, decoherence, higgs,
+         hausdorff, zigzag, collider, mass_formula) =
         std::thread::scope(|s| {
             let h1 = s.spawn(|| if flags.mass {
                 println!("  [M1] Traversal mass ratios (prism-confined)...");
@@ -106,6 +127,22 @@ pub fn run_all(flags: &MeasureFlags, ctx: &MeasureContext) -> MeasureResults {
                 println!("  [M9] Higgs mechanism (topological drag)...");
                 Some(m09_higgs::run(ctx))
             } else { None });
+            let h11 = s.spawn(|| if flags.hausdorff {
+                println!("  [M11] Hausdorff dimension (BFS volume growth)...");
+                Some(m11_hausdorff::run(ctx))
+            } else { None });
+            let h12 = s.spawn(|| if flags.zigzag {
+                println!("  [M12] Zigzag KK dimension...");
+                Some(m12_zigzag::run(ctx, rev_csr.as_ref().unwrap()))
+            } else { None });
+            let h13 = s.spawn(|| if flags.collider {
+                println!("  [M13] Topological collider...");
+                Some(m13_collider::run(ctx, rev_csr.as_ref().unwrap()))
+            } else { None });
+            let h14 = s.spawn(|| if flags.mass_formula {
+                println!("  [M14] Exact mass formula (genus verification)...");
+                Some(m14_mass_formula::run(ctx))
+            } else { None });
             (
                 h1.join().unwrap(),
                 h2.join().unwrap(),
@@ -114,6 +151,10 @@ pub fn run_all(flags: &MeasureFlags, ctx: &MeasureContext) -> MeasureResults {
                 h5.join().unwrap(),
                 h6.join().unwrap(),
                 h7.join().unwrap(),
+                h11.join().unwrap(),
+                h12.join().unwrap(),
+                h13.join().unwrap(),
+                h14.join().unwrap(),
             )
         });
 
@@ -133,6 +174,7 @@ pub fn run_all(flags: &MeasureFlags, ctx: &MeasureContext) -> MeasureResults {
     MeasureResults {
         traversal, half_life, modulo, vacuum_pol, electroweak,
         decoherence, neutrino, pmns, higgs, lagrangian: None,
+        hausdorff, zigzag, collider, mass_formula,
     }
 }
 
@@ -149,6 +191,10 @@ pub fn aggregate_all(results: &[MeasureResults]) -> MeasureResults {
         pmns: collect_and_agg(results, |r| r.pmns.as_ref(), m08_pmns::aggregate),
         higgs: collect_and_agg(results, |r| r.higgs.as_ref(), m09_higgs::aggregate),
         lagrangian: None,
+        hausdorff: collect_and_agg(results, |r| r.hausdorff.as_ref(), m11_hausdorff::aggregate),
+        zigzag: collect_and_agg(results, |r| r.zigzag.as_ref(), m12_zigzag::aggregate),
+        collider: collect_and_agg(results, |r| r.collider.as_ref(), m13_collider::aggregate),
+        mass_formula: collect_and_agg(results, |r| r.mass_formula.as_ref(), m14_mass_formula::aggregate),
     }
 }
 
@@ -223,6 +269,26 @@ pub fn write_all_csv(
             m10_lagrangian::write_csv(r, &mut w);
         }
     }
+    if let Some(ref r) = results.hausdorff {
+        if let Ok(mut w) = CsvWriter::new(&format!("{dir}/hausdorff.csv"), meta) {
+            m11_hausdorff::write_csv(r, &mut w);
+        }
+    }
+    if let Some(ref r) = results.zigzag {
+        if let Ok(mut w) = CsvWriter::new(&format!("{dir}/zigzag.csv"), meta) {
+            m12_zigzag::write_csv(r, &mut w);
+        }
+    }
+    if let Some(ref r) = results.collider {
+        if let Ok(mut w) = CsvWriter::new(&format!("{dir}/collider.csv"), meta) {
+            m13_collider::write_csv(r, &mut w);
+        }
+    }
+    if let Some(ref r) = results.mass_formula {
+        if let Ok(mut w) = CsvWriter::new(&format!("{dir}/mass_formula.csv"), meta) {
+            m14_mass_formula::write_csv(r, &mut w);
+        }
+    }
 }
 
 /// Print all measurement summaries to stdout.
@@ -237,4 +303,8 @@ pub fn print_all_summaries(results: &MeasureResults) {
     if let Some(ref r) = results.pmns { m08_pmns::print_summary(r); }
     if let Some(ref r) = results.higgs { m09_higgs::print_summary(r); }
     if let Some(ref r) = results.lagrangian { m10_lagrangian::print_summary(r); }
+    if let Some(ref r) = results.hausdorff { m11_hausdorff::print_summary(r); }
+    if let Some(ref r) = results.zigzag { m12_zigzag::print_summary(r); }
+    if let Some(ref r) = results.collider { m13_collider::print_summary(r); }
+    if let Some(ref r) = results.mass_formula { m14_mass_formula::print_summary(r); }
 }

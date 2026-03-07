@@ -51,7 +51,7 @@ fn resolve(node: usize, merge: Option<&[usize]>) -> usize {
 ///
 /// # Arguments
 /// * `vacuum_csr` - The vacuum (undirected or symmetric) CSR graph.
-/// * `pts` - Spacetime coordinates [t, x, y, z] for each sprinkled point.
+/// * `sorted_coords` - Spacetime coordinates [t, x, y, z] for each sprinkled point.
 /// * `merge_map` - Kuratowski contraction map: `merge_map[i]` is the
 ///   representative node for node `i`. Identity (`merge_map[i] == i`) for
 ///   non-merged nodes.
@@ -62,7 +62,7 @@ fn resolve(node: usize, merge: Option<&[usize]>) -> usize {
 /// the contracted graph.
 pub fn build_flux_csr(
     vacuum_csr: &CsrGraph<Directed>,
-    pts: &[[f64; 4]],
+    sorted_coords: &[[f64; 4]],
     merge_map: &[usize],
     n_nodes: usize,
 ) -> CsrGraph<Directed> {
@@ -73,7 +73,7 @@ pub fn build_flux_csr(
     let mut deg = vec![0u32; n_nodes];
     for u in 0..n_nodes {
         for &v in vacuum_csr.neighbors(u) {
-            if pts[u][0] < pts[v as usize][0] {
+            if sorted_coords[u][0] < sorted_coords[v as usize][0] {
                 let ri = merge_map[u];
                 let ci = merge_map[v as usize];
                 if ri != ci {
@@ -96,7 +96,7 @@ pub fn build_flux_csr(
     let mut pos = head[..n_nodes].to_vec();
     for u in 0..n_nodes {
         for &v in vacuum_csr.neighbors(u) {
-            if pts[u][0] < pts[v as usize][0] {
+            if sorted_coords[u][0] < sorted_coords[v as usize][0] {
                 let ri = merge_map[u];
                 let ci = merge_map[v as usize] as u32;
                 if ri != ci as usize {
@@ -239,18 +239,16 @@ mod tests {
 
     #[test]
     fn build_flux_csr_simple() {
-        // 4 points with increasing time: t=0, t=1, t=2, t=3
-        let pts = vec![
+        // 4 points with increasing time: 0, 1, 2, 3
+        let coords = vec![
             [0.0, 0.0, 0.0, 0.0],
             [1.0, 0.0, 0.0, 0.0],
             [2.0, 0.0, 0.0, 0.0],
             [3.0, 0.0, 0.0, 0.0],
         ];
-        // Undirected-style edges stored in a "directed" CSR for the vacuum:
-        // We store forward edges: 0->1, 1->2, 2->3
         let vacuum = chain_csr();
         let merge_map = vec![0, 1, 2, 3]; // identity
-        let flux = build_flux_csr(&vacuum, &pts, &merge_map, 4);
+        let flux = build_flux_csr(&vacuum, &coords, &merge_map, 4);
 
         // Should produce same chain 0->1, 1->2, 2->3
         assert_eq!(flux.degree(0), 1);
@@ -265,7 +263,7 @@ mod tests {
     #[test]
     fn build_flux_csr_with_merge() {
         // Merge node 1 into node 0: merge_map = [0, 0, 2, 3]
-        let pts = vec![
+        let coords = vec![
             [0.0, 0.0, 0.0, 0.0],
             [1.0, 0.0, 0.0, 0.0],
             [2.0, 0.0, 0.0, 0.0],
@@ -273,7 +271,7 @@ mod tests {
         ];
         let vacuum = chain_csr();
         let merge_map = vec![0, 0, 2, 3]; // node 1 -> node 0
-        let flux = build_flux_csr(&vacuum, &pts, &merge_map, 4);
+        let flux = build_flux_csr(&vacuum, &coords, &merge_map, 4);
 
         // Edge 0->1 becomes 0->0 (self-loop, dropped)
         // Edge 1->2 becomes 0->2 (kept)

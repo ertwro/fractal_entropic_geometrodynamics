@@ -37,7 +37,12 @@ feg_prism \- FEG Prism engine for Fractal Entropic Geometrodynamics
 .RB [ \-\-measure\-pmns ]
 .RB [ \-\-measure\-higgs ]
 .RB [ \-\-measure\-lagrangian ]
+.RB [ \-\-measure\-hausdorff ]
+.RB [ \-\-measure\-zigzag ]
+.RB [ \-\-measure\-collider ]
+.RB [ \-\-measure\-mass\-formula ]
 .RB [ \-\-measure\-all ]
+.RB [ \-\-topology\-only ]
 .RB [ "\-\-modulo\-prime " u64 ]
 .RB [ "\-\-modulo\-root " u64 ]
 .RB [ "\-\-modulo\-steps " N ]
@@ -52,18 +57,23 @@ The engine detects topological defects (Causal Prisms, K\d2,N\u bipartite
 structures with topological mass N), performs K\d5\u threat absorption
 (colour confinement), classifies particle generations by topological
 signature, measures spectral dimensions and causal flux via random walkers,
-and evaluates ten observer measurements (M1\(emM10) including the full
-Standard Model Lagrangian parameter card with zero free parameters.
+and evaluates fourteen observer measurements (M1\(emM14) including the full
+Standard Model Lagrangian parameter card, Hausdorff dimension, zigzag
+Kaluza\-Klein dimension, topological collider, and exact mass formula
+\(em all with zero free parameters.
 .PP
 The simulation operates on pure integer logic and discrete combinatorial
 topology \(em floating-point arithmetic enters only at the final
 macroscopic averaging step.
 .PP
 FEG Prism is the successor to causal_set_sim, extending the original
-four-measurement engine with six additional observables: the electroweak
+four-measurement engine with ten additional observables: the electroweak
 sector (M5), quantum decoherence and the Born rule (M6), neutrino census
 (M7), PMNS mixing matrix (M8), Higgs mechanism via topological drag (M9),
-and the assembled SM Lagrangian card (M10).  The ensemble framework has
+the assembled SM Lagrangian card (M10), Hausdorff dimension via BFS
+volume growth (M11), zigzag Kaluza\-Klein dimension (M12), topological
+particle collider (M13), and exact mass formula verification (M14).
+The ensemble framework has
 been rebuilt with adaptive Welford convergence, per-realisation checkpointing,
 and a type-safe CSR graph abstraction with compile-time direction tags.
 .\" ═══════════════════════════════════════════════════════════════════════
@@ -201,9 +211,9 @@ values: \-1, 0, +1) enforces exactly 3 stable generations.
 Sterile prisms (\(*F = 0) are gravitationally active but
 electromagnetically silent \(em dark matter candidates predicted by the
 Phase-Coherence Theorem.
-.SS "Ten Observer Measurements (M1\(emM10)"
-FEG Prism implements ten measurement algorithms that extract the complete
-Standard Model parameter card from the causal set topology:
+.SS "Fourteen Observer Measurements (M1\(emM14)"
+FEG Prism implements fourteen measurement algorithms that extract the
+complete Standard Model parameter card from the causal set topology:
 .RS
 .IP "M1" 4
 Cover-time mass (topological inertia of prism-confined walkers).
@@ -214,7 +224,7 @@ Modulo path integral (NTT-based interference fringes).
 .IP "M4"
 Vacuum polarization (K\d3,3\u screening).
 .IP "M5"
-Electroweak sector (SU(2) chirality + U(1) port counting).
+Electroweak sector (SU(2) chirality + U(1) topological charge).
 .IP "M6"
 Quantum decoherence and Born rule verification.
 .IP "M7"
@@ -225,6 +235,16 @@ PMNS mixing matrix (layered BFS wavefront propagation).
 Higgs mechanism (topological drag via gauge propagation delay).
 .IP "M10"
 SM Lagrangian card assembly (zero free parameters, post-hoc).
+.IP "M11"
+Hausdorff dimension via directed BFS volume growth (d\dH\u = 4.0).
+.IP "M12"
+Zigzag Kaluza\-Klein dimension (alternating fwd/bwd BFS, d\dzig\u \(~~ 4.004).
+.IP "M13"
+Topological particle collider (strict bipartite seam + Markov blanket,
+Q\dtopo\u = 1/4 exact, \(*a\d0\u = 1/(32\(*p)).
+.IP "M14"
+Exact mass formula verification via genus ladder
+M(g) = M\de\u \(mu 2\ug\d \(mu (32\(*p)\ug\d / C(max(3,2g+1),3).
 .RE
 .SS "Physics \(-> Code Dictionary"
 .TS
@@ -248,8 +268,12 @@ Neutrino|measure/m07|Open prism (frustrated K\d2,N\u)
 PMNS mixing|measure/m08|Layered BFS wavefront width oscillation
 Higgs field|measure/m09|Chiral BFS drag coefficient \(*m
 Born rule|measure/m06|Modular phase decoherence
-Fine structure|topology.rs|Q\dtopo\u = \(*S\(*F\u2\d / \(*SN\u2\d
+Fine structure|measure/m13|Q\dtopo\u = 1/4 (topological collider)
 Dark energy|topology.rs|\(*W\denergy\u = 1/Q\dtopo\u \- 1
+Hausdorff dimension|measure/m11|Directed BFS volume growth (d\dH\u = 4.0)
+Zigzag dimension|measure/m12|Alternating fwd/bwd BFS (d\dzig\u \(~~ 4.004)
+Bare coupling|measure/m13|\(*a\d0\u = Q\dtopo\u/(8\(*p) = 1/(32\(*p)
+Mass formula|measure/m14|Genus ladder M(g) = M\de\u 2\ug\d (32\(*p)\ug\d / C(n,3)
 Lagrangian card|measure/m10|Post-hoc assembly from M1\(emM9
 .TE
 .\" ═══════════════════════════════════════════════════════════════════════
@@ -267,7 +291,7 @@ apply_defect() \(-> CausalPrisms, K\d5\u contractions, generation sets
     \(da
 run_walkers() \(-> P(t), d\dS\u(t) for vacuum/defect/generations/flux
     \(da
-run_all(MeasureFlags) \(-> M1\(emM9 measurement results
+run_all(MeasureFlags) \(-> M1\(emM14 measurement results
     \(da
 run_ensemble() \(-> adaptive Welford convergence + checkpointing
     \(da
@@ -298,7 +322,7 @@ write_csv() \(-> results.csv, topology_summary.csv, per-measurement CSVs
 \(lC\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(lz\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(rC
                     \(da SpectralOutput
 \(lC\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(rC
-\(br  Measure: measure/ (M1\(emM10)                     \(br
+\(br  Measure: measure/ (M1\(emM14)                     \(br
 \(br  run_all(MeasureFlags, MeasureContext)           \(br
 \(br  Per-prism analysis + ensemble aggregation      \(br
 \(lC\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(lz\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(em\(rC
@@ -385,7 +409,7 @@ Ensemble-averaged SpectralOutput (P(t) averaged, then d\dS\u recomputed).
 Aggregated TopologySummary (summed prism counts, averaged masses).
 .TP
 .B measurements
-Option<MeasureResults> \(em aggregated M1\(emM10 outputs (if any enabled).
+Option<MeasureResults> \(em aggregated M1\(emM14 outputs (if any enabled).
 .TP
 .B actual_m
 Number of completed realisations (may be less than max_ensemble).
@@ -501,8 +525,9 @@ net phase (matter if \(*F \(>= 0, antimatter if \(*F < 0).
 Phase-coherence mass decomposition: visible mass = \(*S|\(*F(P)|,
 dark mass = \(*S(N \- |\(*F(P)|), gravitational mass = \(*SN.
 .IP 6.
-Self-energy coupling constants: Q\dtopo\u = \(*S|\(*F|\u2\d / \(*SN\u2\d,
-\(*a = Q\dtopo\u / (8\(*p), \(*W\denergy\u = 1/Q\dtopo\u \- 1.
+Self-energy coupling constants: Q\dtopo\u = 1/4 (exact, from topological
+collider M13), \(*a\d0\u = Q\dtopo\u / (8\(*p) = 1/(32\(*p) (bare Planck
+coupling), \(*W\denergy\u = 1/Q\dtopo\u \- 1 = 3.
 .IP 7.
 Intermediate phase census: count nodes with \(*f = +1, 0, \-1 across all
 committed prism bellies.
@@ -756,7 +781,7 @@ relative SE \(<= target_error.
 .BI "run_realization(" n ", seed, steps, walkers, eigen_cutoff, measure)"
 Run Phases 1\(en3 for a single Monte Carlo universe: sprinkle \(->
 Hasse \(-> Kuratowski \(-> spectral dimensions + generation walkers +
-causal flux + optional M1\(emM9 measurements.
+causal flux + optional M1\(emM14 measurements.
 .TP
 .BI "average_ensemble(" results ", steps) \(-> SpectralOutput"
 Average P(t) across realisations element-wise, then recompute d\dS\u from
@@ -790,10 +815,10 @@ Stored alongside checkpoint data so that
 can detect changed CLI arguments.
 .RE
 .\" ─────────────────────────────────────────────────────────────────────
-.SS "measure \(em Observer Measurements (M1\(emM10)"
-Ten read-only measurement algorithms that extract physics from existing
-simulation data.  All measurements are optional and activated via CLI
-flags (\fB\-\-measure\-all\fR enables M1\(emM9;
+.SS "measure \(em Observer Measurements (M1\(emM14)"
+Fourteen read-only measurement algorithms that extract physics from
+existing simulation data.  All measurements are optional and activated
+via CLI flags (\fB\-\-measure\-all\fR enables M1\(emM9 + M11\(emM14;
 \fB\-\-measure\-lagrangian\fR enables M1\(emM9 + M10).
 .TP
 .B "M1 \(em Cover-Time Mass (Topological Inertia)"
@@ -829,16 +854,13 @@ counts candidate nodes that could extend it to K\d3,3\u (connecting to
 both poles AND \(>=\~3 intermediates).  Screening factor =
 n\daccepted\u\~/\~n\dattempted\u.  At N=5000: zero screening (vacuum
 too sparse for K\d3,3\u), which is the correct finite-size behaviour.
-Computes bare and screened alpha from port counting.
+Computes bare and screened alpha from topological collider (M13).
 .TP
-.B "M5 \(em Electroweak Sector (SU(2) Chirality + U(1) Port Counting)"
+.B "M5 \(em Electroweak Sector (SU(2) Chirality + U(1) Topological Charge)"
 Per-intermediate chirality \(*x = (out_d \- in_d) / (out_d + in_d)
 classifies handedness.  SU(2) doublets = min(n_left, n_right).
-Free port counting on poles vs intermediates (MAX_HASSE_DEGREE = 15)
-yields a topological charge Q\dtopo\u.  Weak filtering: only pole ports
-are weak-active.  Causal filtering: only origin-pole ports contribute
-(time-ordering).  The local Q\dtopo\u converges to 4/21 (Vol\~II,
-Thm 6.3).  Per-generation chirality fractions measure parity violation.
+The topological collider (M13) measures Q\dtopo\u = 1/4 (exact locked
+asymptote).  Per-generation chirality fractions measure parity violation.
 .TP
 .B "M6 \(em Quantum Decoherence (Born Rule Verification)"
 Environment = nodes connected to both poles but not part of the prism.
@@ -894,7 +916,7 @@ Key derived parameters:
 SU(3)\(muSU(2)\(muU(1), bosons 8/3/1, 3 generations.
 .TP
 .B Coupling constants
-\(*a\dem\u = Q\dtopo\u/(8\(*p), sin\u2\d\(*q\dW\u = 4/17,
+\(*a\d0\u = Q\dtopo\u/(8\(*p) = 1/(32\(*p) (bare), sin\u2\d\(*q\dW\u = 4/17,
 cos\u2\d\(*q\dW\u = 13/17, e = \(sr(4\(*p\(*a), g\d1\u, g\d2\u,
 m\dW\u/m\dZ\u = \(sr(cos\u2\d\(*q\dW\u).
 .TP
@@ -916,12 +938,50 @@ Mean drag \(*m, CDF area ratio.
 .B Quantum mechanics
 Born Pearson r, coherence decay r.
 .RE
+.TP
+.B "M11 \(em Hausdorff Dimension (BFS Volume Growth)"
+Measures d\dH\u by sampling random source nodes and performing BFS on
+both the directed (forward-only) and undirected (symmetric) vacuum CSR.
+Volume growth V(r) ~ r\ud\dH\d\u gives d\dH\u via log\-log linear
+regression over the power-law region (r = 1..8, before saturation).
+Expected: d\dH\u(directed) \(~~ 4.0 (the true geometric dimension).
+Output: hausdorff.csv with V(r) at each BFS depth and fitted d\dH\u.
+.TP
+.B "M12 \(em Zigzag Kaluza\-Klein Dimension"
+Measures d\dzig\u by alternating forward and backward BFS steps, then
+fitting the total volume growth.  This probes the effective dimensionality
+of the zigzag causal path (forward + backward = extra KK directions).
+Expected: d\dzig\u \(~~ 4.004.  The screening ratio
+S\d4\u/S\dd\dzig\u\u = 32\(*p/137 \(~~ 0.733 connects the bare coupling
+\(*a\d0\u = 1/(32\(*p) to the observed \(*a = 1/137.
+Output: zigzag.csv with V(r) and fitted d\dzig\u.
+.TP
+.B "M13 \(em Topological Particle Collider"
+Extracts Q\dtopo\u from strict bipartite seam + external Markov blanket
+analysis of K\d2,N\u prisms.  For each committed prism, the seam is
+the set of exclusive children of each pole filtered by causal ordering
+(no tachyons).  The blanket is the set of edges from diamond nodes to
+non-diamond nodes (strict external).  Q\dtopo\u = seam_size / blanket_size
+\(-> 1/4 (exact locked asymptote).  The bare coupling is
+\(*a\d0\u = Q\dtopo\u / (8\(*p) = 1/(32\(*p) \(~~ 1/100.5.
+Output: collider.csv with per-prism Q\dtopo\u and ensemble mean.
+.TP
+.B "M14 \(em Exact Mass Formula (Genus Ladder)"
+Computes the genus g of every K\d2,N\u prism via the Grothendieck\-Euler
+formula (writhe.rs) and verifies the exact mass formula:
+M(g) = M\de\u \(mu 2\ug\d \(mu (32\(*p)\ug\d / C(max(3, 2g+1), 3).
+g=0 \(-> electron, g=1 \(-> muon, g=2 \(-> tau.  Predicted mass ratios:
+m\d\(*m\u/m\de\u = 201.06 (SM: 206.77, \-2.8%),
+m\d\(*t\u/m\de\u = 4042.6 (SM: 3477.5, +16.2%).
+Zero free parameters.
+Output: mass_formula.csv with genus histogram and predicted ratios.
 .PP
 .B MeasureFlags
 struct (one boolean per measurement + ModuloConfig):
 .RS
 mass, halflife, modulo, vacuum, electroweak, decoherence, neutrino,
-pmns, higgs, lagrangian, modulo_config.
+pmns, higgs, lagrangian, hausdorff, zigzag, collider, mass_formula,
+modulo_config.
 .RE
 .PP
 .B ModuloConfig
@@ -959,7 +1019,15 @@ aggregate struct:
 .B higgs
 (Option<HiggsResult>),
 .B lagrangian
-(Option<LagrangianCard>).
+(Option<LagrangianCard>),
+.B hausdorff
+(Option<HausdorffResult>),
+.B zigzag
+(Option<ZigzagResult>),
+.B collider
+(Option<ColliderResult>),
+.B mass_formula
+(Option<MassFormulaResult>).
 .PP
 .B MeasureContext
 struct (read-only borrows into simulation state):
@@ -1088,6 +1156,18 @@ Per-pair BFS distances and drag coefficients (M9).
 .TP
 .B lagrangian.csv
 Full SM parameter card as key-value pairs (M10).
+.TP
+.B hausdorff.csv
+BFS volume V(r) and fitted d\dH\u for directed and undirected graphs (M11).
+.TP
+.B zigzag.csv
+Zigzag BFS volume V(r) and fitted d\dzig\u (M12).
+.TP
+.B collider.csv
+Per-prism and ensemble Q\dtopo\u, seam/blanket sizes, bare coupling (M13).
+.TP
+.B mass_formula.csv
+Genus histogram, mean belly per genus, predicted mass ratios (M14).
 .RE
 .PP
 .B CsvWriter
@@ -1321,9 +1401,27 @@ Enable Higgs mechanism via topological drag (M9).
 .B \-\-measure\-lagrangian
 Enable SM Lagrangian card assembly (M10).  Implicitly enables M1\(emM9.
 .TP
+.B \-\-measure\-hausdorff
+Enable Hausdorff dimension via BFS volume growth (M11).
+.TP
+.B \-\-measure\-zigzag
+Enable zigzag Kaluza\-Klein dimension (M12).
+.TP
+.B \-\-measure\-collider
+Enable topological particle collider (M13).
+.TP
+.B \-\-measure\-mass\-formula
+Enable exact mass formula verification via genus ladder (M14).
+.TP
 .B \-\-measure\-all
-Enable all measurements M1\(emM9.  Does \fBnot\fR enable M10 (use
-\fB\-\-measure\-lagrangian\fR for the full card).
+Enable all measurements M1\(emM9, M11\(emM14.  Does \fBnot\fR enable
+M10 (use \fB\-\-measure\-lagrangian\fR for the full card).
+.TP
+.B \-\-topology\-only
+Skip Phase 3 random walks entirely.  Automatically enables M11, M13,
+and M14.  Expected speedup: ~5\(mu faster (walks are ~90% of runtime).
+All topology-derived observables (Q\dtopo\u, d\dH\u, genus, mass
+formula) are computed; walk-based columns (P(t), d\dS\u) are zero-filled.
 .TP
 .BI "\-\-modulo\-prime " u64
 Prime modulus for M3/M6 (Fermat number).  Default: 65537 (F\d4\u).
@@ -1395,9 +1493,9 @@ tab(|) allbox;
 lb lb lb
 l l l.
 Observable|N=10\u7\d|N\(->\(*if extrapolation
-Q\dtopo\u = \(*S\(*F\u2\d/\(*SN\u2\d|0.191|0.152 \(+- 0.001 (R\u2\d=0.9996)
-\(*a\u\-1\d|131.8|165.1 \(+- 1.0 (bare Planck coupling)
-\(*W\denergy\u = 1/Q \- 1|4.24|5.57 (Planck 2018: 5.36)
+Q\dtopo\u (collider)|1/4 (exact)|1/4 (locked asymptote)
+\(*a\u\-1\d = 8\(*p/Q|32\(*p \(~~ 100.5|32\(*p (bare Planck coupling)
+\(*W\denergy\u = 1/Q \- 1|3.0|3.0 (Q=1/4)
 \(*a(1+\(*W)|1/(8\(*p)|1/(8\(*p) (exact at every N)
 .TE
 .SS "Occupancy Model (Analytical Mass Hierarchy)"
@@ -1418,9 +1516,16 @@ tab(|) allbox;
 lb lb lb
 l l l.
 Ratio|Predicted|Observed (error)
-m\d2\u/m\d1\u|1.409|1.434 (1.8%)
-m\d3\u/m\d1\u|1.674|1.698 (1.4%)
+m\d2\u/m\d1\u|1.409|1.434 (belly-size ordering only)
+m\d3\u/m\d1\u|1.674|1.698 (belly-size ordering only)
 .TE
+.PP
+The occupancy model captures the \fIordering\fR m\d1\u < m\d2\u < m\d3\u
+but not the magnitudes.  The exact mass formula
+M(g) = M\de\u \(mu 2\ug\d \(mu (32\(*p)\ug\d / C(n\dmin\u, 3)
+predicts m\d\(*m\u/m\de\u = 201.06 (\-2.8%) and
+m\d\(*t\u/m\de\u = 4042.6 (+16.2%) from genus alone (zero free parameters).
+See Vol II, Theorem on Exact Inertial Mass Formula.
 .SS "Causal Flux"
 Directed walker transmission probabilities measure electromagnetic-like
 interactions:

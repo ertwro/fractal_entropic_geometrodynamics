@@ -196,26 +196,65 @@ fn run_realization(
     eigen_cutoff: usize,
     measure: &MeasureFlags,
     realization_idx: usize,
+    topology_only: bool,
 ) -> (SpectralOutput, TopologySummary, Option<MeasureResults>) {
     let mut rng = StdRng::seed_from_u64(seed);
 
-    // Phase 1 — Poisson sprinkling + Hasse diagram
-    let (pts_raw, _big_t) = phase1::sprinkle(n_points, &mut rng);
-    let (pts, vacuum_csr, momentum) = if n_points <= eigen_cutoff {
+    // Phase 1 — 4D Poisson diamond + Lorentz-causal Hasse diagram
+    let (pts_raw, _half_t) = phase1::sprinkle(n_points, &mut rng);
+    let (euclidean, vacuum_csr, momentum) = if n_points <= eigen_cutoff {
         phase1::build_hasse_sparse(&pts_raw)
     } else {
         phase1::build_hasse_direct(&pts_raw)
     };
     drop(pts_raw);
+    let sorted_coords = euclidean;
 
     // Phase 2 — Kuratowski contraction + particle classification
     println!("  [In-Memory] Phase 1 CSR: {} edges", vacuum_csr.n_edge_slots());
-    let momentum_clone = if measure.halflife || measure.electroweak || measure.neutrino {
+    let momentum_clone = if measure.halflife || measure.electroweak || measure.neutrino || measure.vacuum {
         momentum.clone()
     } else {
         vec![]
     };
     let (defect, topology, prisms) = phase2::apply_defect(n_points, vacuum_csr, momentum);
+
+    // ── Topology-only: skip Phase 3 walks, return stub SpectralOutput ──
+    if topology_only {
+        let meas = if measure.any_active() {
+            let mut flags = measure.clone();
+            if measure.decoherence_every > 1 && realization_idx % measure.decoherence_every != 0 {
+                flags.decoherence = false;
+            }
+            let walkers = ((tmax as f64 / epsilon).powi(2)).ceil() as usize;
+            let ctx = MeasureContext {
+                n_points,
+                sorted_coords: &sorted_coords,
+                vacuum_csr: &defect.vacuum_csr,
+                sym_vacuum: None,
+                defect: &defect,
+                prisms: &prisms,
+                momentum: &momentum_clone,
+                topology: &topology,
+                walkers,
+                epsilon,
+                seed,
+                modulo_config: &flags.modulo_config,
+            };
+            let mut m = measure::run_all(&flags, &ctx);
+            if let Some(ref mut mod_result) = m.modulo {
+                mod_result.compact();
+            }
+            Some(m)
+        } else {
+            None
+        };
+        let spectral = SpectralOutput {
+            mass: defect.generations.mass,
+            ..SpectralOutput::default()
+        };
+        return (spectral, topology, meas);
+    }
 
     // Phase 3a — vacuum + defect spectral dimensions
     let sym_vac: CsrGraph<Undirected> = defect.vacuum_csr.symmetrize();
@@ -416,9 +455,9 @@ fn run_realization(
         let walkers = ((tmax as f64 / epsilon).powi(2)).ceil() as usize;
         let ctx = MeasureContext {
             n_points,
-            pts: &pts,
+            sorted_coords: &sorted_coords,
             vacuum_csr: &defect.vacuum_csr,
-            sym_vacuum: &sym_vac,
+            sym_vacuum: Some(&sym_vac),
             defect: &defect,
             prisms: &prisms,
             momentum: &momentum_clone,
@@ -449,10 +488,10 @@ fn run_realization(
     // Build flux CSR (trivial, <1s)
     let n_def = defect.defect_csr.n_nodes();
     let flux_csr = phase3::build_flux_csr(
-        &defect.vacuum_csr, &pts, &defect.merge_map, n_points,
+        &defect.vacuum_csr, &sorted_coords, &defect.merge_map, n_points,
     );
-    // Free pts (320 MB at N=10M) — no longer needed after flux CSR construction.
-    drop(pts);
+    // Free sorted_coords — no longer needed after flux CSR construction.
+    drop(sorted_coords);
     let (flux_head, flux_data) = flux_csr.raw();
 
     let flux_origins: Vec<usize> = defect.generations.gen1.iter()
@@ -574,6 +613,7 @@ pub fn run_ensemble(
     force_all: bool,
     epsilon: f64,
     tmax: usize,
+    topology_only: bool,
 ) -> EnsembleResult {
     if exec_mode == ExecMode::Streaming {
         eprintln!("ERROR: --stream mode is not yet implemented in FEG_prism.");
@@ -585,14 +625,18 @@ pub fn run_ensemble(
     let done = AtomicUsize::new(0);
     let max_concurrent_runs = max_concurrent_runs.min(batch_size);
 
+    // Pool uses ALL available cores.  max_concurrent_runs limits how many
+    // realizations run in parallel (via with_max_len(1) on the batch chunk),
+    // but intra-realization parallelism (Hasse search, walkers) uses the
+    // full pool regardless.
     let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(max_concurrent_runs)
+        .num_threads(rayon::current_num_threads().max(max_concurrent_runs))
         .build()
         .unwrap();
 
     let run_one = |i: usize| -> (SpectralOutput, TopologySummary, Option<MeasureResults>) {
         let seed = seed_base + i as u64;
-        let result = run_realization(n_points, seed, steps, epsilon, tmax, eigen_cutoff, measure, i);
+        let result = run_realization(n_points, seed, steps, epsilon, tmax, eigen_cutoff, measure, i, topology_only);
 
         let completed = done.fetch_add(1, Ordering::Relaxed) + 1;
         let elapsed = t0.elapsed().as_secs_f64();

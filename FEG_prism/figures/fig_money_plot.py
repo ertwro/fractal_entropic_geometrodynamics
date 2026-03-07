@@ -23,14 +23,14 @@ import matplotlib.pyplot as plt
 
 
 CAPTION = (
-    "We present a non-perturbative calculation of the Fine Structure Constant "
-    "\u03b1 using a discrete causal set simulation with zero free parameters. "
-    "By defining particles as topological obstructions (K\u2082,\u2099 prisms) "
-    "in a random geometric graph, we derive a value of 1/\u03b1 \u2248 131.8 "
-    "at N=10\u2077, with a renormalization flow suggesting convergence to 137.0 "
-    "in the continuum limit. The simulation naturally reproduces the "
-    "three-generation mass hierarchy, maximal parity violation for leptons, "
-    "and a Dark Matter fraction of 63%."
+    "Per-batch bare coupling 1/\u03b1\u2080 from the FSS estimator "
+    "Q = \u03a3|\u03a6|\u00b2/\u03a3N\u00b2 on the ensemble topology snapshots. "
+    "The topological collider (M13) measures Q_topo = 1/4 exactly, giving "
+    "\u03b1\u2080 = 1/(32\u03c0) \u2248 1/100.5 at the Planck scale. "
+    "Vacuum polarization screens the bare coupling to the observed "
+    "\u03b1 \u2248 1/137; the screening ratio is 32\u03c0/137 \u2248 0.733. "
+    "The simulation naturally reproduces the three-generation mass hierarchy, "
+    "maximal parity violation for leptons, and a Dark Matter fraction of 63%."
 )
 
 
@@ -83,6 +83,7 @@ def main():
     y = np.array(batch_inv_alpha)
     mean_val = np.mean(y)
     std_val = np.std(y, ddof=1)
+    bare = 32.0 * np.pi   # exact: 1/alpha_0 = 32*pi ≈ 100.5
     phys = 137.036
     total_m = snapshots[-1][0]
 
@@ -111,35 +112,41 @@ def main():
     ax.axhspan(mean_val - std_val, mean_val + std_val,
                color="#4C72B0", alpha=0.10, zorder=2)
     ax.axhline(mean_val, color="#4C72B0", ls="-", lw=1.2, alpha=0.6, zorder=3,
-               label=rf"Ensemble mean $1/\alpha = {mean_val:.1f} \pm {std_val:.1f}$")
+               label=rf"FSS mean $1/\alpha_0 = {mean_val:.1f} \pm {std_val:.1f}$")
 
     # Per-batch scatter
     ax.scatter(x, y, s=55, color="#4C72B0", edgecolors="white",
-               linewidths=0.6, zorder=5, label=f"Per-batch $1/\\alpha$ (M={total_m})")
+               linewidths=0.6, zorder=5,
+               label=f"Per-batch $1/\\alpha_0$ (FSS, M={total_m})")
 
-    # Physical reference line
+    # Exact bare coupling from collider: 1/alpha_0 = 32*pi
+    ax.axhline(bare, color="#8B2635", ls="-", lw=2.0, zorder=4,
+               label=rf"Collider exact $1/\alpha_0 = 32\pi \approx {bare:.1f}$")
+
+    # Physical observed reference line
     ax.axhline(phys, color="#E8A838", ls="--", lw=2.0, zorder=4,
-               label=r"Physical $1/\alpha = 137.036$")
+               label=r"Observed $1/\alpha = 137.036$")
 
-    # Annotate the screening gap
-    gap = phys - mean_val
-    mid_y = (mean_val + phys) / 2.0
+    # Annotate the vacuum polarization screening gap
+    gap = phys - bare
+    mid_y = (bare + phys) / 2.0
     arrow_x = x[-1] + 1.5
     ax.annotate(
-        "", xy=(arrow_x, phys - 0.15), xytext=(arrow_x, mean_val + 0.15),
+        "", xy=(arrow_x, phys - 0.15), xytext=(arrow_x, bare + 0.15),
         arrowprops=dict(arrowstyle="<->", color="0.35", lw=1.2),
     )
     ax.text(
         arrow_x + 0.5, mid_y,
-        f"Finite Volume\nScreening Effect\n$\\Delta = {gap:.1f}$",
+        f"Vacuum Polarization\nScreening\n"
+        rf"$32\pi/137 \approx 0.733$",
         fontsize=9, va="center", ha="left", color="0.3",
         bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="0.7", alpha=0.85),
     )
 
     ax.set_xlabel("Realization (batch midpoint)")
-    ax.set_ylabel(r"$1/\alpha$")
+    ax.set_ylabel(r"$1/\alpha_0$ (bare coupling)")
     ax.set_xlim(0, x[-1] + 6)
-    y_lo = mean_val - 4 * max(std_val, 1.0)
+    y_lo = min(mean_val, bare) - 4 * max(std_val, 1.0)
     y_hi = phys + 5
     ax.set_ylim(y_lo, y_hi)
     ax.legend(loc="upper left", frameon=True, framealpha=0.9, edgecolor="0.85")

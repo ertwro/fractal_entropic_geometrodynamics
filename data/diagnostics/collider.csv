@@ -1,0 +1,21 @@
+# FEG Kuratowski Calculus Engine (FEG_prism)
+# Author: Juan Pablo Silva Alvarado
+# DOI: 10.5281/zenodo.18769707
+# Framework: Fractal Entropic Geometrodynamics
+# Provenance SHA-256: a4fee33737305b5eb78a16be2ff233bdce125bffa352127fcbcd997d018c05aa
+# Commit: ad4f708 (dirty)
+# Timestamp: 2026-03-06T18:40:13Z
+# N: 10000000  M: 1 (converged=false, min=8, max=1)  mode: in-memory
+# epsilon: 0.01  tmax: 15  walkers: 2250000
+# algorithm: forward-forward belly (children(u) ∩ parents(v))
+# seed: 42
+# M13 Topological Collider (Q_topo and bare coupling)
+key,value
+diamonds_found,450642838
+diamonds_tested,450629860
+total_seam,25672004768
+total_blanket,111089702427
+Q_topo,0.23109257
+inv_alpha_bare,108.7562
+Q_topo_exact,0.250000
+inv_alpha_exact,100.530965

@@ -104,6 +104,17 @@ pub struct CausalPrism {
     pub intermediates: Vec<usize>,
 }
 
+/// A detected K_5 minor from threat contraction.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct K5Minor {
+    /// The 5 vertices forming the K_5 minor.
+    pub vertices: [usize; 5],
+    /// Index of the source prism that spawned this K_5 threat.
+    pub source_prism_idx: usize,
+    /// Classification by prime-5 tree level of the threat node.
+    pub z5_level: u16,
+}
+
 /// Result of the Causal Prism contraction with particle classification.
 pub struct DefectOutput {
     /// Original directed Hasse (moved in — ownership transfer).
@@ -118,6 +129,8 @@ pub struct DefectOutput {
     pub defect_core: Vec<usize>,
     /// Generation classification sets and mass spectrum.
     pub generations: GenerationSets,
+    /// Detected K_5 minors from threat contraction.
+    pub k5_minors: Vec<K5Minor>,
 }
 
 /// Generation classification by bulk-momentum phase signature.
@@ -492,6 +505,7 @@ pub fn apply_defect(
     let mut merge_into: Vec<usize> = (0..n).collect();
     let mut is_merged  = vec![false; n];
     let mut merge_count = 0usize;
+    let mut k5_minors: Vec<K5Minor> = Vec::new();
 
     // Undirected adjacency check: t<->v exists if t->v OR v->t in the directed Hasse.
     // The K_5 threat criterion is topological (undirected), not causal (directed).
@@ -499,7 +513,7 @@ pub fn apply_defect(
         are_connected(&vacuum_csr, u, v as u32) || are_connected(&vacuum_csr, v, u as u32)
     };
 
-    for prism in &prisms {
+    for (prism_idx, prism) in prisms.iter().enumerate() {
         let deg_o = vacuum_csr.degree(prism.origin);
         let deg_d = vacuum_csr.degree(prism.destination);
         let absorber = if deg_o >= deg_d { prism.origin } else { prism.destination };
@@ -527,10 +541,20 @@ pub fn apply_defect(
             if is_placed[t] || is_merged[t] { continue; }
             let to_origin = connected_undirected(t, prism.origin);
             let to_dest   = connected_undirected(t, prism.destination);
-            let to_inter: usize = prism.intermediates.iter()
+            let to_inter: Vec<usize> = prism.intermediates.iter()
                 .filter(|&&w| connected_undirected(t, w))
-                .count();
-            if (to_origin && to_dest) && to_inter >= PRISM_THREAT {
+                .map(|&w| w)
+                .collect();
+            if (to_origin && to_dest) && to_inter.len() >= PRISM_THREAT {
+                // Record K_5 minor before absorbing: {t, origin, dest, inter[0], inter[1]}
+                let v0 = to_inter[0];
+                let v1 = to_inter[1];
+                k5_minors.push(K5Minor {
+                    vertices: [t, prism.origin, prism.destination, v0, v1],
+                    source_prism_idx: prism_idx,
+                    z5_level: 0, // Will be filled if pts are available
+                });
+
                 merge_into[t] = absorber;
                 is_merged[t]  = true;
                 merge_count  += 1;
@@ -539,7 +563,7 @@ pub fn apply_defect(
     }
 
     {
-        let msg = format!("  Threat contractions: {merge_count}");
+        let msg = format!("  Threat contractions: {merge_count} | K_5 minors: {}", k5_minors.len());
         println!("{}", msg);
         use std::fs::OpenOptions; use std::io::Write;
         if let Ok(mut f) = OpenOptions::new().create(true).append(true).open("simulation.log") {
@@ -812,6 +836,14 @@ pub fn apply_defect(
         total as f64 / sterile_prisms_count as f64
     };
 
+    // K_5 statistics for topology summary
+    let k5_count = k5_minors.len();
+    let mean_k5_z5_level = if k5_count > 0 {
+        k5_minors.iter().map(|m| m.z5_level as f64).sum::<f64>() / k5_count as f64
+    } else {
+        0.0
+    };
+
     let topology = TopologySummary {
         total_nodes: n,
         total_prisms: prisms.len(),
@@ -840,6 +872,8 @@ pub fn apply_defect(
         prisms_gen1,
         prisms_gen2,
         prisms_gen3,
+        k5_count,
+        mean_k5_z5_level,
     };
 
     (DefectOutput {
@@ -856,5 +890,134 @@ pub fn apply_defect(
             sterile: sterile_nodes,
             mass: [mass_gen1, mass_gen2, mass_gen3, mass_anti1],
         },
+        k5_minors,
     }, topology, prisms)
+}
+
+/// Unbiased K_{2,n} prism census: scan ALL nodes, no degree threshold, no placement.
+///
+/// Returns every valid K_{2,n} (n >= 3) subgraph in the Hasse diagram without
+/// the core selection bias of `apply_defect`.  Prisms may share nodes (no greedy
+/// placement), giving the complete topological census.
+///
+/// For each origin u with out-degree >= 3, we traverse u→w→v (2-hop forward)
+/// and compute belly = children(u) ∩ parents(v).  Every (u,v) pair with
+/// |belly| >= 3 emits a prism.  To avoid double-counting, we require u < v
+/// (in node index order).
+pub fn scan_all_prisms(
+    vacuum_csr: &CsrGraph<Directed>,
+    n: usize,
+) -> Vec<CausalPrism> {
+    let rev_csr = vacuum_csr.reverse();
+    let min_belly = 3usize;
+
+    let mut prisms: Vec<CausalPrism> = Vec::new();
+    let mut cands: Vec<u32> = Vec::with_capacity(256);
+
+    let report_step = (n / 20).max(1);
+
+    for u in 0..n {
+        if u % report_step == 0 && u > 0 {
+            let pct = u as f64 / n as f64 * 100.0;
+            eprintln!("  [Unbiased scan] {pct:.0}% ({u}/{n}) | Prisms: {}", prisms.len());
+        }
+
+        let nb_u = vacuum_csr.neighbors(u);
+        if nb_u.len() < min_belly { continue; }
+
+        // 2-hop forward: u → w → v
+        cands.clear();
+        for &w in nb_u {
+            for &v in vacuum_csr.neighbors(w as usize) {
+                let v_us = v as usize;
+                // Require v > u to avoid double-counting (u,v) and (v,u).
+                if v_us > u {
+                    cands.push(v);
+                }
+            }
+        }
+        cands.sort_unstable();
+        cands.dedup();
+
+        for &v_u32 in &cands {
+            let v = v_u32 as usize;
+            let pv = rev_csr.neighbors(v);
+            if pv.len() < min_belly { continue; }
+
+            let shared = count_slice_intersection(nb_u, pv);
+            if shared >= min_belly {
+                let intermediates = extract_slice_intersection(nb_u, pv);
+                prisms.push(CausalPrism {
+                    origin: u,
+                    destination: v,
+                    intermediates,
+                });
+            }
+        }
+    }
+
+    eprintln!("  [Unbiased scan] Complete: {} total prisms found", prisms.len());
+    prisms
+}
+
+/// Unbiased K_{2,n} census keeping only the MAXIMAL prism per origin node.
+///
+/// For each origin u, emits only the prism with the largest belly (most
+/// intermediates).  This selects the "most complete topological representation"
+/// of each node's defect structure, without the top-10% core bias.
+pub fn scan_maximal_prisms(
+    vacuum_csr: &CsrGraph<Directed>,
+    n: usize,
+) -> Vec<CausalPrism> {
+    let rev_csr = vacuum_csr.reverse();
+    let min_belly = 3usize;
+
+    // For each origin u, track best (largest belly) prism.
+    let mut best: Vec<Option<CausalPrism>> = (0..n).map(|_| None).collect();
+
+    let report_step = (n / 10).max(1);
+
+    for u in 0..n {
+        if u % report_step == 0 && u > 0 {
+            eprintln!("  [Maximal scan] {}%", u * 100 / n);
+        }
+
+        let nb_u = vacuum_csr.neighbors(u);
+        if nb_u.len() < min_belly { continue; }
+
+        // 2-hop forward: u → w → v
+        let mut cands: Vec<u32> = Vec::new();
+        for &w in nb_u {
+            for &v in vacuum_csr.neighbors(w as usize) {
+                if (v as usize) > u {
+                    cands.push(v);
+                }
+            }
+        }
+        cands.sort_unstable();
+        cands.dedup();
+
+        let mut best_belly = best[u].as_ref().map(|p| p.intermediates.len()).unwrap_or(0);
+
+        for &v_u32 in &cands {
+            let v = v_u32 as usize;
+            let pv = rev_csr.neighbors(v);
+            if pv.len() < min_belly { continue; }
+
+            let shared = count_slice_intersection(nb_u, pv);
+            if shared >= min_belly && shared > best_belly {
+                let intermediates = extract_slice_intersection(nb_u, pv);
+                best_belly = shared;
+                best[u] = Some(CausalPrism {
+                    origin: u,
+                    destination: v,
+                    intermediates,
+                });
+            }
+        }
+    }
+
+    let prisms: Vec<CausalPrism> = best.into_iter().flatten().collect();
+    eprintln!("  [Maximal scan] Complete: {} maximal prisms", prisms.len());
+    prisms
 }

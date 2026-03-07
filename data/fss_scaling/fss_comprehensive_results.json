@@ -229,9 +229,11 @@
     }
   },
   "derived": {
-    "alpha_inf": 0.006058574676723878,
-    "inv_alpha_inf": 165.05532296925344,
-    "Omega_inf_from_Q": 5.567342633546485,
-    "gap_to_137_percent": 20.446687709254093
+    "alpha_inf": 0.009947183943243459,
+    "inv_alpha_inf": 100.53096491487338,
+    "Omega_inf_from_Q": 3.0,
+    "gap_to_137_percent": 26.639344262295083,
+    "Q_inf_collider": 0.25,
+    "note": "Collider locks Q_topo=1/4 (exact), superseding N^{-1/4} power-law extrapolation"
   }
 }

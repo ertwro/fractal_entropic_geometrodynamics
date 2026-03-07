@@ -66,10 +66,15 @@ fn print_usage() {
     eprintln!("  --measure-pmns       M8: PMNS mixing matrix");
     eprintln!("  --measure-higgs      M9: Higgs mechanism");
     eprintln!("  --measure-lagrangian M10: Full SM Lagrangian card");
-    eprintln!("  --measure-all        Enable all measurements (M1-M9)");
+    eprintln!("  --measure-hausdorff  M11: Hausdorff dimension (BFS volume growth)");
+    eprintln!("  --measure-zigzag     M12: Zigzag KK dimension");
+    eprintln!("  --measure-collider   M13: Topological collider (Q_topo)");
+    eprintln!("  --measure-mass-formula M14: Exact mass formula verification");
+    eprintln!("  --measure-all        Enable all measurements (M1-M9, M11-M14)");
     eprintln!("  --modulo-prime <u64> Prime modulus for M3 (default: 65537)");
     eprintln!("  --modulo-root <u64>  Primitive root for M3 (default: 3)");
     eprintln!("  --modulo-steps <N>   NTT walk steps for M3/M6 (default: 500)");
+    eprintln!("  --topology-only      Skip Phase 3 walks; run M11/M13/M14 only (~5x faster)");
     eprintln!("  --decoherence-every <N>  Run M6 every N-th realization (default: 1)");
     eprintln!("  --help               Show this help message");
 }
@@ -90,6 +95,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let force_inmemory = args.iter().any(|a| a == "--inmemory");
     let resume = args.iter().any(|a| a == "--resume");
     let force_all = args.iter().any(|a| a == "--force-all");
+    let topology_only = args.iter().any(|a| a == "--topology-only");
 
     let mut epsilon: f64 = 0.01;
     let mut tmax: usize = 15;
@@ -172,6 +178,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         pmns: pmns_flag,
         higgs: all_m1_m9 || args.iter().any(|a| a == "--measure-higgs"),
         lagrangian: lagrangian_flag,
+        hausdorff: all_m1_m9 || topology_only || args.iter().any(|a| a == "--measure-hausdorff"),
+        zigzag: all_m1_m9 || args.iter().any(|a| a == "--measure-zigzag"),
+        collider: all_m1_m9 || topology_only || args.iter().any(|a| a == "--measure-collider"),
+        mass_formula: all_m1_m9 || topology_only || args.iter().any(|a| a == "--measure-mass-formula"),
         modulo_config: ModuloConfig {
             prime: parsed_modulo_prime.unwrap_or(65537),
             root: parsed_modulo_root.unwrap_or(3),
@@ -192,6 +202,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             if measure.pmns { Some("M8:pmns") } else { None },
             if measure.higgs { Some("M9:higgs") } else { None },
             if measure.lagrangian { Some("M10:lagrangian") } else { None },
+            if measure.hausdorff { Some("M11:hausdorff") } else { None },
+            if measure.zigzag { Some("M12:zigzag") } else { None },
+            if measure.collider { Some("M13:collider") } else { None },
+            if measure.mass_formula { Some("M14:mass_formula") } else { None },
         ].iter().filter_map(|&x| x).collect();
         println!("  measurements: {}", active.join(", "));
         if measure.modulo {
@@ -202,6 +216,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    if topology_only {
+        println!("  mode: topology-only (Phase 3 walks skipped)");
+    }
     println!("  seed: {seed_base}{}",
         if parsed_seed.is_some() { " (deterministic)" } else { " (system clock)" });
 
@@ -238,13 +255,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("[export-slice] Running single realization (seed={seed_base})...");
 
         let mut rng = StdRng::seed_from_u64(seed_base);
-        let (pts_raw, _big_t) = phase1::sprinkle(n_points, &mut rng);
-        let (pts, vacuum_csr, momentum) = if n_points <= eigen_cutoff {
+        let (pts_raw, _half_t) = phase1::sprinkle(n_points, &mut rng);
+        let (euclidean, vacuum_csr, momentum) = if n_points <= eigen_cutoff {
             phase1::build_hasse_sparse(&pts_raw)
         } else {
             phase1::build_hasse_direct(&pts_raw)
         };
         drop(pts_raw);
+        let sorted_coords = euclidean;
 
         let (defect, _topo, causal_prisms) =
             phase2::apply_defect(n_points, vacuum_csr, momentum);
@@ -254,7 +272,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut hasse_edges = Vec::new();
         for u in 0..n_points {
             for &v in vac_csr.neighbors(u) {
-                if pts[u][0] < pts[v as usize][0] {
+                if sorted_coords[u][0] < sorted_coords[v as usize][0] {
                     hasse_edges.push((u as u32, v));
                 }
             }
@@ -270,7 +288,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let slice = anim_export::TopologySlice {
             n_total: n_points,
-            coordinates: pts,
+            coordinates: sorted_coords,
             hasse_edges,
             prisms: prism_defs,
         };
@@ -303,10 +321,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // step array (t ≈ 36) stabilizes.  The CRT budget is thus a floor,
     // not a ceiling.
     let walkers: usize = ((tmax as f64 / epsilon).powi(2)).ceil() as usize;
-    println!(
-        "[Phase 3] Topological Error Tolerance \u{03b5} = {epsilon}. At t_max = {tmax},\n\
-         Causal Resolution Theorem: W_base = {walkers} (per-category dilution applied at runtime).\n"
-    );
+    if !topology_only {
+        println!(
+            "[Phase 3] Topological Error Tolerance \u{03b5} = {epsilon}. At t_max = {tmax},\n\
+             Causal Resolution Theorem: W_base = {walkers} (per-category dilution applied at runtime).\n"
+        );
+    } else {
+        println!("[topology-only] Phase 3 walks skipped — deterministic topology measurements only.\n");
+    }
 
     // Dense step sampling: 1..30 (integer), then 32, 34, ..., 100 (even).
     // Covers short-time lattice transient, scaling plateau, and approach
@@ -339,7 +361,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         n_points, &steps, walkers, eigen_cutoff, &measure, exec_mode,
         seed_base, max_ensemble, min_ensemble, target_error,
         batch_size, max_concurrent_runs, &output_dir, resume, force_all,
-        epsilon, tmax,
+        epsilon, tmax, topology_only,
     );
 
     // ── M10: Assemble SM Lagrangian card (post-hoc) ─────────────────────

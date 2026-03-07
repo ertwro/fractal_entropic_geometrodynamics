@@ -18,7 +18,7 @@ use crate::provenance;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-const CHECKPOINT_VERSION: u32 = 4;
+const CHECKPOINT_VERSION: u32 = 8;
 
 /// Parameter fingerprint for validating checkpoint compatibility.
 ///
@@ -92,10 +92,13 @@ pub fn save(
             r.nodes = vec![];
         }
         if let Some(ref mut r) = m.vacuum_pol {
-            r.samples = vec![];
+            r.gauge_bins = vec![];
+            r.grav_bins = vec![];
         }
         if let Some(ref mut r) = m.electroweak {
             r.per_prism = vec![];
+            r.ew_gauge_bins = vec![];
+            r.ew_grav_bins = vec![];
         }
         if let Some(ref mut r) = m.decoherence {
             r.per_prism = vec![];

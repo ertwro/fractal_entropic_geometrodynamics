@@ -68,7 +68,15 @@ pub fn run(ctx: &MeasureContext) -> ModuloPathResult {
     let p = ctx.modulo_config.prime;
     let g = ctx.modulo_config.root;
     let merge = &ctx.defect.merge_map;
-    let (sym_vac_head, sym_vac_data) = ctx.sym_vacuum.raw();
+    let sym = match ctx.sym_vacuum {
+        Some(s) => s,
+        None => return ModuloPathResult {
+            nodes: vec![], total_walkers: 0, mean_intensity: 0.0,
+            max_intensity: 0.0, constructive_count: 0, destructive_count: 0,
+            prime: p, root: g,
+        },
+    };
+    let (sym_vac_head, sym_vac_data) = sym.raw();
     let n_steps = ctx.modulo_config.steps;
 
     let arrivals: Vec<AtomicU64> = (0..n).map(|_| AtomicU64::new(0)).collect();
@@ -177,10 +185,10 @@ pub fn run(ctx: &MeasureContext) -> ModuloPathResult {
             phase_sum: pacc,
             intensity,
             coords: [
-                ctx.pts.get(i).map_or(0.0, |c| c[0] as f32),
-                ctx.pts.get(i).map_or(0.0, |c| c[1] as f32),
-                ctx.pts.get(i).map_or(0.0, |c| c[2] as f32),
-                ctx.pts.get(i).map_or(0.0, |c| c[3] as f32),
+                ctx.sorted_coords.get(i).map_or(0.0, |c| c[0] as f32),
+                ctx.sorted_coords.get(i).map_or(0.0, |c| c[1] as f32),
+                ctx.sorted_coords.get(i).map_or(0.0, |c| c[2] as f32),
+                ctx.sorted_coords.get(i).map_or(0.0, |c| c[3] as f32),
             ],
         });
     }

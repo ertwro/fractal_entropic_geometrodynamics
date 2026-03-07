@@ -1,0 +1,78 @@
+# FEG Kuratowski Calculus Engine (FEG_prism)
+# Author: Juan Pablo Silva Alvarado
+# DOI: 10.5281/zenodo.18769707
+# Framework: Fractal Entropic Geometrodynamics
+# Provenance SHA-256: a4fee33737305b5eb78a16be2ff233bdce125bffa352127fcbcd997d018c05aa
+# Commit: ad4f708 (dirty)
+# Timestamp: 2026-03-06T18:40:13Z
+# N: 10000000  M: 1 (converged=false, min=8, max=1)  mode: in-memory
+# epsilon: 0.01  tmax: 15  walkers: 2250000
+# algorithm: forward-forward belly (children(u) ∩ parents(v))
+# seed: 42
+# M11 Hausdorff Dimension (BFS volume growth)
+key,value
+d_H_directed,3.377436
+d_H_undirected,0.000000
+n_sources,500
+V_dir_r0,1.00
+V_dir_r1,29.03
+V_dir_r2,333.92
+V_dir_r3,1634.46
+V_dir_r4,4987.11
+V_dir_r5,11570.18
+V_dir_r6,22415.24
+V_dir_r7,38145.92
+V_dir_r8,58889.59
+V_dir_r9,84314.60
+V_dir_r10,113606.12
+V_dir_r11,145459.13
+V_dir_r12,178158.13
+V_dir_r13,209747.17
+V_dir_r14,238324.68
+V_dir_r15,262371.09
+V_dir_r16,281204.52
+V_dir_r17,294585.23
+V_dir_r18,302686.16
+V_dir_r19,306534.52
+V_dir_r20,308058.72
+V_dir_r21,308605.16
+V_dir_r22,308772.61
+V_dir_r23,308813.45
+V_dir_r24,308821.20
+V_dir_r25,308822.45
+V_dir_r26,308822.64
+V_dir_r27,308822.68
+V_dir_r28,308822.70
+V_dir_r29,308822.70
+V_dir_r30,308822.70
+V_undir_r0,0.00
+V_undir_r1,0.00
+V_undir_r2,0.00
+V_undir_r3,0.00
+V_undir_r4,0.00
+V_undir_r5,0.00
+V_undir_r6,0.00
+V_undir_r7,0.00
+V_undir_r8,0.00
+V_undir_r9,0.00
+V_undir_r10,0.00
+V_undir_r11,0.00
+V_undir_r12,0.00
+V_undir_r13,0.00
+V_undir_r14,0.00
+V_undir_r15,0.00
+V_undir_r16,0.00
+V_undir_r17,0.00
+V_undir_r18,0.00
+V_undir_r19,0.00
+V_undir_r20,0.00
+V_undir_r21,0.00
+V_undir_r22,0.00
+V_undir_r23,0.00
+V_undir_r24,0.00
+V_undir_r25,0.00
+V_undir_r26,0.00
+V_undir_r27,0.00
+V_undir_r28,0.00
+V_undir_r29,0.00
+V_undir_r30,0.00

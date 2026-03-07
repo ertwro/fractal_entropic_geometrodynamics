@@ -40,43 +40,49 @@ pub fn print_summary(
 ) {
     let mid = steps.len() / 2;
     let last = steps.len() - 1;
+    let walks_empty = output.vacuum.p.is_empty();
 
     println!(
         "\n\u{2500}\u{2500} Summary ({actual_m} realisations, converged={converged}) \
          \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}"
     );
 
-    // Spectral dimensions at midpoint
-    println!(
-        "  d_S vacuum global  (t={}): {:.2}",
-        steps[mid],
-        output.vacuum.ds.get(mid).unwrap_or(&0.0),
-    );
-    println!(
-        "  d_S defect global  (t={}): {:.2}",
-        steps[mid],
-        output.defect.ds.get(mid).unwrap_or(&0.0),
-    );
-    println!(
-        "  d_S core on vacuum (t={}): {:.2}",
-        steps[mid],
-        output.vac_core.ds.get(mid).unwrap_or(&0.0),
-    );
-    println!(
-        "  d_S core on defect (t={}): {:.2}",
-        steps[mid],
-        output.def_core.ds.get(mid).unwrap_or(&0.0),
-    );
+    if walks_empty {
+        println!("  d_S: skipped (topology-only)");
+        println!("  P saturation: skipped (topology-only)");
+    } else {
+        // Spectral dimensions at midpoint
+        println!(
+            "  d_S vacuum global  (t={}): {:.2}",
+            steps[mid],
+            output.vacuum.ds.get(mid).unwrap_or(&0.0),
+        );
+        println!(
+            "  d_S defect global  (t={}): {:.2}",
+            steps[mid],
+            output.defect.ds.get(mid).unwrap_or(&0.0),
+        );
+        println!(
+            "  d_S core on vacuum (t={}): {:.2}",
+            steps[mid],
+            output.vac_core.ds.get(mid).unwrap_or(&0.0),
+        );
+        println!(
+            "  d_S core on defect (t={}): {:.2}",
+            steps[mid],
+            output.def_core.ds.get(mid).unwrap_or(&0.0),
+        );
 
-    // P saturation at last step
-    println!("  \u{2500}\u{2500} P saturation (t={}) \u{2500}\u{2500}", steps[last]);
-    let p_loc_vac = output.vac_core.p.get(last).copied().unwrap_or(0.0);
-    let p_loc_def = output.def_core.p.get(last).copied().unwrap_or(0.0);
-    let ratio = if p_loc_vac > 0.0 { p_loc_def / p_loc_vac } else { 0.0 };
-    println!(
-        "  P_loc_vac = {:.6e}  P_loc_def = {:.6e}  ratio = {:.4}",
-        p_loc_vac, p_loc_def, ratio,
-    );
+        // P saturation at last step
+        println!("  \u{2500}\u{2500} P saturation (t={}) \u{2500}\u{2500}", steps[last]);
+        let p_loc_vac = output.vac_core.p.get(last).copied().unwrap_or(0.0);
+        let p_loc_def = output.def_core.p.get(last).copied().unwrap_or(0.0);
+        let ratio = if p_loc_vac > 0.0 { p_loc_def / p_loc_vac } else { 0.0 };
+        println!(
+            "  P_loc_vac = {:.6e}  P_loc_def = {:.6e}  ratio = {:.4}",
+            p_loc_vac, p_loc_def, ratio,
+        );
+    }
 
     // Mass spectrum
     println!("  \u{2500}\u{2500} Mass Spectrum (avg N) \u{2500}\u{2500}");

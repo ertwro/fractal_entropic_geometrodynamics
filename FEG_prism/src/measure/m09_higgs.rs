@@ -133,7 +133,21 @@ fn bfs_ball_volume(
 
 pub fn run(ctx: &MeasureContext) -> HiggsResult {
     let n = ctx.n_points;
-    let (sym_vac_head, sym_vac_data) = ctx.sym_vacuum.raw();
+    let sym = match ctx.sym_vacuum {
+        Some(s) => s,
+        None => return HiggsResult {
+            mean_drag: 0.0, median_drag: 0.0, std_drag: 0.0,
+            mean_d_base: 0.0, mean_d_chiral: 0.0,
+            n_pairs_sampled: 0, n_reachable_both: 0,
+            n_reachable_photon: 0, n_reachable_weak: 0,
+            left_fraction: 0.0, per_pair: vec![],
+            cdf_n_sources: 0,
+            cdf_photon_frontier: vec![], cdf_weak_frontier: vec![],
+            cdf_photon_cumulative: vec![], cdf_weak_cumulative: vec![],
+            cdf_area_ratio: vec![],
+        },
+    };
+    let (sym_vac_head, sym_vac_data) = sym.raw();
     let (vac_head, _vac_data) = ctx.vacuum_csr.raw();
     let n_pairs = 200usize;
 
@@ -165,7 +179,7 @@ pub fn run(ctx: &MeasureContext) -> HiggsResult {
 
     // Step 2: Select distant prism pairs (early x late temporal quartiles)
     let mut prism_by_time: Vec<(usize, f64)> = ctx.prisms.iter().enumerate()
-        .map(|(i, p)| (i, ctx.pts[p.origin][0]))
+        .map(|(i, p)| (i, ctx.sorted_coords[p.origin][0]))
         .collect();
     prism_by_time.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
 

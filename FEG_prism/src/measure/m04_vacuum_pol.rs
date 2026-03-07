@@ -2,51 +2,67 @@
 // Copyright (c) 2026 Juan Pablo Silva Alvarado
 // Fractal Entropic Geometrodynamics — DOI: 10.5281/zenodo.18769707
 
-//! M4 — Combinatorial RG Flow: Q_topo(V) in Alexandrov Intervals
+//! M4 — Bifurcated Beta-Functions (Gauge vs Gravity/Confinement)
 //!
-//! Samples random Alexandrov intervals A(p,q) = {r : p ≺ r ≺ q} of varying
-//! volume V = |A(p,q)|, counts which prisms fall entirely inside each interval,
-//! and computes the local Q_topo(V).  This is the running coupling constant —
-//! purely combinatorial, zero free parameters.
+//! The universe has a bi-metric space: two independent spatial primes
+//! (3 and 5) constructing space via two different Kuratowski obstructions.
+//!
+//! - **K_{3,3} → prime 3** → SU(3)×SU(2) gauge structure → z3 coordinate
+//! - **K_5 → prime 5** → gravity/confinement → z5 coordinate
+//! - **z2 is temporal** — not a spatial axis
+//!
+//! Two decoupled scans:
+//! - **β_gauge(b)**: scan `z3 mod 3^b` — tracks K_{3,3} prism resolution
+//! - **β_grav(c)**: scan `z5 mod 5^c` — tracks K_5 defect resolution
 
 use super::context::MeasureContext;
-use crate::graph::grid::is_causal;
 use crate::output::CsvWriter;
-use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
-use rayon::prelude::*;
 
-/// Number of Alexandrov interval samples per realization.
-const N_SAMPLES: usize = 1000;
+/// Quantize a spatial coordinate to a u64 label for modular binning.
+/// Maps the coordinate range [min, max] to [0, SCALE) where SCALE is large
+/// enough for meaningful modular arithmetic at multiple resolutions.
+const QUANT_SCALE: f64 = 1e15;
 
-/// Maximum random-walk depth when picking the future endpoint q.
-const MAX_DEPTH: usize = 15;
-
-/// Minimum interval volume to keep (skip degenerate intervals).
-const MIN_VOLUME: usize = 10;
+#[inline]
+fn quantize(val: f64, min_val: f64, span: f64) -> u64 {
+    if span <= 0.0 { return 0; }
+    (((val - min_val) / span) * QUANT_SCALE) as u64
+}
 
 // ── Data Structures ──────────────────────────────────────────────────────────
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-pub struct AlexandrovSample {
-    pub volume: usize,
-    pub n_prisms: usize,
-    pub local_phase_sq: usize,
-    pub local_mass_sq: usize,
-    pub local_q: f64,
-    pub local_alpha: f64,
+pub struct GaugeBin {
+    pub b: u32,           // exponent: resolution = 3^b
+    pub n_resolved: usize,
+    pub n_unresolved: usize,
+    pub phase_sq: usize,
+    pub mass_sq: usize,
+    pub q: f64,
+    pub alpha: f64,
+}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct GravBin {
+    pub c: u32,           // exponent: resolution = 5^c
+    pub n_resolved: usize,
+    pub n_unresolved: usize,
+    pub phase_sq: usize,
+    pub mass_sq: usize,
+    pub q: f64,
+    pub alpha: f64,
 }
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct VacuumPolResult {
-    pub samples: Vec<AlexandrovSample>,
-    pub n_sampled: usize,
+    pub gauge_bins: Vec<GaugeBin>,
+    pub grav_bins: Vec<GravBin>,
     pub global_q: f64,
     pub global_alpha: f64,
     pub mean_local_q: f64,
 }
 
-// ── Pre-computed prism info ──────────────────────────────────────────────────
+// ── Pre-computed prism info (local to run()) ─────────────────────────────────
 
 struct PrismInfo {
     all_nodes: Vec<usize>,
@@ -57,9 +73,7 @@ struct PrismInfo {
 // ── Measurement ──────────────────────────────────────────────────────────────
 
 pub fn run(ctx: &MeasureContext) -> VacuumPolResult {
-    let n = ctx.n_points;
-    let pts = ctx.pts;
-    let (vac_head, vac_data) = ctx.vacuum_csr.raw();
+    let coords = ctx.sorted_coords;
 
     // Global Q_topo from topology summary
     let global_q = if ctx.topology.mass_sq_total > 0 {
@@ -71,11 +85,11 @@ pub fn run(ctx: &MeasureContext) -> VacuumPolResult {
 
     if ctx.prisms.is_empty() {
         return VacuumPolResult {
-            samples: vec![],
-            n_sampled: 0,
+            gauge_bins: vec![],
+            grav_bins: vec![],
             global_q,
             global_alpha,
-            mean_local_q: 0.0,
+            mean_local_q: global_q,
         };
     }
 
@@ -102,186 +116,264 @@ pub fn run(ctx: &MeasureContext) -> VacuumPolResult {
         })
         .collect();
 
-    // ── Build node → prism index map ─────────────────────────────────────
-    let mut node_to_prisms: Vec<Vec<usize>> = vec![Vec::new(); n];
-    for (pi, info) in prism_info.iter().enumerate() {
-        for &node in &info.all_nodes {
-            if node < n {
-                node_to_prisms[node].push(pi);
-            }
+    // ── Pre-compute quantized spatial coords for each prism's nodes ─────
+    // Determine coordinate ranges for quantization
+    let (mut min_x, mut max_x) = (f64::MAX, f64::MIN);
+    let (mut min_y, mut max_y) = (f64::MAX, f64::MIN);
+    for info in &prism_info {
+        for &nd in &info.all_nodes {
+            let c = &coords[nd];
+            if c[1] < min_x { min_x = c[1]; }
+            if c[1] > max_x { max_x = c[1]; }
+            if c[2] < min_y { min_y = c[2]; }
+            if c[2] > max_y { max_y = c[2]; }
         }
     }
+    let span_x = max_x - min_x;
+    let span_y = max_y - min_y;
 
-    // ── Pre-sort nodes by time coordinate ────────────────────────────────
-    let mut time_sorted: Vec<usize> = (0..n).collect();
-    time_sorted.sort_unstable_by(|&a, &b| {
-        pts[a][0].partial_cmp(&pts[b][0]).unwrap()
-    });
-
-    // Extract sorted time values for binary search
-    let sorted_times: Vec<f64> = time_sorted.iter().map(|&i| pts[i][0]).collect();
-
-    // ── Sample Alexandrov intervals in parallel ──────────────────────────
-    let samples: Vec<AlexandrovSample> = (0..N_SAMPLES)
-        .into_par_iter()
-        .filter_map(|sample_idx| {
-            let mut rng = StdRng::seed_from_u64(ctx.seed.wrapping_add(sample_idx as u64));
-
-            // Pick random starting node p
-            let p = rng.gen_range(0..n);
-
-            // Random walk forward to find q
-            let mut current = p;
-            let depth = rng.gen_range(1..=MAX_DEPTH);
-            for _ in 0..depth {
-                let s = vac_head[current] as usize;
-                let e = vac_head[current + 1] as usize;
-                if s == e {
-                    break; // no forward neighbors
-                }
-                current = vac_data[rng.gen_range(s..e)] as usize;
-            }
-            let q = current;
-            if q == p {
-                return None; // degenerate: couldn't move forward
-            }
-
-            // Verify p ≺ q (should hold by construction, but be safe)
-            if !is_causal(&pts[p], &pts[q]) {
-                return None;
-            }
-
-            let t_p = pts[p][0];
-            let t_q = pts[q][0];
-
-            // Binary search for time window [t_p, t_q] in sorted_times
-            let lo = sorted_times.partition_point(|&t| t <= t_p);
-            let hi = sorted_times.partition_point(|&t| t < t_q);
-
-            // Build interval membership set: r ∈ A(p,q) iff p ≺ r ≺ q
-            let mut interval: Vec<usize> = Vec::new();
-            for &idx in &time_sorted[lo..hi] {
-                if idx == p || idx == q {
-                    continue;
-                }
-                if is_causal(&pts[p], &pts[idx]) && is_causal(&pts[idx], &pts[q]) {
-                    interval.push(idx);
-                }
-            }
-
-            let volume = interval.len();
-            if volume < MIN_VOLUME {
-                return None;
-            }
-
-            // Build fast membership lookup
-            let mut in_interval = vec![false; n];
-            for &idx in &interval {
-                in_interval[idx] = true;
-            }
-            // Also include endpoints for prism containment check
-            in_interval[p] = true;
-            in_interval[q] = true;
-
-            // Collect candidate prism indices from interval nodes
-            let mut candidate_prisms: Vec<usize> = Vec::new();
-            for &idx in &interval {
-                candidate_prisms.extend_from_slice(&node_to_prisms[idx]);
-            }
-            // Also check prisms touching p and q
-            candidate_prisms.extend_from_slice(&node_to_prisms[p]);
-            candidate_prisms.extend_from_slice(&node_to_prisms[q]);
-            candidate_prisms.sort_unstable();
-            candidate_prisms.dedup();
-
-            // A prism is interior iff ALL its nodes are in the interval
-            let mut local_phase_sq: usize = 0;
-            let mut local_mass_sq: usize = 0;
-            let mut n_prisms: usize = 0;
-            for &pi in &candidate_prisms {
-                let info = &prism_info[pi];
-                if info.all_nodes.iter().all(|&nd| in_interval[nd]) {
-                    local_phase_sq += info.phi_abs * info.phi_abs;
-                    local_mass_sq += info.n_inter * info.n_inter;
-                    n_prisms += 1;
-                }
-            }
-
-            let local_q = if local_mass_sq > 0 {
-                local_phase_sq as f64 / local_mass_sq as f64
-            } else {
-                return None; // no prisms with mass
-            };
-            let local_alpha = local_q / (8.0 * std::f64::consts::PI);
-
-            Some(AlexandrovSample {
-                volume,
-                n_prisms,
-                local_phase_sq,
-                local_mass_sq,
-                local_q,
-                local_alpha,
-            })
-        })
+    let prism_z3: Vec<Vec<u64>> = prism_info
+        .iter()
+        .map(|info| info.all_nodes.iter().map(|&nd| quantize(coords[nd][1], min_x, span_x)).collect())
         .collect();
 
-    let n_sampled = samples.len();
-    let mean_local_q = if n_sampled > 0 {
-        samples.iter().map(|s| s.local_q).sum::<f64>() / n_sampled as f64
-    } else {
-        0.0
-    };
+    let prism_z5: Vec<Vec<u64>> = prism_info
+        .iter()
+        .map(|info| info.all_nodes.iter().map(|&nd| quantize(coords[nd][2], min_y, span_y)).collect())
+        .collect();
+
+    // ── Gauge scan: z3 mod 3^b ───────────────────────────────────────────
+    let mut gauge_bins: Vec<GaugeBin> = Vec::new();
+    for b in 0u32.. {
+        let mod3 = match 3u64.checked_pow(b) {
+            Some(v) => v,
+            None => break,
+        };
+
+        let mut n_resolved: usize = 0;
+        let mut n_unresolved: usize = 0;
+        let mut phase_sq: usize = 0;
+        let mut mass_sq: usize = 0;
+
+        for (pi, info) in prism_info.iter().enumerate() {
+            let z3s = &prism_z3[pi];
+            let cell3 = z3s[0] % mod3;
+            let resolved = z3s[1..].iter().all(|&z3| z3 % mod3 == cell3);
+
+            if resolved {
+                n_resolved += 1;
+                phase_sq += info.phi_abs * info.phi_abs;
+                mass_sq += info.n_inter * info.n_inter;
+            } else {
+                n_unresolved += 1;
+            }
+        }
+
+        if n_resolved == 0 {
+            break;
+        }
+
+        let q = if mass_sq > 0 {
+            phase_sq as f64 / mass_sq as f64
+        } else {
+            0.0
+        };
+        let alpha = q / (8.0 * std::f64::consts::PI);
+
+        gauge_bins.push(GaugeBin {
+            b,
+            n_resolved,
+            n_unresolved,
+            phase_sq,
+            mass_sq,
+            q,
+            alpha,
+        });
+    }
+
+    // ── Gravity scan: z5 mod 5^c ─────────────────────────────────────────
+    let mut grav_bins: Vec<GravBin> = Vec::new();
+    for c in 0u32.. {
+        let mod5 = match 5u64.checked_pow(c) {
+            Some(v) => v,
+            None => break,
+        };
+
+        let mut n_resolved: usize = 0;
+        let mut n_unresolved: usize = 0;
+        let mut phase_sq: usize = 0;
+        let mut mass_sq: usize = 0;
+
+        for (pi, info) in prism_info.iter().enumerate() {
+            let z5s = &prism_z5[pi];
+            let cell5 = z5s[0] % mod5;
+            let resolved = z5s[1..].iter().all(|&z5| z5 % mod5 == cell5);
+
+            if resolved {
+                n_resolved += 1;
+                phase_sq += info.phi_abs * info.phi_abs;
+                mass_sq += info.n_inter * info.n_inter;
+            } else {
+                n_unresolved += 1;
+            }
+        }
+
+        if n_resolved == 0 {
+            break;
+        }
+
+        let q = if mass_sq > 0 {
+            phase_sq as f64 / mass_sq as f64
+        } else {
+            0.0
+        };
+        let alpha = q / (8.0 * std::f64::consts::PI);
+
+        grav_bins.push(GravBin {
+            c,
+            n_resolved,
+            n_unresolved,
+            phase_sq,
+            mass_sq,
+            q,
+            alpha,
+        });
+    }
 
     VacuumPolResult {
-        samples,
-        n_sampled,
+        gauge_bins,
+        grav_bins,
         global_q,
         global_alpha,
-        mean_local_q,
+        mean_local_q: global_q,
     }
 }
 
 // ── Ensemble Aggregation ─────────────────────────────────────────────────────
 
 pub fn aggregate(results: &[VacuumPolResult]) -> VacuumPolResult {
-    let mut all_samples: Vec<AlexandrovSample> = Vec::new();
-    for r in results {
-        all_samples.extend(r.samples.iter().cloned());
-    }
-    let n_sampled = all_samples.len();
-    let mean_local_q = if n_sampled > 0 {
-        all_samples.iter().map(|s| s.local_q).sum::<f64>() / n_sampled as f64
-    } else {
-        0.0
-    };
     let global_q = results.iter().map(|r| r.global_q).sum::<f64>() / results.len() as f64;
     let global_alpha = global_q / (8.0 * std::f64::consts::PI);
 
+    // Aggregate gauge bins: join by b
+    let max_b = results.iter().flat_map(|r| r.gauge_bins.iter().map(|g| g.b)).max().unwrap_or(0);
+    let mut gauge_bins: Vec<GaugeBin> = Vec::new();
+    for b in 0..=max_b {
+        let mut total_phase_sq: usize = 0;
+        let mut total_mass_sq: usize = 0;
+        let mut total_resolved: usize = 0;
+        let mut total_unresolved: usize = 0;
+
+        for r in results {
+            if let Some(bin) = r.gauge_bins.iter().find(|x| x.b == b) {
+                total_phase_sq += bin.phase_sq;
+                total_mass_sq += bin.mass_sq;
+                total_resolved += bin.n_resolved;
+                total_unresolved += bin.n_unresolved;
+            }
+        }
+
+        if total_resolved == 0 { continue; }
+
+        let q = if total_mass_sq > 0 {
+            total_phase_sq as f64 / total_mass_sq as f64
+        } else {
+            0.0
+        };
+        let alpha = q / (8.0 * std::f64::consts::PI);
+
+        gauge_bins.push(GaugeBin {
+            b,
+            n_resolved: total_resolved,
+            n_unresolved: total_unresolved,
+            phase_sq: total_phase_sq,
+            mass_sq: total_mass_sq,
+            q,
+            alpha,
+        });
+    }
+
+    // Aggregate grav bins: join by c
+    let max_c = results.iter().flat_map(|r| r.grav_bins.iter().map(|g| g.c)).max().unwrap_or(0);
+    let mut grav_bins: Vec<GravBin> = Vec::new();
+    for c in 0..=max_c {
+        let mut total_phase_sq: usize = 0;
+        let mut total_mass_sq: usize = 0;
+        let mut total_resolved: usize = 0;
+        let mut total_unresolved: usize = 0;
+
+        for r in results {
+            if let Some(bin) = r.grav_bins.iter().find(|x| x.c == c) {
+                total_phase_sq += bin.phase_sq;
+                total_mass_sq += bin.mass_sq;
+                total_resolved += bin.n_resolved;
+                total_unresolved += bin.n_unresolved;
+            }
+        }
+
+        if total_resolved == 0 { continue; }
+
+        let q = if total_mass_sq > 0 {
+            total_phase_sq as f64 / total_mass_sq as f64
+        } else {
+            0.0
+        };
+        let alpha = q / (8.0 * std::f64::consts::PI);
+
+        grav_bins.push(GravBin {
+            c,
+            n_resolved: total_resolved,
+            n_unresolved: total_unresolved,
+            phase_sq: total_phase_sq,
+            mass_sq: total_mass_sq,
+            q,
+            alpha,
+        });
+    }
+
     VacuumPolResult {
-        samples: all_samples,
-        n_sampled,
+        gauge_bins,
+        grav_bins,
         global_q,
         global_alpha,
-        mean_local_q,
+        mean_local_q: global_q,
     }
 }
 
 // ── CSV Output ───────────────────────────────────────────────────────────────
 
 pub fn write_csv(result: &VacuumPolResult, w: &mut CsvWriter) {
-    w.comment("M4 Combinatorial RG Flow (Q_topo in Alexandrov intervals)");
+    w.comment("M4 Gauge Beta-Function (z3 mod 3^b)");
     w.header(&[
-        "volume",
-        "n_prisms",
-        "local_phase_sq",
-        "local_mass_sq",
-        "local_q",
-        "local_alpha",
+        "b",
+        "n_resolved",
+        "n_unresolved",
+        "phase_sq",
+        "mass_sq",
+        "q",
+        "alpha",
     ]);
-    for s in &result.samples {
+    for g in &result.gauge_bins {
         w.row_fmt(format_args!(
-            "{},{},{},{},{:.6},{:.6}",
-            s.volume, s.n_prisms, s.local_phase_sq, s.local_mass_sq, s.local_q, s.local_alpha
+            "{},{},{},{},{},{:.6},{:.8}",
+            g.b, g.n_resolved, g.n_unresolved, g.phase_sq, g.mass_sq, g.q, g.alpha
+        ));
+    }
+
+    w.comment("M4 Gravity Beta-Function (z5 mod 5^c)");
+    w.header(&[
+        "c",
+        "n_resolved",
+        "n_unresolved",
+        "phase_sq",
+        "mass_sq",
+        "q",
+        "alpha",
+    ]);
+    for g in &result.grav_bins {
+        w.row_fmt(format_args!(
+            "{},{},{},{},{},{:.6},{:.8}",
+            g.c, g.n_resolved, g.n_unresolved, g.phase_sq, g.mass_sq, g.q, g.alpha
         ));
     }
 }
@@ -289,8 +381,7 @@ pub fn write_csv(result: &VacuumPolResult, w: &mut CsvWriter) {
 // ── Terminal Summary ─────────────────────────────────────────────────────────
 
 pub fn print_summary(result: &VacuumPolResult) {
-    println!("  [M4] Combinatorial RG Flow:");
-    println!("    Samples:         {}", result.n_sampled);
+    println!("  [M4] Bifurcated Beta-Functions:");
     println!(
         "    Global Q_topo:   {:.4}  (1/alpha = {:.1})",
         result.global_q,
@@ -300,10 +391,34 @@ pub fn print_summary(result: &VacuumPolResult) {
             0.0
         }
     );
-    println!("    Mean local Q:    {:.4}", result.mean_local_q);
-    if !result.samples.is_empty() {
-        let v_min = result.samples.iter().map(|s| s.volume).min().unwrap();
-        let v_max = result.samples.iter().map(|s| s.volume).max().unwrap();
-        println!("    Volume range:    [{}, {}]", v_min, v_max);
+
+    // Gauge track
+    if !result.gauge_bins.is_empty() {
+        let total = result.gauge_bins[0].n_resolved + result.gauge_bins[0].n_unresolved;
+        let active = result.gauge_bins.iter().filter(|g| g.n_resolved > 0).count();
+        println!("    β_gauge (z3 mod 3^b): {} active levels ({} prisms)", active, total);
+        for g in result.gauge_bins.iter().filter(|g| g.n_resolved > 0) {
+            let inv_alpha = if g.alpha > 0.0 { 1.0 / g.alpha } else { 0.0 };
+            println!(
+                "      b={}: Q={:.4}, 1/α={:.1}  (resolved={}/{})",
+                g.b, g.q, inv_alpha,
+                g.n_resolved, g.n_resolved + g.n_unresolved
+            );
+        }
+    }
+
+    // Grav track
+    if !result.grav_bins.is_empty() {
+        let total = result.grav_bins[0].n_resolved + result.grav_bins[0].n_unresolved;
+        let active = result.grav_bins.iter().filter(|g| g.n_resolved > 0).count();
+        println!("    β_grav (z5 mod 5^c): {} active levels ({} prisms)", active, total);
+        for g in result.grav_bins.iter().filter(|g| g.n_resolved > 0) {
+            let inv_alpha = if g.alpha > 0.0 { 1.0 / g.alpha } else { 0.0 };
+            println!(
+                "      c={}: Q={:.4}, 1/α={:.1}  (resolved={}/{})",
+                g.c, g.q, inv_alpha,
+                g.n_resolved, g.n_resolved + g.n_unresolved
+            );
+        }
     }
 }

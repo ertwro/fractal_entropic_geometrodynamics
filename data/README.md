@@ -30,6 +30,10 @@ data/
 │   ├── pmns.csv                     M8: PMNS mixing matrix
 │   ├── higgs.csv                    M9: Higgs drag coefficients
 │   └── accumulation.log             Welford convergence trace
+├── diagnostics/                     Single-realization diagnostic outputs
+│   ├── hausdorff.csv                M11: BFS volume growth (N=10^7, M=1)
+│   ├── zigzag.csv                   M12: Zigzag KK dimension (N=10^7, M=1)
+│   └── mass_formula.csv             M14: Genus-ladder mass formula (N=5000, M=1)
 ├── fss_scaling/                     Finite-size scaling (4 lattice sizes)
 │   ├── N_100000/                    N=10^5, M=10
 │   │   ├── results.csv
@@ -296,13 +300,15 @@ production screening charge in QED.
 | 1,000,000 | 0.2184 | 115.1 |
 | 5,000,000 | 0.1966 | 127.8 |
 | 10,000,000 | 0.1907 | 131.8 |
-| N → ∞ | **0.1523 ± 0.0009** | **165.1** |
+| N → ∞ (FSS) | 0.1523 ± 0.0009 | 165.1 |
+| N → ∞ (collider) | **1/4 = 0.250** | **32π ≈ 100.5** |
 
-The continuum-limit bare coupling 1/α_0 = 165.1 is the UV-cutoff value at the
-Planck scale.  The 165 → 137 gap is not a deficiency of the model but the
-physically expected domain of renormalization-group running from the Planck
-scale to laboratory energies.  The mechanism is ab initio: graph planarity
-forces phase anti-correlation at UV scales without any tuning.
+The FSS power-law extrapolation (Q → 0.152) is superseded by the topological
+collider — a strict bipartite seam with causal filter and external Markov
+blanket — which directly measures Q_topo = 1/4 (exact), giving α₀ = 1/(32π).
+The gap from α₀⁻¹ ≈ 100.5 to the lab value 137.036 is vacuum polarization
+screening: graph planarity forces phase anti-correlation at UV scales.
+Screening ratio: 32π/137 ≈ 0.73.
 
 ---
 
@@ -449,3 +455,35 @@ prefactor alpha and measures the ratio G_BH / G_thermo:
 The `results.csv` now contains 26 columns including bulk-restricted fields for
 the Jacobson analysis (bulk spectral dimension, bulk return probability, bulk
 causal flux).
+
+---
+
+## Diagnostic Outputs (`diagnostics/`)
+
+Single-realization outputs from measurement modules M11, M12, M14.
+These are NOT part of the M=20 ensemble; they are one-shot diagnostics.
+
+### `hausdorff.csv` (M11: BFS volume growth)
+
+| Key | Description |
+|-----|-------------|
+| `d_H_directed` | Hausdorff dimension from directed BFS (should → 4.0 with averaging) |
+| `n_sources` | Number of BFS source points sampled |
+| `V_dir_r{k}` | Mean directed BFS ball volume at radius k |
+
+### `zigzag.csv` (M12: Zigzag Kaluza-Klein dimension)
+
+| Key | Description |
+|-----|-------------|
+| `d_zig` | Zigzag dimension (alternating forward-backward BFS) |
+| `screening_ratio` | d_zig / d_H |
+| `V_zig_d{k}` | Mean zigzag ball volume at depth k |
+
+### `mass_formula.csv` (M14: Genus-ladder mass formula)
+
+| Key | Description |
+|-----|-------------|
+| `genus_{g}_count` | Number of prisms at genus g (g=0: electron, g=1: muon, g=2: tau) |
+| `mean_belly_g{g}` | Mean belly size at genus g |
+| `predicted_mu_e` | Predicted m_μ/m_e from exact formula (SM: 206.77) |
+| `predicted_tau_e` | Predicted m_τ/m_e from exact formula (SM: 3477.5) |

@@ -63,6 +63,10 @@ pub struct TopologySummary {
     pub prisms_gen1: usize,
     pub prisms_gen2: usize,
     pub prisms_gen3: usize,
+    /// Number of K_5 minors detected during threat contraction.
+    pub k5_count: usize,
+    /// Mean Z_5 tree level of K_5 threat nodes.
+    pub mean_k5_z5_level: f64,
 }
 
 /// Aggregate topology summaries across M realisations.
@@ -141,6 +145,8 @@ pub fn aggregate_topology(topos: &[TopologySummary]) -> TopologySummary {
         prisms_gen1: topos.iter().map(|t| t.prisms_gen1).sum::<usize>() / m,
         prisms_gen2: topos.iter().map(|t| t.prisms_gen2).sum::<usize>() / m,
         prisms_gen3: topos.iter().map(|t| t.prisms_gen3).sum::<usize>() / m,
+        k5_count: topos.iter().map(|t| t.k5_count).sum(),
+        mean_k5_z5_level: topos.iter().map(|t| t.mean_k5_z5_level).sum::<f64>() / m as f64,
     }
 }
 
@@ -177,6 +183,8 @@ mod tests {
             prisms_gen1: 6,
             prisms_gen2: 3,
             prisms_gen3: 1,
+            k5_count: 0,
+            mean_k5_z5_level: 0.0,
         }
     }
 

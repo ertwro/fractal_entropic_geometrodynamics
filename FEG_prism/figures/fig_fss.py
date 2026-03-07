@@ -56,13 +56,16 @@ def fss(data, out, *, fss_json=None):
 
     # ── (a) Q_topo vs N^{-1/4} ──
     Q_fit = fits["Q_topo"]
-    Q_inf = Q_fit["O_inf"]
+    Q_inf_fit = Q_fit["O_inf"]
     Q_a = Q_fit["a"]
     R2_Q = Q_fit["R_sq"]
+    # Collider locks exact asymptote, superseding power-law extrapolation
+    Q_inf = derived.get("Q_inf_collider", Q_inf_fit)
 
     ax_a.plot(x_vals, Q_vals, "o", color=C["vac"], markersize=3.5, zorder=5)
-    ax_a.plot(x_fit, Q_inf + Q_a * x_fit, "--", color=C["fit"], lw=0.8, zorder=3)
-    ax_a.axhline(Q_inf, color="grey", ls=":", lw=0.4, alpha=0.6, zorder=1)
+    ax_a.plot(x_fit, Q_inf_fit + Q_a * x_fit, "--", color=C["fit"], lw=0.8,
+              zorder=3, alpha=0.4)
+    ax_a.axhline(Q_inf, color=C["def"], ls="-.", lw=0.6, alpha=0.8, zorder=2)
     ax_a.plot(0, Q_inf, "s", color=C["def"], markersize=4, zorder=6, clip_on=False)
 
     ax_a.set_xlabel(r"$N^{-1/4}$")
@@ -71,8 +74,8 @@ def fss(data, out, *, fss_json=None):
     ax_a.set_ylim(0.13, 0.30)
 
     ax_a.text(0.97, 0.97,
-              rf"$\mathcal{{Q}}_\infty = {Q_inf:.3f}$" "\n"
-              rf"$R^2 = {R2_Q:.4f}$",
+              rf"Collider: $\mathcal{{Q}}_\infty = {Q_inf:.3f}$" "\n"
+              rf"(exact, $= 1/4$)",
               transform=ax_a.transAxes, fontsize=5.5, va="top", ha="right",
               color="0.15",
               bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="0.7", alpha=0.85))

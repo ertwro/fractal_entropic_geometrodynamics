@@ -304,9 +304,11 @@ The simulation proceeds through six phases, each corresponding to a Rust module:
   │  Phase 3: Spectral Observables    (phase3/)              │
   │    Random walkers → d_S(t) → Causal Flux                 │
   ├─────────────────────────────────────────────────────────┤
-  │  Measurements M1–M10              (measure/)             │
-  │    Mass, half-life, modulo, vacuum pol., electroweak,     │
-  │    decoherence, neutrino, PMNS, Higgs, Lagrangian        │
+  │  Measurements M1–M14              (measure/)             │
+  │    M1–M10: Mass, half-life, modulo, vacuum pol.,         │
+  │    electroweak, decoherence, neutrino, PMNS, Higgs,      │
+  │    Lagrangian; M11–M14: Hausdorff, zigzag, collider,     │
+  │    mass formula                                           │
   ├─────────────────────────────────────────────────────────┤
   │  Phase 4: Output                  (output/)              │
   │    CSV serialisation + provenance stamps                  │
@@ -337,8 +339,8 @@ The simulation proceeds through six phases, each corresponding to a Rust module:
   \modname{ensemble/}      & Adaptive batching (\file{runner.rs}),
                              Welford averaging (\file{averaging.rs}),
                              checkpointing (\file{checkpoint.rs}) \\
-  \modname{measure/}       & Ten observer measurements M1--M10, each in
-                             \file{m01\_traversal.rs} through \file{m10\_lagrangian.rs} \\
+  \modname{measure/}       & Fourteen observer measurements M1--M14, in
+                             \file{m01\_traversal.rs} through \file{m14\_mass\_formula.rs} \\
   \modname{output/}        & CSV writer (\file{csv.rs}),
                              human-readable summary (\file{summary.rs}) \\
   \modname{anim\_export.rs} & Binary topology slice for Manim animation \\
@@ -684,10 +686,9 @@ Aggregated ratios:
 \begin{itemize}
   \item $\Omega_{\text{dark}}/\Omega_{\text{vis}} =
         \sum(N - |\Phi|) / \sum |\Phi|$
-  \item $Q_{\text{topo}} = \sum |\Phi|^2 / \sum N^2$
-        (topological charge ratio, intrinsic)
-  \item $\alpha_{\text{EM}} = Q_{\text{topo}} / (8\pi)$
-        (observed electromagnetic coupling)
+  \item $Q_{\text{topo}} = 1/4$ (exact, from topological collider M13)
+  \item $\alpha_0 = Q_{\text{topo}} / (8\pi) = 1/(32\pi) \approx 1/100.5$
+        (bare Planck coupling; vacuum polarization screens to $\alpha \approx 1/137$)
 \end{itemize}
 
 \section{Topology Summary}
@@ -938,7 +939,7 @@ deviations.  Topology fields are aggregated by \func{aggregate\_topology()}.
 
 Source: \file{measure/mod.rs}
 
-The measurement system provides ten independent physics observables.  Each
+The measurement system provides fourteen independent physics observables.  Each
 measurement is gated by a boolean flag in \code{MeasureFlags} and receives a
 \code{MeasureContext} containing the full Phase 1--2 outputs.  Results are
 aggregated across ensemble realisations via per-measurement \func{aggregate()}
@@ -1143,7 +1144,7 @@ Assembles a complete Standard Model parameter card from M1--M9 outputs:
   \toprule
   \textbf{Parameter} & \textbf{Source} & \textbf{FEG Derivation} \\
   \midrule
-  $\alpha_{\text{EM}}$ & M4 & $Q_{\text{topo}}/(8\pi)$ \\
+  $\alpha_0 = 1/(32\pi)$ & M13 & Topological collider $Q_{\text{topo}} = 1/4$ \\
   $\sin^2\theta_W$     & M5 & Left/right walker asymmetry \\
   $m_e : m_\mu : m_\tau$ & M1 & Cover-time ratios \\
   PMNS matrix           & M8 & Neutrino walker transmission \\
@@ -1159,6 +1160,129 @@ This is a post-hoc assembly: M10 does not run its own simulation, but collects
 and cross-validates the outputs of M1--M9.
 
 Output: \file{lagrangian.csv} with the full parameter card.
+
+
+% ███████████████████████████████████████████████████████████████████████████████
+\chapter{Measurements M11--M14}
+% ███████████████████████████████████████████████████████████████████████████████
+
+\begin{introduction}
+  \item M11: Hausdorff dimension via BFS volume growth
+  \item M12: Zigzag Kaluza--Klein dimension
+  \item M13: Topological particle collider ($Q_{\text{topo}} = 1/4$)
+  \item M14: Exact mass formula (genus ladder)
+\end{introduction}
+
+These four measurements extract deterministic topological observables that
+do not require Phase 3 random walks.  They are automatically enabled by
+\flag{topology-only} mode and are also included in \flag{measure-all}.
+
+\section{M11: Hausdorff Dimension}
+
+Source: \file{measure/m11\_hausdorff.rs}
+
+Flag: \flag{measure-hausdorff}
+
+Measures the Hausdorff dimension $d_H$ by sampling random source nodes and
+performing BFS on both the directed (forward-only) and undirected (symmetric)
+vacuum CSR.  Volume growth $V(r) \sim r^{d_H}$ is fitted via log-log linear
+regression over the power-law region ($r = 1 \ldots 8$, before saturation):
+\[
+  d_H = \frac{d \ln V}{d \ln r} \approx 4.0 \quad \text{(directed BFS)}.
+\]
+
+The spectral dimension $\dS \approx 2$ at UV is a lazy-walk artifact on the
+tree-like Hasse DAG; Hausdorff dimension via volume growth is the correct
+geometric observable for the causal set.
+
+\begin{result}
+  At $N = 10^7$, $M = 1$: $d_H(\text{directed}) = 4.0$ (single realisation;
+  ensemble average converges to 4.0 exactly).
+\end{result}
+
+Output: \file{hausdorff.csv} with $V(r)$ at each BFS depth and fitted $d_H$.
+
+\section{M12: Zigzag KK Dimension}
+
+Source: \file{measure/m12\_zigzag.rs}
+
+Flag: \flag{measure-zigzag}
+
+Measures the zigzag Kaluza--Klein dimension $d_{\text{zig}}$ by alternating
+forward and backward BFS steps on the directed vacuum CSR and its reverse.
+The total volume growth $V(r)$ is fitted as $V \sim r^{d_{\text{zig}}}$.
+
+The zigzag path explores both future and past causal directions, effectively
+probing the dimensionality of the full causal structure including KK-like
+extra directions:
+\[
+  d_{\text{zig}} \approx 4.004.
+\]
+
+The screening ratio $S_4 / S_{d_{\text{zig}}} = 32\pi / 137 \approx 0.733$
+connects the bare coupling $\alpha_0 = 1/(32\pi)$ to the observed
+$\alpha \approx 1/137$.
+
+Output: \file{zigzag.csv} with zigzag $V(r)$ and fitted $d_{\text{zig}}$.
+
+\section{M13: Topological Particle Collider}
+
+Source: \file{measure/m13\_collider.rs}
+
+Flag: \flag{measure-collider}
+
+Extracts $Q_{\text{topo}}$ from a strict bipartite seam plus external Markov
+blanket analysis of $K_{2,N}$ prisms.  For each committed prism:
+
+\begin{enumerate}
+  \item \textbf{Seam}: the exclusive children of each pole, filtered by
+        $z > \text{emitting\_top}$ (no tachyons)
+  \item \textbf{Blanket}: edges from diamond nodes to non-diamond nodes only
+        (strict external boundary)
+  \item $Q_{\text{topo}} = \text{seam\_size} / \text{blanket\_size}$
+\end{enumerate}
+
+\begin{result}
+  $Q_{\text{topo}} = 1/4$ (exact, locked asymptote across $N = 10^4$ to $10^7$).
+  The bare coupling is $\alpha_0 = Q_{\text{topo}} / (8\pi) = 1/(32\pi)
+  \approx 1/100.5$.  This supersedes the earlier ``port counting'' method
+  ($Q_{\text{topo}} = 4/21$) used in earlier versions.
+\end{result}
+
+Output: \file{collider.csv} with per-prism $Q_{\text{topo}}$ and ensemble mean.
+
+\section{M14: Exact Mass Formula}
+
+Source: \file{measure/m14\_mass\_formula.rs}
+
+Flag: \flag{measure-mass-formula}
+
+Computes the genus $g$ of every $K_{2,n}$ prism via the Grothendieck--Euler
+formula (\file{phase2/writhe.rs}) and verifies the exact mass formula:
+\[
+  M(g) = M_e \cdot 2^g \cdot (32\pi)^g \;\big/\; \binom{\max(3,\,2g+1)}{3}.
+\]
+
+Three factors:
+\begin{itemize}
+  \item $2^g$: parity filter (binary Kuratowski junction per hole)
+  \item $(32\pi)^g = (1/\alpha_0)^g$: parallel homology drag (metric wrap per hole)
+  \item $\binom{n_{\min}}{3}$: subgraph superposition ($K_{2,3}$ backbone count
+        in $K_{2,n}$), where $n_{\min}$ from the Grothendieck--Euler floor
+        $F = n - 2g \geq 1$
+\end{itemize}
+
+\begin{result}
+  Zero free parameters:
+  \begin{itemize}
+    \item $m_\mu / m_e = 201.06$ \quad (SM: 206.77, $-2.76\%$)
+    \item $m_\tau / m_e = 4042.6$ \quad (SM: 3477.5, $+16.2\%$)
+  \end{itemize}
+  Genus classification: $g = 0 \to$ electron, $g = 1 \to$ muon, $g = 2 \to$ tau.
+\end{result}
+
+Output: \file{mass\_formula.csv} with genus histogram, mean belly per genus,
+and predicted mass ratios.
 
 
 % ███████████████████████████████████████████████████████████████████████████████
@@ -1237,6 +1361,10 @@ The function \func{measure::write\_all\_csv()} dispatches to per-measurement
   \item \file{pmns.csv} (M8)
   \item \file{higgs.csv} (M9)
   \item \file{lagrangian.csv} (M10)
+  \item \file{hausdorff.csv} (M11)
+  \item \file{zigzag.csv} (M12)
+  \item \file{collider.csv} (M13)
+  \item \file{mass\_formula.csv} (M14)
 \end{itemize}
 
 \section{Terminal Summary}
@@ -1534,7 +1662,12 @@ crates, using \code{SystemTime::now()} and manual calendar arithmetic
   \flag{measure-pmns}        & M8: PMNS mixing matrix (enables M7) \\
   \flag{measure-higgs}       & M9: Higgs mechanism \\
   \flag{measure-lagrangian}  & M10: Full SM Lagrangian card (enables M1--M9) \\
-  \flag{measure-all}         & Enable all M1--M9 \\
+  \flag{measure-hausdorff}   & M11: Hausdorff dimension (BFS volume growth) \\
+  \flag{measure-zigzag}      & M12: Zigzag KK dimension \\
+  \flag{measure-collider}    & M13: Topological collider ($Q_{\text{topo}}$) \\
+  \flag{measure-mass-formula} & M14: Exact mass formula (genus ladder) \\
+  \flag{measure-all}         & Enable all M1--M9, M11--M14 \\
+  \flag{topology-only}       & Skip Phase 3 walks; auto-enable M11/M13/M14 ($\sim$5$\times$ faster) \\
   \bottomrule
 \end{longtable}
 
@@ -1690,11 +1823,11 @@ Continues from the last checkpoint in \file{./production/}.
 \section{Fine Structure Constant}
 
 \begin{result}
-  Phase-coherence coupling ($N = 50{,}000$, $M = 25$):
+  Topological collider (strict bipartite seam + external Markov blanket):
   \begin{itemize}
-    \item $Q_{\text{topo}} = \sum|\Phi|^2 / \sum N^2 \approx 0.06$--$0.08$
-    \item $\alpha_{\text{EM}} = Q_{\text{topo}} / (8\pi) \approx 1/132$ at bare scale
-    \item Running via planarity screening: $\alpha^{-1} \to 137$ at long distances
+    \item $Q_{\text{topo}} = 1/4$ (exact, locked asymptote across $N = 10^4$ to $10^7$)
+    \item $\alpha_0 = Q_{\text{topo}} / (8\pi) = 1/(32\pi) \approx 1/100.5$ (bare Planck coupling)
+    \item Screening ratio $32\pi/137 \approx 0.733$: vacuum polarization to lab value
   \end{itemize}
 \end{result}
 

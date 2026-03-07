@@ -5,6 +5,7 @@
 pub mod spectral;
 pub mod walker;
 pub mod flux;
+pub mod laplacian;
 
 pub use spectral::{WalkResult, SpectralOutput, spectral_dimension};
 pub use walker::{
@@ -13,3 +14,8 @@ pub use walker::{
     compute_eigen, compute_monte_carlo_csr,
 };
 pub use flux::{build_flux_csr, run_transmission_walkers};
+pub use laplacian::{
+    HeatKernelResult, RgFlowResult,
+    heat_kernel_exact, heat_kernel_slq, integrate_rg,
+    log_spaced_times, weyl_law_check,
+};

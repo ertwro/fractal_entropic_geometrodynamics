@@ -21,17 +21,7 @@ pub const MAX_PROPER_TIME_SQ: f64 = 64.0;
 pub const MAX_CAUSAL_DEPTH: i16 = 15;
 
 /// Maximum out-degree before abandoning light-cone search for a node.
-///
 /// Mean Hasse valence at ρ ≈ 1 is ~4–10; 15 descendants ⟹ saturated causal shadow.
-///
-/// This constant also sets the **lattice mode decay timescale** for spectral
-/// dimension measurements.  The lazy-walk transition matrix T = ½(I + D⁻¹A)
-/// has local eigenvalues near λ ≈ 1 − 1/(2D), which decay on a timescale
-/// t_lattice = 1/|ln λ| ≈ D_max = 15.  After t ≈ 15 steps, discrete graph
-/// artifacts (degree echoes, parity oscillations) have decayed by ~1/e,
-/// and the return probability P(t) enters the continuum scaling regime
-/// P(t) ~ t^{−d_s/2}.  The CRT budget is calibrated at t_max = D_max
-/// for this reason (see [`crate::convergence`] for the full derivation).
 pub const MAX_HASSE_DEGREE: usize = 15;
 
 /// A spacetime event quantized onto an integer lattice for cache-coherent traversal.
