@@ -12,9 +12,7 @@ This Rust engine recovers the Standard Model from pure combinatorial topology,
 offering a discrete generative companion to the continuum triumphs of
 general relativity and quantum field theory.
 
-**Latest version (v4):** [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18769707.svg)](https://doi.org/10.5281/zenodo.18769707)
-**Previous version (v2):** [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18746995.svg)](https://doi.org/10.5281/zenodo.18746995)
-**Previous version (v1):** [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18733424.svg)](https://doi.org/10.5281/zenodo.18733424)
+**Zenodo concept doi:** [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18719774.svg)](https://doi.org/10.5281/zenodo.18719774)
 
 This code engine is evidence of Kuratowski Calculus in action and its Modulo Synthesis by Juan Pablo Silva Alvarado.
 
@@ -172,33 +170,33 @@ continuum QFT accepts as empirical inputs here arise from counting.
 
 ### Raw measurements (N = 10^7, M = 20)
 
-| Observable              | Value                | Note                                 |
-| ----------------------- | -------------------- | ------------------------------------ |
-| d_S (UV, sigma=1)       | 1.949 +/- 0.002      | Planck-scale d_S -> 2                |
-| d_S (IR, sigma=4)       | 4.956 +/- 0.001      | 4D continuum emerges                 |
-| Defect core d_S         | 9.10                 | Topological trapping                 |
-| Prisms per realization  | 386,197              |                                      |
-| Gen1 / Gen2 / Gen3      | 2.1% / 84.9% / 13.0% | Exactly 3 (theorem)                  |
-| Mass gen1 / gen2 / gen3 | 1036 / 1436 / 1689   | Topological Planck units             |
-| Ratio m1 : m2 : m3      | 1 : 1.39 : 1.63      | N-independent invariant              |
-| Q_topo                  | 0.1907               | Raw at N=10^7; collider locks 1/4    |
-| alpha_0 = Q/(8pi)       | 1/131.8 (raw)        | Collider: 1/(32pi) ~ 1/100.5        |
-| sin^2 theta_W           | 4/17 = 0.2353        | K\_{2,3} eigensystem bipartite ratio |
-| m_W / m_Z               | 0.8745               |                                      |
-| G_N                     | 1/(16pi)             | Jacobson alpha-sweep plateau: G=1/16 |
-| alpha(1 + Omega)        | 1/(8pi)              | **Exact at every N**                 |
-| GUE <r>                 | 0.603 +/- 0.002      | GUE = 0.6027 (complex QM confirmed)  |
-| SFF slope gamma         | 1.04 +/- 0.03        | GUE prediction: 1                    |
-| G_BH / G_thermo         | 4.16                 | Bekenstein-Hawking factor of 4       |
-| Left fraction (M5)      | 0.465                | Parity violation from topology       |
-| Born r (M6)             | 0.101                | Cramer transactional handshake       |
-| Coherence r (M6)        | 0.153                | Kuratowski decoherence protection    |
-| d_H (directed BFS)      | 3.38                 | Directed Hausdorff dim (M=1)*        |
-| d_zig (zigzag)          | 4.004                | Zigzag Kaluza-Klein dimension (M=1)* |
-| Q_topo (collider, M13)  | 0.231                | Exact: 1/4; inv_alpha = 108.8 (M=1)* |
-| m_mu/m_e (M14)          | 201.1                | Exact formula; SM: 206.8 (-2.8%)     |
-| m_tau/m_e (M14)         | 4042.6               | Exact formula; SM: 3477.5 (+16.2%)   |
-| Omega_dark/Omega_vis    | 1.70                 | Raw at N=10^7                        |
+| Observable              | Value                | Note                                  |
+| ----------------------- | -------------------- | ------------------------------------- |
+| d_S (UV, sigma=1)       | 1.949 +/- 0.002      | Planck-scale d_S -> 2                 |
+| d_S (IR, sigma=4)       | 4.956 +/- 0.001      | 4D continuum emerges                  |
+| Defect core d_S         | 9.10                 | Topological trapping                  |
+| Prisms per realization  | 386,197              |                                       |
+| Gen1 / Gen2 / Gen3      | 2.1% / 84.9% / 13.0% | Exactly 3 (theorem)                   |
+| Mass gen1 / gen2 / gen3 | 1036 / 1436 / 1689   | Topological Planck units              |
+| Ratio m1 : m2 : m3      | 1 : 1.39 : 1.63      | N-independent invariant               |
+| Q_topo                  | 0.1907               | Raw at N=10^7; collider locks 1/4     |
+| alpha_0 = Q/(8pi)       | 1/131.8 (raw)        | Collider: 1/(32pi) ~ 1/100.5          |
+| sin^2 theta_W           | 4/17 = 0.2353        | K\_{2,3} eigensystem bipartite ratio  |
+| m_W / m_Z               | 0.8745               |                                       |
+| G_N                     | 1/(16pi)             | Jacobson alpha-sweep plateau: G=1/16  |
+| alpha(1 + Omega)        | 1/(8pi)              | **Exact at every N**                  |
+| GUE <r>                 | 0.603 +/- 0.002      | GUE = 0.6027 (complex QM confirmed)   |
+| SFF slope gamma         | 1.04 +/- 0.03        | GUE prediction: 1                     |
+| G_BH / G_thermo         | 4.16                 | Bekenstein-Hawking factor of 4        |
+| Left fraction (M5)      | 0.465                | Parity violation from topology        |
+| Born r (M6)             | 0.101                | Cramer transactional handshake        |
+| Coherence r (M6)        | 0.153                | Kuratowski decoherence protection     |
+| d_H (directed BFS)      | 3.38                 | Directed Hausdorff dim (M=1)\*        |
+| d_zig (zigzag)          | 4.004                | Zigzag Kaluza-Klein dimension (M=1)\* |
+| Q_topo (collider, M13)  | 0.231                | Exact: 1/4; inv_alpha = 108.8 (M=1)\* |
+| m_mu/m_e (M14)          | 201.1                | Exact formula; SM: 206.8 (-2.8%)      |
+| m_tau/m_e (M14)         | 4042.6               | Exact formula; SM: 3477.5 (+16.2%)    |
+| Omega_dark/Omega_vis    | 1.70                 | Raw at N=10^7                         |
 
 \* M11-M14 values are from a single diagnostic realization (M=1, N=10^7,
 topology-only mode). The M=20 ensemble was run before M11-M14 existed;
@@ -209,13 +207,13 @@ a full M=20 topology-only run will tighten these numbers.
 Five lattice sizes (N = 10^5 to 10^7) confirm all boundary-sensitive
 observables follow the 4D scaling law **O(N) = O_inf + a \* N^{-1/4}**:
 
-| Observable     | N = 10^7 | N -> inf                     | R^2    |
-| -------------- | -------- | ---------------------------- | ------ |
-| Q_topo         | 0.191    | **1/4 = 0.250** (collider)   | --     |
-| 1/alpha_0      | 131.9    | **32pi ~ 100.5** (collider)  | --     |
-| Omega_energy   | 4.25     | **5.57** (Planck 2018: 5.36) | 0.990  |
-| d_S (UV)       | 1.949    | **1.953**                    | 0.890  |
-| d_S (IR)       | 4.956    | **5.002**                    | 0.988  |
+| Observable   | N = 10^7 | N -> inf                     | R^2   |
+| ------------ | -------- | ---------------------------- | ----- |
+| Q_topo       | 0.191    | **1/4 = 0.250** (collider)   | --    |
+| 1/alpha_0    | 131.9    | **32pi ~ 100.5** (collider)  | --    |
+| Omega_energy | 4.25     | **5.57** (Planck 2018: 5.36) | 0.990 |
+| d_S (UV)     | 1.949    | **1.953**                    | 0.890 |
+| d_S (IR)     | 4.956    | **5.002**                    | 0.988 |
 
 Mass ratios and generation fractions are **N-independent topological invariants**
 (R^2 < 0.1 against N^{-1/4}).
@@ -255,7 +253,7 @@ The occupancy formula reproduces mass ratios with **zero free parameters**:
 ### Vacuum Polarization
 
 The topological collider (M13) measures the bare charge Q_topo = 1/4 exactly,
-giving alpha_0 = 1/(32pi) ~ 1/100.5 at the Planck scale.  The FSS estimator
+giving alpha_0 = 1/(32pi) ~ 1/100.5 at the Planck scale. The FSS estimator
 (Q = Sigma|Phi|^2 / Sigma N^2) returns Q ~ 0.191 at N=10^7 — lower than 1/4
 because K\_{3,3}-free constraints force phase anti-correlation at small belly
 sizes, screening the net charge. This is vacuum polarization: the geometric
