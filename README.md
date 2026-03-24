@@ -1,7 +1,7 @@
 # Fractal Entropic Geometrodynamics
 
 [![CI](https://github.com/ertwro/fractal_entropic_geometrodynamics/actions/workflows/ci.yml/badge.svg)](https://github.com/ertwro/fractal_entropic_geometrodynamics/actions/workflows/ci.yml)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18769707.svg)](https://doi.org/10.5281/zenodo.18769707)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18719774.svg)](https://doi.org/10.5281/zenodo.18719774)
 [![License: MIT](https://img.shields.io/badge/Code-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CC BY-SA 4.0](https://img.shields.io/badge/Theory-CC%20BY--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-sa/4.0/)
 
