@@ -500,6 +500,14 @@ Four volumes (pdf/tex) of the _Modulo Synthesis_ pedagogic project:
 
 ---
 
+## Related Repositories
+
+| Repository | Description |
+| ---------- | ----------- |
+| [yang-mills-mass-gap](https://github.com/ertwro/yang-mills-mass-gap) | Yang-Mills preprint + Lean 4 verification (46 theorems) |
+
+---
+
 ## Citation
 
 ```bibtex
@@ -509,8 +517,8 @@ Four volumes (pdf/tex) of the _Modulo Synthesis_ pedagogic project:
                Three Particle Generations from Discrete Topological Constraints},
   year      = {2026},
   publisher = {Zenodo},
-  doi       = {10.5281/zenodo.18769707},
-  url       = {https://doi.org/10.5281/zenodo.18769707},
+  doi       = {10.5281/zenodo.18719774},
+  url       = {https://doi.org/10.5281/zenodo.18719774},
 }
 ```
 
