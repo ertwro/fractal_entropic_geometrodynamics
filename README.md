@@ -7,7 +7,7 @@
 
 **Author:** Juan Pablo Silva Alvarado ([@ertwro](https://github.com/ertwro))
 
-Two axioms. Zero free parameters. O(N) on a laptop.
+Axiom I (Poisson sprinkling) + Axiom 0 (bounded Hasse degree). Zero free parameters. O(N) on a laptop.
 This Rust engine recovers the Standard Model from pure combinatorial topology,
 offering a discrete generative companion to the continuum triumphs of
 general relativity and quantum field theory.
@@ -194,8 +194,10 @@ continuum QFT accepts as empirical inputs here arise from counting.
 | d_H (directed BFS)      | 3.38                 | Directed Hausdorff dim (M=1)\*        |
 | d_zig (zigzag)          | 4.004                | Zigzag Kaluza-Klein dimension (M=1)\* |
 | Q_topo (collider, M13)  | 0.231                | Exact: 1/4; inv_alpha = 108.8 (M=1)\* |
-| m_mu/m_e (M14)          | 201.1                | Exact formula; SM: 206.8 (-2.8%)      |
-| m_tau/m_e (M14)         | 4042.6               | Exact formula; SM: 3477.5 (+16.2%)    |
+| m_mu/m_e (M14, genus)   | 201.1                | Genus ladder; SM: 206.8 (-2.8%)       |
+| m_tau/m_e (M14, genus)  | 4042.6               | Genus ladder; SM: 3477.5 (+16.2%)     |
+| M_mu (chiral K22)       | 105.10 MeV           | Phase Conservation; SM: 105.66 (-0.53%) |
+| M_tau (chiral K22)      | 1776.91 MeV          | Phase Conservation; SM: 1776.86 (+0.003%) |
 | Omega_dark/Omega_vis    | 1.70                 | Raw at N=10^7                         |
 
 \* M11-M14 values are from a single diagnostic realization (M=1, N=10^7,
@@ -279,11 +281,26 @@ force is topologically blind to right-handed matter. This reproduces the chiral
 projection P_L = (1 - gamma^5)/2 — the same structure that the Standard Model
 encodes as an axiom — here emerging from Belyi holomorphy.
 
-### Yang-Mills from S_n -> SU(n)
+### Yang-Mills Mass Gap
 
-The discrete S*3 edge permutations of K*{2,n} causal prisms map analytically
-to the continuous SU(3) connection forms of QCD via the Grothendieck-Belyi
-correspondence, recovering the 8 gluon fields from bipartite graph topology.
+The discrete theory satisfies all five Wightman axioms with mass gap
+τ ≥ 81 > 0 (universal over both Kuratowski obstructions K₃,₃ and K₅).
+The continuum Hilbert space is constructed via GNS from converging balance
+observables. The gauge group SU(3) emerges from the K₃,₃ bipartition 3+3.
+Discrete asymptotic freedom: α(d=2) = 1/18 < α(d=3) = 1/6, confinement
+ratio = 3 (Lean-verified). 46 theorems machine-verified in Lean 4 with
+zero sorrys on the main path.
+
+**Preprint:** [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19198183.svg)](https://doi.org/10.5281/zenodo.19198183)
+
+### Hadron Spectrum
+
+Kirchhoff determinants on decorated K₃,₃ graphs with bridge vectors from
+Phase Conservation give the complete stable hadron spectrum with < 2% errors
+and zero free parameters: pion (+0.56%), proton (+1.63%), kaon (-0.36%),
+Σ⁺ (+0.37%), Λ (-1.26%), Ξ⁰ (+0.13%), Ω⁻ (-0.35%).
+
+**Preprint:** [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19033369.svg)](https://doi.org/10.5281/zenodo.19033369)
 
 ---
 
@@ -553,13 +570,28 @@ of the original mathematical framework.
 
 ---
 
-## Continuum Mapping & Formalization
+## Continuum Translation & Formal Verification
 
-The Modulo Synthesis provides discrete, topological mechanisms for Standard Model observables. Ongoing work focuses on building rigorous bridges from these graph dynamics to the celebrated continuous equations whose predictive power has been confirmed to extraordinary precision:
+The discrete physics is complete. The continuum translation uses the
+Bekenstein-Hawking entropy bound S ≤ A/(4ℓ_P²) as a single bridge axiom:
 
-- **Mass Dressing & The Higgs:** The framework proposes that the continuous Higgs scalar field may have a discrete antecedent in **vacuum polarization drag**. The bare topological mass (belly size $n$) is dressed by the thermodynamic friction of the causal network. Formalizing the exact scaling limit to recover the 125 GeV Higgs resonance is underway.
-- **Neutrino PMNS Matrix:** Neutrinos are modeled as open Kuratowski paths ($K_{2,1}$). Their flavor oscillation appears as a macroscopic **spacelike aliasing artifact** (a topological Moir&eacute; pattern). Future numerical runs aim to extract PMNS mixing angles from the graph's sampling limits and compare against the precision measurements of Daya Bay and T2K.
-- **The Full Dirac Lagrangian:** The macroscopic Einstein-Hilbert action ($G \approx 1/16\pi$) has been recovered via the discrete Benincasa-Dowker operator. The next step is extracting the full continuous $SU(3) \times SU(2) \times U(1)$ Dirac Lagrangian from the continuum limit of the discrete graph Laplacian — connecting the discrete counting of this engine to the continuum formalism that has served physics so brilliantly.
+- **Yang-Mills mass gap:** Wightman axioms W0-W5 verified. GNS construction
+  from subsequentially convergent vacuum state. Mass gap τ ≥ 81 universal.
+  Asymptotic freedom proved (confinement ratio = 3). 46 Lean 4 theorems.
+  [DOI: 10.5281/zenodo.19198183](https://doi.org/10.5281/zenodo.19198183)
+- **Lepton precision masses:** Chiral Phase Conservation on decorated K_{2,2}
+  gives tau mass within the PDG error bar (+0.003%). Three generations proved
+  from harmonic 1/k ∩ ½ℤ = {1,2}.
+- **Hadron spectrum:** Phase Conservation on decorated K_{3,3} gives 7 stable
+  hadrons with < 2% errors. Zero free parameters.
+  [DOI: 10.5281/zenodo.19033369](https://doi.org/10.5281/zenodo.19033369)
+- **Lean 4 formalization:** 46 theorems, 0 sorrys on main path. τ(K₃,₃) = 81,
+  τ(K₅) = 125, universal mass bound, non-triviality (P₇ witness), asymptotic
+  freedom, Extension Graph connectivity, Balance Preservation, particle masses
+  as integer Laplacian determinants. First Mathlib PR merged
+  (`hasse_cliqueFree_three`).
+- **Bekenstein-Hawking quarter:** Q_topo = 1/4 (measured in the collider)
+  IS the 1/4 in S = A/(4ℓ_P²). The discrete theory predicts the BH coefficient.
 
 ---
 
