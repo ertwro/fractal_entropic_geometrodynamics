@@ -248,7 +248,7 @@ You are free to share and adapt this material for any purpose, including\\
 commercially, provided you give appropriate credit and distribute any\\
 derivative works under the same license.\\[1em]
 \url{https://creativecommons.org/licenses/by-sa/4.0/}\\[2em]
-{\small DOI: \href{https://doi.org/10.5281/zenodo.18769707}{10.5281/zenodo.18769707}}
+{\small DOI: \href{https://doi.org/10.5281/zenodo.18719774}{10.5281/zenodo.18719774}}
 \end{center}
 \vspace*{\fill}
 \clearpage
@@ -483,23 +483,9 @@ quantities (metric, curvature, volume, dimension) must be \emph{derived}
 from the combinatorics of $(\mathcal{C}, \prec)$.
 Figure~\ref{fig:small-causet} shows a minimal example.
 
-\begin{theorem}[The Kuratowski Resolution (Theorem~I)]\label{ax:planarity}
-The Hasse diagram of~$\mathcal{C}$ preserves \textbf{local planarity}:
-every emergent subdivision of~$K_5$ or of~$K_{3,3}$ is resolved by
-\textbf{vertex absorption}---the external node that generates the
-Kuratowski obstruction is contracted into the pole of highest degree
-of the threatened Causal Prism \KC{Ax.~A2}.
-\end{theorem}
-
-\noindent
-Why planarity? Because the Hasse diagram is a \emph{two-dimensional}
-combinatorial object: it records only nearest-neighbour causal links,
-with no room for link crossings. A $K_5$ or $K_{3,3}$ minor would
-require edges to ``cross'' in any planar drawing---physically, this
-means two independent causal channels interfering without sharing an
-event, violating locality.  Theorem~I is not a modelling choice; it is
-the dynamical consequence of maintaining a well-defined causal
-structure. Together, Axiom~0, Axiom~I, and Theorem~I generate
+Together, Axiom~0, Axiom~I, and Theorem~I
+(stated formally in Modulo~\ref{ch:kuratowski},
+\S\ref{sec:axiomatic-hierarchy}) generate
 \emph{all} the physics developed in this volume and in Volume~II. Every
 previously independent axiom (valence saturation, bipartite matter,
 locality horizon, etc.) is now a \emph{derived theorem} from these
@@ -1165,11 +1151,13 @@ topological threat can emerge:
 \end{equation}
 
 \noindent
-\textbf{Physical meaning.} When a threat is detected, the offending
-node is absorbed by vertex contraction into the nearest pole. This is
-the discrete analogue of \textbf{colour confinement}: the topology
-forbids an external node from breaking the bipartite structure of the
-Prism, just as QCD forbids isolating a quark.
+\textbf{Physical meaning.} When a threat is detected, the non-planar
+subgraph acquires Kirchhoff mass $\tau \geq 81$---it \emph{becomes}
+a topological defect (matter).  This is the discrete analogue of
+\textbf{colour confinement}: the graph does not forbid the threat but
+\emph{makes it massive}.  An external node that breaks the bipartite
+structure of the Prism is absorbed into a new defect, just as QCD
+forbids isolating a quark by creating new hadrons from the flux tube.
 
 \subsection{The Hasse Depth: $d_{\max} = 4$}
 
@@ -2347,7 +2335,7 @@ Run \texttt{feg\_prism 10000 5 ./ex06 --inmemory --seed 42}.
   \item Phase space screening and the Master Scaling Law.
   \item Logarithmic running as a special case.
   \item The fine structure constant from topological charge on $K_{2,3}$.
-  \item Vacuum polarization as planarity screening.
+  \item Vacuum polarization as mass-gap screening.
   \item Finite-size scaling and the topological collider:
     $\mathcal{Q}_{\mathrm{topo}} = 1/4$ (exact).
 \end{introduction}
@@ -2380,13 +2368,14 @@ collapses. The vacuum becomes emptier than standard QFT assumes.
 
 On a causal set, the screening mechanism is \textbf{topological}: the
 bounded Hasse degree (Axiom~0) limits the local connectivity available
-for virtual pair configurations. The vacuum is locally series-parallel
-(planarity preserved), and each virtual pair that would create a
-non-planar minor carries Kirchhoff mass $\tau \geq 81$.  This
-creates \emph{anti-correlations} in the pair distribution that are
-invisible to continuum QFT. The effective number of screening pairs is
-reduced by the bounded-degree constraint, producing a weaker screening
-than the standard QFT prediction.
+for virtual pair configurations. Each virtual pair that would create a
+non-planar minor carries Kirchhoff mass $\tau \geq 81$---the universal
+mass gap (Theorem~I).  This creates \emph{anti-correlations} in the pair
+distribution that are invisible to continuum QFT: creating a virtual
+pair costs at least 81 mass units, so the vacuum is far less
+``populated'' than standard QFT assumes.  The effective number of
+screening pairs is reduced by the mass-gap constraint, producing a
+weaker screening than the standard QFT prediction.
 
 \section{The Master Scaling Law}
 
@@ -2475,7 +2464,7 @@ The static port-counting ratio is:
     \approx 0.190
 \end{equation}
 This treats each prism in isolation, neglecting the collective
-planarity constraints of the full Hasse diagram. The
+topological constraints of the full Hasse diagram. The
 \textbf{topological collider}---a strict bipartite seam with causal
 filter and external Markov blanket---measures the definitive value:
 \begin{equation}\label{eq:qtopo-collider}
@@ -2507,8 +2496,9 @@ The bare coupling $\alpha_0 \approx 1/100.5$ is the value at the Planck
 scale, before vacuum screening. As the spectral dimension flows from
 $\dS = 2$ (UV) to $\dS = 4$ (IR), virtual electron--positron pairs
 progressively screen the bare charge. The screening mechanism is
-\textbf{planarity-constrained}: only pairs whose creation does not
-introduce a $K_5$ or $K_{3,3}$ minor contribute.
+\textbf{mass-gap constrained}: every pair whose creation produces a
+non-planar minor costs at least $\tau = 81$ mass units (Theorem~I),
+suppressing high-momentum virtual states.
 
 The Standard Model predicts that $\alpha$ runs from $\approx 1/100$
 near the Planck scale to $\approx 1/137$ at low energies, with the
@@ -2520,8 +2510,9 @@ invoking the QED $\beta$-function---remains an open problem
 
 \begin{result}
 Renormalization is not infinities subtracting infinities. It is
-planarity screening on a Kuratowski-constrained graph as $\dS$ flows
-from 2 to 4. The bare fine structure constant
+mass-gap screening on a Kuratowski-constrained graph as $\dS$ flows
+from 2 to 4: every virtual pair that would create a non-planar minor
+costs $\tau \geq 81$, naturally suppressing UV modes. The bare fine structure constant
 $\alpha_0 = 1/(32\pi)$ at the Planck scale is dressed to
 $1/137$ by the vacuum's topological response.
 \end{result}
@@ -3197,7 +3188,7 @@ causal set has a maximum density $\rho_{\max} = \lP^{-4}$---one event
 per Planck four-volume. When the holographic bound
 $S \le A/4G$ saturates (Theorem~\ref{thm:holographic}), the causal set
 becomes incompressible: no more events can be packed into a given
-volume without violating planarity (Theorem~\ref{ax:planarity}).
+volume without exceeding the Volumetric Limit (Axiom~\ref{ax:volumetric-limit}).
 
 \subsection{The Modified Friedmann Equation}
 
@@ -3227,8 +3218,9 @@ $\rho_{\max} = \frac{3}{4G\,\mathcal{V}_{\max}\,\lP} \sim \lP^{-4}$
   \rho_{\mathrm{eff}} = \rho - \frac{\rho^2}{\rho_{\max}}.
 \]
 The first term is the standard contribution; the second is the
-back-reaction from events that are ``used up'' in maintaining
-planarity. As $\rho \to \rho_{\max}$, $\rho_{\mathrm{eff}} \to 0$:
+back-reaction from non-planar defects: each Volumetric Limit
+violation creates a massive defect ($\tau \geq 81$), consuming
+events.  As $\rho \to \rho_{\max}$, $\rho_{\mathrm{eff}} \to 0$:
 the causal set resists further compression.
 
 \textbf{Step 4:} Substituting $\rho_{\mathrm{eff}}$ into the
@@ -3260,7 +3252,7 @@ Figure~\ref{fig:cosmic-bounce} summarises the timeline.
 \includegraphics[width=0.75\textwidth]{fig1_7_cosmic_bounce.pdf}
 \caption{The Kuratowski epoch.  At maximum density, the causal set is
 a total order (chain); transitive reduction produces the Hasse diagram;
-as density drops, spatial width emerges and the first $K_5$
+as density drops, spatial width emerges and the first non-planar
 contractions produce matter (prisms).  The Big Bang singularity is
 replaced by a smooth bounce at $\rho = \rho_{\max}$.}
 \label{fig:cosmic-bounce}
@@ -3381,13 +3373,14 @@ which contains $K_{3,3}$ as a minor.
 all resolutions except vertex contraction. The threatening node is
 absorbed into the pole of highest degree (minimising the entropy
 cost). The result is a Causal Prism $K_{2,N}$
-(Theorem~\ref{ax:planarity}). \KC{Thm.~A.6--A.7}
+(Theorem~\ref{thm:kuratowski-resolution}). \KC{Thm.~A.6--A.7}
 \end{proof}
 
 \noindent
 Matter is not a statistical fluctuation. It is a \textbf{topological
-inevitability}---the only mechanism by which a dense triangle-free graph
-can remain planar \cite{diestel2017,kuratowski1930}.
+inevitability}---a dense triangle-free graph must exceed the Volumetric
+Limit, and every such violation creates a massive non-planar defect
+\cite{diestel2017,kuratowski1930}.
 
 \section{The Causal Prism $K_{2,N}$}
 
@@ -3525,9 +3518,9 @@ Each pole of a prism $K_{2,N}$ has $N$ internal links plus at most
 $\mathcal{V}_{\max} - N$ external links. Once $\deg(u) = \mathcal{V}_{\max} = 15$, the pole
 is \textbf{causally saturated}: no new $\covers$-links can form. A
 non-planar configuration adjacent to a saturated pole cannot be
-resolved by contraction into that pole. It must either nucleate a new
-prism or remain unresolved (which is impossible if $H$ is to remain
-planar).
+resolved by contraction into that pole. It must nucleate a new
+prism---acquiring its own Kirchhoff mass $\tau \geq 81$---or persist
+as a massive defect in its own right.
 
 \begin{corollary}[Self-Limiting Condensation]\label{cor:self-limiting}
 Prism formation is self-quenching: each condensation event reduces the
@@ -3598,16 +3591,29 @@ With this machinery, Volume~II derives:
   \item \textbf{Generation--genus correspondence:} $K_{2,3} \to S^2$
     (electron), $K_{2,4} \to T^2$ (muon), $K_{2,6} \to \Sigma_2$
     (tau)---via Kuratowski twists forced by ambient Hasse pressure.
-  \item \textbf{Exact inertial mass formula:}
+  \item \textbf{Genus ladder mass formula:}
     $M(g) = M_e \cdot 2^g (32\pi)^g / \binom{n_{\min}(g)}{3}$,
-    predicting $m_\mu/m_e = 64\pi \approx 201$ (SM: $207$,
+    giving $m_\mu/m_e = 64\pi \approx 201$ (SM: $207$,
     error $-2.8\%$) and $m_\tau/m_e \approx 4043$ (SM: $3478$,
-    error $+16\%$), with zero free parameters.
+    error $+16\%$). This captures the \emph{orbital} topology.
+  \item \textbf{Chiral precision masses:}
+    The chiral bipartition $K_{2,2}$ (left/right-handed sectors) gives
+    Kirchhoff spanning tree counts
+    $\tau_e = 12$, $\tau_\mu = 2468$ ($-0.53\%$),
+    $\tau_\tau = 41{,}728$ ($+0.003\%$)---tau mass within the
+    experimental error bar, with zero free parameters.
   \item \textbf{Particle decay:} The cobordism barrier, edge
     snap-back, and half-life as Markov hitting time. Parity violation
     from the holomorphic veto on Belyi functions.
   \item \textbf{Gauge groups:} $g = 0 \to U(1)$, $g = 1 \to SU(2)$,
     $g = 2 \to SU(3)$ via Coxeter--Riemann-Hilbert--Narasimhan-Seshadri.
+  \item \textbf{Asymptotic freedom:}
+    $\alpha(d{=}2) = 1/18 < \alpha(d{=}3) = 1/6$, confinement ratio~$=3$,
+    matching the Yang--Mills prediction exactly.
+  \item \textbf{Hadron spectrum:}
+    Phase Conservation maps $(I,S)$ quantum numbers to unique bridge
+    vectors on $K_{3,3}$; seven particle masses match within $<2\%$,
+    zero free parameters.
   \item \textbf{The fine structure constant:} $\alpha_0 =
     \mathcal{Q}_{\mathrm{topo}}/(8\pi) = 1/(32\pi) \approx 1/100.5$
     from the topological collider measurement $\mathcal{Q}_{\mathrm{topo}} = 1/4$ (Volume~II).
